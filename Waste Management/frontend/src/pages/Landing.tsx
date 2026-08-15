@@ -260,13 +260,13 @@ export default function Landing() {
               src={img}
               alt=""
               loading="eager"
-              className={`absolute inset-0 h-full w-full object-cover object-center brightness-[0.9] dark:brightness-[0.6] transition-opacity duration-1000 ease-in-out ${
-                i === bgIndex ? 'opacity-40 dark:opacity-30' : 'opacity-0'
+              className={`absolute inset-0 h-full w-full object-cover object-center brightness-100 dark:brightness-[0.7] transition-opacity duration-1000 ease-in-out ${
+                i === bgIndex ? 'opacity-100 dark:opacity-90' : 'opacity-0'
               }`}
             />
           ))}
-          {/* Subtle gradient vignette */}
-          <div className="absolute inset-0 bg-gradient-to-b from-surface/60 via-surface/40 to-surface dark:from-surface/80 dark:via-surface/60 dark:to-surface" />
+          {/* Subtle gradient vignette blending into bottom */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-surface/10 to-surface dark:from-transparent dark:via-surface/30 dark:to-surface" />
         </div>
 
         {/* Indian Government tricolor accent strip */}
@@ -281,7 +281,7 @@ export default function Landing() {
         />
 
         {/* Premium Frosted Glass Hero Container for 100% Guaranteed Contrast & Legibility */}
-        <div className="relative mx-auto max-w-4xl rounded-3xl border border-line/60 bg-surface/85 p-6 text-center shadow-2xl backdrop-blur-xl sm:p-10">
+        <div className="relative mx-auto max-w-4xl rounded-3xl border border-white/50 bg-white/40 p-6 text-center shadow-2xl backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/40 sm:p-10">
           {/* Official government badge row */}
           <div className="mb-3 flex items-center justify-center gap-2">
             <div className="h-px flex-1 max-w-[80px] bg-gradient-to-r from-transparent to-line" />
