@@ -1,21 +1,26 @@
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=800&size=48&pause=1000&color=16A34A&center=true&vCenter=true&width=800&height=100&lines=Safaai+Sarathi+2.0;Autonomous+Waste+Logistics;AI-Driven+Urban+Cleanliness" alt="Typing SVG" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=16A34A,22C55E,10B981,059669&height=250&section=header&text=Safaai%20Sarathi%202.0&fontSize=80&fontAlignY=38&desc=Autonomous%20AI-Driven%20Civic%20Logistics&descAlignY=60&descAlign=50&fontColor=ffffff" width="100%" alt="Header" />
 
-**An Autonomous, AI-Driven Ecosystem for Next-Gen Municipal Waste Management & Civic Grievance Triage**
+<br/>
+
+<a href="https://safaai-sarathi2-0.vercel.app" target="_blank">
+  <img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=800&size=30&pause=1000&color=059669&center=true&vCenter=true&width=800&height=60&lines=NEXT-GEN+SMART+CITY+ECOSYSTEM;GAMIFIED+CITIZEN+SUPER-APP;AI-POWERED+WASTE+TRIAGE;REAL-TIME+FLEET+TELEMETRY" alt="Typing SVG" />
+</a>
+
+<br/>
 
 [![React](https://img.shields.io/badge/Frontend-React%2018%20%7C%20Vite%20%7C%20TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
 [![NodeJS](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%7C%20Prisma%20ORM-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![ThreeJS](https://img.shields.io/badge/3D%20Graphics-Three.js%20%7C%20R3F-black?style=for-the-badge&logo=three.js&logoColor=white)](https://threejs.org/)
 [![AI-Powered](https://img.shields.io/badge/AI%20Engine-Computer%20Vision%20%7C%20LightGBM-FF6F00?style=for-the-badge&logo=scikitlearn&logoColor=white)](https://github.com/)
-[![License](https://img.shields.io/badge/Govt.%20Of%20India-Civic%20Tech-orange?style=for-the-badge)](https://swachhbharat.mygov.in/)
 
 <br/>
 
-> *"Transforming Municipal Waste Management from Passive Grievance Redressal into Proactive, Real-time AI Triage & Dynamic Fleet Logistics."*
+> **🚀 "Transforming Municipal Waste Management from Passive Grievance Redressal into Proactive, Real-time AI Triage & Dynamic Fleet Logistics."**
 
-[🌐 Live Deployment (Vercel)](https://safaai-sarathi2-0.vercel.app) &nbsp;•&nbsp; [⚙️ API Backend (Render)](https://safaaisarathi2-0.onrender.com) &nbsp;•&nbsp; [📑 System Architecture](#-end-to-end-system-architecture)
+[🌐 **LIVE PLATFORM**](https://safaai-sarathi2-0.vercel.app) &nbsp;•&nbsp; [⚙️ **API ENDPOINT**](https://safaaisarathi2-0.onrender.com) &nbsp;•&nbsp; [📑 **ARCHITECTURE**](#-system-architecture)
 
 </div>
 
@@ -23,44 +28,53 @@
 
 <br/>
 
-## 🌟 The Problem We Are Solving
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=10B981&height=60&text=🏆%20HACKATHON%20WINNING%20USP&fontColor=ffffff&fontSize=30&stroke=000000" alt="USP Banner"/>
+</div>
 
-Traditional municipal portals are essentially simple form dropboxes: citizens upload a complaint, it sits in an unread, unstructured database, and takes weeks to be manually sorted and attended to. **Safaai Sarathi 2.0** completely re-engineers civic operations with a proactive, **Intelligent Autonomous Triage Layer**.
+<br/>
 
-### 🏆 Hackathon Winning Features
-- **🤖 Zero Fake Complaints (AI Fraud Shield):** Analyzes EXIF metadata, camera lens characteristics, Shannon entropy, and location authenticity to prevent duplicate or downloaded spam images.
+Traditional municipal portals are essentially simple form dropboxes: citizens upload a complaint, it sits in an unread, unstructured database, and takes weeks to be manually sorted. **Safaai Sarathi 2.0** completely re-engineers civic operations with a proactive, **Intelligent Autonomous Triage Layer**:
+
+- **🤖 Zero Fake Complaints (AI Fraud Shield):** Analyzes EXIF metadata, camera lens characteristics, Shannon entropy, and location authenticity to mathematically reject duplicate or downloaded spam images.
 - **⚡ Instant Emergency Escalation:** Medical waste, dead animals, and chemical hazards bypass human delay with an automated **30-minute SLA countdown timer**.
-- **🔗 Smart Duplicate Merging:** When 10 citizens photograph the same overflowing bin, it merges them into a single high-priority ticket using ResNet visual embeddings and spatial radii.
+- **🔗 Smart Duplicate Merging:** When 10 citizens photograph the same overflowing bin, it doesn't create 10 redundant tickets; it merges them into a single high-priority node using **ResNet visual embeddings** and spatial radii.
 - **📸 Mandatory Photo-Proof Resolution:** A driver cannot close a ticket by simply clicking a checkbox. The API mathematically blocks resolution unless an authentic post-cleanup photo is provided.
 - **📍 Rotated & Interpolated Live GPS Tracking:** Google Maps-style 60 FPS smooth truck movement on custom Leaflet vector maps.
 
 <br/>
 
-## 🎬 Real Application Previews & Showcase
+---
+
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=059669&height=60&text=🎬%20APPLICATION%20SHOWCASE&fontColor=ffffff&fontSize=30&stroke=000000" alt="Showcase Banner"/>
+</div>
+
+<br/>
 
 <div align="center">
 
-### 1️⃣ Full-Width 3D Drive-by Intro & Official Civic Landing Page
-| 🚛 Full-Screen 3D Heavy Municipal Truck Intro | 🏛️ Official Landing Page (Glassmorphism & Live Database Stats) |
+### 🟢 Citizen Interface & Landing
+| 🚛 **3D Interactive Drive-by Intro** | 🏛️ **Official Glassmorphic Landing Page** |
 | :---: | :---: |
-| <img src="./docs/assets/01_splash_intro.png" width="490" alt="3D Intro Screen" /> | <img src="./docs/assets/landing_hero_live.png" width="490" alt="Landing Page" /> |
-| *Real-time Three.js 6x4 heavy municipal EV truck with active beacon, road lighting & dynamic drive-by motion* | *Live Gandhinagar database stats, Government of India tricolor strip, and glassmorphic quick-report hero* |
+| <img src="./docs/assets/01_splash_intro.png" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="3D Intro Screen" /> | <img src="./docs/assets/landing_hero_live.png" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Landing Page" /> |
+| *Real-time Three.js 6x4 heavy municipal EV truck with active beacon, road lighting & physics* | *Live Gandhinagar DB stats, Government of India tricolor, and glassmorphic quick-report* |
 
 <br/>
 
-### 2️⃣ Citizen Super-App: Live Vehicle Tracking & Gamified Green Credits
-| 📍 Real-Time Interpolated Truck Tracking & ETA | 🏆 Gamified Green Credits & Reward Claiming |
+### 🟢 Gamification & Real-Time Tracking
+| 📍 **Live Interpolated Truck Tracking** | 🏆 **Gamified Green Credits & Wallet** |
 | :---: | :---: |
-| <img src="./docs/assets/citizen_live_tracking.png" width="490" alt="Citizen Live Tracking" /> | <img src="./docs/assets/citizen_green_credits.png" width="490" alt="Citizen Green Credits" /> |
-| *Live WebSocket heading-rotated GPS truck position, distance in metres & accurate 1-minute arrival ETA* | *Gamified civic reward system: +5 report, +15 verified. Seamless voucher clipboard claiming.* |
+| <img src="./docs/assets/citizen_live_tracking.png" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Citizen Tracking" /> | <img src="./docs/assets/citizen_green_credits.png" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Green Credits" /> |
+| *Live WebSocket heading-rotated GPS truck position, distance & 1-minute arrival ETA* | *Civic reward system: +5 report, +15 verified. Seamless voucher clipboard claiming.* |
 
 <br/>
 
-### 3️⃣ Driver Navigator & Officer Inspection Console
-| 🚛 Driver Turn-by-Turn Route & SOS Triage | 🛡️ Ward Officer Live Queue & Photo Proof Validation |
+### 🟢 Fleet Logistics & Ward Triage
+| 🚛 **Driver Turn-by-Turn VRP Navigator** | 🛡️ **Ward Officer Live Inspection Queue** |
 | :---: | :---: |
-| <img src="./docs/assets/05_driver_dashboard.png" width="490" alt="Driver Dashboard" /> | <img src="./docs/assets/06_officer_dashboard.png" width="490" alt="Officer Console" /> |
-| *Optimized pickup stops with VRP Or-Opt solver, battery/capacity telemetry, and instant 1-tap SOS triage* | *Point-in-polygon ward triage, 30-min SLA countdown timer, and mathematically enforced photo-proof resolution* |
+| <img src="./docs/assets/05_driver_dashboard.png" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Driver Dashboard" /> | <img src="./docs/assets/06_officer_dashboard.png" width="450" style="border-radius:10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);" alt="Officer Console" /> |
+| *Optimized pickup stops with Or-Opt solver, battery telemetry, and 1-tap SOS* | *Point-in-polygon triage, 30-min SLA timer, and enforced photo-proof validation* |
 
 </div>
 
@@ -68,14 +82,20 @@ Traditional municipal portals are essentially simple form dropboxes: citizens up
 
 ---
 
-## 🛠️ Tech Stack & Powered By
-
-We built this platform using an industry-standard, fully typed ecosystem:
-
 <div align="center">
-  <img src="https://skillicons.dev/icons?i=react,typescript,vite,tailwind,threejs,nodejs,express,postgres,prisma,docker,github,vercel&perline=12" alt="Tech Stack Icons" />
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=047857&height=60&text=🛠️%20TECHNOLOGY%20ECOSYSTEM&fontColor=ffffff&fontSize=30&stroke=000000" alt="Tech Stack Banner"/>
 </div>
 
+<br/>
+
+<div align="center">
+  <img src="https://skillicons.dev/icons?i=react,typescript,vite,tailwind,threejs,nodejs,express,postgres,prisma,docker,github,vercel,html,css,js,figma&perline=8" alt="Tech Stack Icons" />
+</div>
+
+<br/>
+
+<details>
+<summary><b>Click to expand detailed tech-stack breakdown</b></summary>
 <br/>
 
 | Domain | Technology / Library | Role & Justification |
@@ -87,11 +107,17 @@ We built this platform using an industry-standard, fully typed ecosystem:
 | **Backend API** | `Node.js`, `Express.js` | High-concurrency event-driven architecture. |
 | **Database & ORM** | `Prisma ORM`, `PostgreSQL 17` | Relational integrity with 17 schema models & strict audit logging. |
 
+</details>
+
 <br/>
 
 ---
 
-## 🧠 AI Agents, Machine Learning Models & Algorithms
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=065F46&height=60&text=🧠%20AI%20MODELS%20&%20ALGORITHMS&fontColor=ffffff&fontSize=30&stroke=000000" alt="AI Banner"/>
+</div>
+
+<br/>
 
 Safaai Sarathi operates a dedicated micro-service hosting specialized AI models:
 
@@ -106,17 +132,21 @@ graph TD
     E -->|Confidence < 70%| H[🛡️ Human-in-the-Loop Review Queue]
 ```
 
-### Specialized Models
-- **👁️ Vision Waste Classifier (PyTorch/CNN):** 9-Class Waste Classification (Piles, Overflowing Bins, Medical, Bio-Waste).
-- **🧬 Duplicate Similarity Embedder:** Cosine similarity on 512-dim visual feature vectors using a ResNet Backbone + Haversine spatial radius.
-- **🔮 Hotspot Predictor:** LightGBM Gradient Boosted Decision Trees trained on 45-day temporal civic data.
-- **🗺️ Fleet Routing Solver:** TSP & VRP Solver with Nearest-Neighbor, 2-Opt edge swaps & Emergency locking.
+### 🔬 Specialized Models in Production
+1. **👁️ Vision Waste Classifier (PyTorch/CNN):** 9-Class Waste Classification (Piles, Overflowing Bins, Medical, Bio-Waste).
+2. **🧬 Duplicate Similarity Embedder:** Cosine similarity on 512-dim visual feature vectors using a ResNet Backbone + Haversine spatial radius.
+3. **🔮 Hotspot Predictor:** LightGBM Gradient Boosted Decision Trees trained on 45-day temporal civic data.
+4. **🗺️ Fleet Routing Solver:** TSP & VRP Solver with Nearest-Neighbor, 2-Opt edge swaps & Emergency locking.
 
 <br/>
 
 ---
 
-## 🏗️ End-to-End System Architecture
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=022C22&height=60&text=🏗️%20SYSTEM%20ARCHITECTURE&fontColor=ffffff&fontSize=30&stroke=000000" alt="Architecture Banner"/>
+</div>
+
+<br/>
 
 ```mermaid
 flowchart TB
@@ -160,7 +190,11 @@ flowchart TB
 
 ---
 
-## 🔐 Strict 4-Domain Portal Isolation
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=000000&height=60&text=🔐%20STRICT%20PORTAL%20ISOLATION&fontColor=ffffff&fontSize=30&stroke=000000" alt="Security Banner"/>
+</div>
+
+<br/>
 
 Safaai Sarathi is **not** a single dashboard with a role dropdown. Each portal is an **independent, isolated security silo**:
 
@@ -177,7 +211,11 @@ Safaai Sarathi is **not** a single dashboard with a role dropdown. Each portal i
 
 ---
 
-## 🚀 Quickstart & Local Setup
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=111827&height=60&text=🚀%20QUICKSTART%20GUIDE&fontColor=ffffff&fontSize=30&stroke=000000" alt="Quickstart Banner"/>
+</div>
+
+<br/>
 
 ### 1️⃣ Clone & Install Dependencies
 ```bash
@@ -186,24 +224,14 @@ cd "SafaaiSarathi2.0/Waste Management"
 npm run install:all
 ```
 
-### 2️⃣ Configure Environment Variables
-Create `.env` in `backend/api/` and `frontend/`:
-```env
-# backend/api/.env
-PORT=5100
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5433/waste_management?schema=public"
-JWT_ACCESS_SECRET="safaai_super_secret_access_key"
-```
-
-### 3️⃣ Database Migration & Deterministic Seeding
+### 2️⃣ Configure Environment Variables & Setup
 ```bash
+# Push schema and seed deterministc data
 npm run db:push     # Creates all 17 tables with relations
 npm run seed        # Seeds Gandhinagar city, 8 wards, fleet, 45-day history
-```
 
-### 4️⃣ Launch Full Stack Development Servers
-```bash
-npm run dev         # Concurrently launches Web (5273) + API (5100) + AI (8100)
+# Launch Concurrently
+npm run dev         # Launches Web (5273) + API (5100) + AI (8100)
 ```
 
 <br/>
@@ -212,7 +240,7 @@ npm run dev         # Concurrently launches Web (5273) + API (5100) + AI (8100)
 
 <div align="center">
 
-<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=600&size=20&pause=2000&color=22C55E&center=true&vCenter=true&width=600&height=50&lines=Made+with+❤️+for+Swachh+Bharat+Abhiyan;Empowering+Citizens.+Optimizing+Cities." alt="Typing SVG Footer" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=059669,10B981,22C55E&height=150&section=footer&text=Made%20with%20💚%20for%20Swachh%20Bharat&fontSize=30&fontAlignY=60" width="100%" alt="Footer" />
 
 *Safaai Sarathi 2.0 — Built to empower citizens, drivers, and municipal administrators.* 🇮🇳
 
