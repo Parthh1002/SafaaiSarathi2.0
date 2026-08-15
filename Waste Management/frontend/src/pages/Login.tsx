@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Check, KeyRound, Loader2, Shield, Smartphone, Truck, User, Building2 } from 'lucide-react';
-import { api, errorMessage, type Portal } from '../lib/api';
+import { api, errorMessage, type Portal, BASE } from '../lib/api';
 import { useAuth, HOME_ROUTE } from '../lib/auth';
 import { LanguageSwitcher, ThemeToggle, toast } from '../components/ui';
 import { useT } from '../lib/i18n';
@@ -391,7 +391,7 @@ export default function Login({ portal }: { portal: Portal }) {
                     <span className="h-px flex-1 bg-line" />
                   </div>
                   <a
-                    href={demo?.googleEnabled ? '/api/auth/citizen/google' : undefined}
+                    href={demo?.googleEnabled ? `${BASE}/api/auth/citizen/google` : undefined}
                     onClick={(e) => {
                       if (!demo?.googleEnabled) {
                         e.preventDefault();

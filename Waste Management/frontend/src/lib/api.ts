@@ -12,7 +12,7 @@ import axios, { AxiosError, type AxiosInstance } from 'axios';
 
 export type Portal = 'citizen' | 'driver' | 'officer' | 'admin';
 
-const BASE = import.meta.env.VITE_API_URL || '';
+export const BASE = import.meta.env.VITE_API_URL || '';
 const tokenKey = (portal: Portal) => `ss_token_${portal}`;
 const userKey = (portal: Portal) => `ss_user_${portal}`;
 
