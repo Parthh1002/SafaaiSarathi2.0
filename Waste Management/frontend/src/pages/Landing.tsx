@@ -78,15 +78,20 @@ const DIFFERENTIATORS = [
 ];
 
 const HERO_IMAGES = [
-  // Ahmedabad / Gandhinagar civic street feel
+  // 1. Ahmedabad / Gandhinagar Smart City Corridor & Clean Urban Landscape
+  "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=1600&q=85&auto=format&fit=crop&crop=center",
+  // 2. Municipal Waste Collection & Smart Sanitation Vehicle on Duty
+  "https://images.unsplash.com/photo-1605600659908-0ef719419d41?w=1600&q=85&auto=format&fit=crop&crop=center",
+  // 3. Dedicated Municipal Sanitation Workers & Cleanliness Drive (Swachhata)
   "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1600&q=85&auto=format&fit=crop&crop=center",
-  // Waste management / cleaning workers
-  "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=1600&q=85&auto=format&fit=crop&crop=center",
-  // Clean city infrastructure
-  "https://images.unsplash.com/photo-1595278456488-82afcc706243?w=1600&q=85&auto=format&fit=crop&crop=center",
-  // Environment / green initiatives
-  "https://images.unsplash.com/photo-1621451537084-482c73073e0f?w=1600&q=85&auto=format&fit=crop&crop=center"
+  // 4. Automated Sustainable Waste Processing & Segregation Facility
+  "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=1600&q=85&auto=format&fit=crop&crop=center",
+  // 5. GIFT City / Gandhinagar Green Urban Civic Infrastructure
+  "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=1600&q=85&auto=format&fit=crop&crop=center",
+  // 6. Modern Clean Roadway & Smart Environmental Management
+  "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&q=85&auto=format&fit=crop&crop=center"
 ];
+
 
 export default function Landing() {
   const t = useT();
@@ -247,34 +252,35 @@ export default function Landing() {
       {/* ---- Hero ---- */}
       <section className="relative overflow-hidden px-4 pb-10 pt-24 sm:pb-14 sm:pt-28">
         {/* Sliding Background images */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 bg-black">
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-surface">
           {HERO_IMAGES.map((img, i) => (
             <img
               key={img}
               src={img}
               alt=""
-              className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ease-in-out ${
-                i === bgIndex ? 'opacity-100' : 'opacity-0'
+              className={`absolute inset-0 h-full w-full object-cover object-center brightness-[0.95] dark:brightness-[0.7] transition-opacity duration-1000 ease-in-out ${
+                i === bgIndex ? 'opacity-65 dark:opacity-45' : 'opacity-0'
               }`}
             />
           ))}
-          {/* Multi-stop gradient overlay: 10% → 25% → 50% → 75% → 100% opacity — light mode */}
+          {/* Luminous frosted contrast mask — light mode (100% readable over any photo) */}
           <div
-            className="absolute inset-0 dark:hidden"
+            className="absolute inset-0 backdrop-blur-[1.5px] dark:hidden"
             style={{
               background:
-                'linear-gradient(to bottom, rgba(247,247,245,0.10) 0%, rgba(247,247,245,0.25) 20%, rgba(247,247,245,0.52) 45%, rgba(247,247,245,0.78) 68%, rgba(247,247,245,1.00) 100%)',
+                'radial-gradient(ellipse 90% 70% at 50% 35%, rgba(255,255,255,0.88) 0%, rgba(247,247,245,0.72) 55%, rgba(247,247,245,1.0) 100%)',
             }}
           />
-          {/* Dark mode overlay */}
+          {/* Luminous frosted contrast mask — dark mode */}
           <div
-            className="absolute inset-0 hidden dark:block"
+            className="absolute inset-0 hidden backdrop-blur-[1.5px] dark:block"
             style={{
               background:
-                'linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.22) 20%, rgba(0,0,0,0.52) 45%, rgba(0,0,0,0.82) 68%, rgba(0,0,0,1.00) 100%)',
+                'radial-gradient(ellipse 90% 70% at 50% 35%, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.72) 55%, rgba(15,23,42,1.0) 100%)',
             }}
           />
         </div>
+
         {/* Indian Government tricolor accent strip */}
         <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex h-1">
           <div className="flex-1 bg-[#FF9933]" />
