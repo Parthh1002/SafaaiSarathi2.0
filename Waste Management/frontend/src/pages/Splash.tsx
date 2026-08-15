@@ -156,8 +156,8 @@ function GarbageTruck() {
       ))}
 
       {/* Ground shadow */}
-      <mesh position={[0, -0.85, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ellipseGeometry args={[1.6, 0.6, 16]} />
+      <mesh position={[0, -0.85, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1.6, 0.6, 1]}>
+        <circleGeometry args={[1, 32]} />
         <meshStandardMaterial color="#000" transparent opacity={0.12} />
       </mesh>
     </group>
