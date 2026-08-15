@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth';
 import { LanguageSwitcher, ThemeToggle } from './ui';
 import { useT } from '../lib/i18n';
 import { initials } from '../lib/format';
+import { User, Settings, Shield } from 'lucide-react';
 
 export interface NavItem {
   to: string;
@@ -110,35 +111,15 @@ export function MobileShell({
         })}
       </nav>
 
-      {menuOpen && (
-        <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm">
-          <button type="button" className="absolute inset-0" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
-          <div className="absolute inset-x-0 bottom-0 animate-sheet-up rounded-t-3xl border-t border-line bg-elevated p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
-            <div className="mb-4 flex items-center gap-3">
-              <span className="grid h-11 w-11 place-items-center rounded-full text-fluid-sm font-bold text-white" style={{ background: user?.avatarColor || '#15803d' }}>
-                {initials(user?.name)}
-              </span>
-              <div className="min-w-0">
-                <p className="truncate font-semibold">{user?.name}</p>
-                <p className="truncate text-fluid-xs text-muted">{user?.email || user?.phone}</p>
-              </div>
-              <button type="button" className="ml-auto rounded-lg p-2 text-muted" onClick={() => setMenuOpen(false)} aria-label="Close">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <button
-              type="button"
-              className="btn-ghost w-full"
-              onClick={async () => {
-                await signOut();
-                navigate('/');
-              }}
-            >
-              <LogOut className="h-4 w-4" /> {t('common.signOut')}
-            </button>
-          </div>
-        </div>
-      )}
+      <AccountModal
+        isOpen={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        user={user}
+        signOut={signOut}
+        navigate={navigate}
+        t={t}
+        portalPath="/app"
+      />
     </div>
   );
 }
@@ -169,6 +150,7 @@ export function ConsoleShell({
   const location = useLocation();
   const t = useT();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   useEffect(() => setDrawerOpen(false), [location.pathname]);
 
@@ -206,24 +188,18 @@ export function ConsoleShell({
       </nav>
 
       <div className="border-t border-line p-3">
-        <div className="mb-2 flex items-center gap-2.5 px-1">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-fluid-xs font-bold text-white" style={{ background: user?.avatarColor || '#15803d' }}>
+        <button
+          type="button"
+          onClick={() => setAccountOpen(true)}
+          className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left transition hover:bg-brand/10 group"
+        >
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-fluid-xs font-bold text-white ring-2 ring-transparent transition group-hover:ring-brand/30" style={{ background: user?.avatarColor || '#15803d' }}>
             {initials(user?.name)}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-fluid-sm font-semibold">{user?.name}</p>
+            <p className="truncate text-fluid-sm font-semibold text-ink group-hover:text-brand">{user?.name}</p>
             <p className="truncate text-fluid-xs text-muted">{user?.ward?.name ?? user?.role}</p>
           </div>
-        </div>
-        <button
-          type="button"
-          className="btn-ghost btn-sm w-full"
-          onClick={async () => {
-            await signOut();
-            navigate('/');
-          }}
-        >
-          <LogOut className="h-4 w-4" /> {t('common.signOut')}
         </button>
       </div>
     </div>
@@ -273,6 +249,16 @@ export function ConsoleShell({
 
         <main className="min-w-0 flex-1 p-4 lg:p-6">{children}</main>
       </div>
+
+      <AccountModal
+        isOpen={accountOpen}
+        onClose={() => setAccountOpen(false)}
+        user={user}
+        signOut={signOut}
+        navigate={navigate}
+        t={t}
+        portalPath={`/${user?.role?.toLowerCase()}`}
+      />
     </div>
   );
 }
@@ -284,5 +270,68 @@ export function BackLink({ to, label = 'Back' }: { to: string; label?: string })
       <ChevronLeft className="h-4 w-4" />
       {label}
     </Link>
+  );
+}
+
+/** Reusable Premium Account Modal for all shells */
+export function AccountModal({ isOpen, onClose, user, signOut, navigate, t, portalPath = '/app' }: any) {
+  if (!isOpen) return null;
+
+  // We check if the user is CITIZEN to show Profile management (other roles might not have a profile page implemented yet).
+  const isCitizen = user?.role === 'CITIZEN';
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <button type="button" className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
+      <div className="relative w-full max-w-sm animate-scale-up overflow-hidden rounded-3xl border border-line/60 bg-surface/95 shadow-2xl backdrop-blur-xl">
+        {/* Banner */}
+        <div className="h-24 w-full bg-gradient-to-br from-brand/80 to-brand-dark/90" />
+        
+        {/* Avatar */}
+        <div className="relative -mt-12 flex justify-center">
+          <div className="rounded-full border-4 border-surface bg-surface p-1">
+            <span
+              className="grid h-20 w-20 place-items-center rounded-full text-3xl font-extrabold text-white shadow-inner"
+              style={{ background: user?.avatarColor || '#15803d' }}
+            >
+              {initials(user?.name)}
+            </span>
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="px-6 pb-6 pt-3 text-center">
+          <h2 className="text-xl font-bold text-ink">{user?.name}</h2>
+          <p className="text-sm text-muted">{user?.email || user?.phone}</p>
+          <div className="mx-auto mt-2 flex max-w-fit items-center gap-1.5 rounded-full bg-brand/10 border border-brand/20 px-3 py-1 text-xs font-semibold text-brand">
+            <Shield className="h-3.5 w-3.5" />
+            {user?.ward?.name ?? user?.role ?? 'Citizen'}
+          </div>
+
+          {/* Actions */}
+          <div className="mt-6 space-y-2">
+            {isCitizen && (
+              <button
+                type="button"
+                onClick={() => { onClose(); navigate(`${portalPath}/profile`); }}
+                className="flex w-full items-center justify-between rounded-xl bg-sunken px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-brand/10 hover:text-brand"
+              >
+                <span className="flex items-center gap-2"><Settings className="h-4 w-4" /> Manage Profile</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={async () => {
+                await signOut();
+                navigate('/');
+              }}
+              className="flex w-full items-center justify-between rounded-xl bg-danger/10 px-4 py-3 text-sm font-semibold text-danger transition-colors hover:bg-danger/20"
+            >
+              <span className="flex items-center gap-2"><LogOut className="h-4 w-4" /> {t('common.signOut')}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
