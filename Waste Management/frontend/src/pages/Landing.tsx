@@ -123,11 +123,26 @@ export default function Landing() {
 
       {/* ---- Hero ---- */}
       <section className="relative overflow-hidden px-4 pb-16 pt-12 sm:pt-20">
+        {/* Indian Government tricolor accent strip */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex h-1">
+          <div className="flex-1 bg-[#FF9933]" />
+          <div className="flex-1 bg-white dark:bg-white/30" />
+          <div className="flex-1 bg-[#138808]" />
+        </div>
         <div
           aria-hidden
           className="pointer-events-none absolute -top-40 left-1/2 h-[60vmin] w-[90vmin] -translate-x-1/2 rounded-full bg-brand/10 blur-3xl"
         />
         <div className="relative mx-auto max-w-4xl text-center">
+          {/* Official government badge row */}
+          <div className="mb-4 flex items-center justify-center gap-2">
+            <div className="h-px flex-1 max-w-[80px] bg-gradient-to-r from-transparent to-line" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#FF9933]/30 bg-[#FF9933]/8 px-3 py-1 text-fluid-xs font-semibold tracking-wide text-[#b35900] dark:border-[#FF9933]/20 dark:bg-[#FF9933]/10 dark:text-[#ffb347]">
+              <span className="text-[#000080] dark:text-[#6699ff]">🔵</span>
+              भारत सरकार &nbsp;·&nbsp; Government of India
+            </span>
+            <div className="h-px flex-1 max-w-[80px] bg-gradient-to-l from-transparent to-line" />
+          </div>
           <span className="chip border-brand/25 bg-brand/10 text-brand">
             <Building2 className="h-3.5 w-3.5" />
             {t('landing.hero.badge')}
@@ -184,7 +199,7 @@ export default function Landing() {
           <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step, i) => (
               <li key={step.key} className="card relative p-5">
-                <span className="absolute right-4 top-4 text-fluid-2xl font-bold text-sunken">{i + 1}</span>
+                <span className="absolute right-4 top-4 text-fluid-2xl font-bold text-ink/20 dark:text-white/25">{i + 1}</span>
                 <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/10 text-brand">
                   <step.icon className="h-5 w-5" />
                 </span>
@@ -298,28 +313,46 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Deep-green footer, everything left-aligned and kept compact. */}
-      <footer className="bg-[#0f4d2a] px-4 py-6 text-white">
-        <div className="mx-auto max-w-6xl">
-          <div className="flex items-center gap-2">
-            <img src="/icon.svg" alt="" className="h-7 w-7" />
-            <span className="text-fluid-base font-bold tracking-tight">Safaai Sarathi</span>
+      {/* Deep-green footer with Indian Government official styling */}
+      <footer className="bg-[#0f4d2a] text-white">
+        {/* Tricolor top strip */}
+        <div className="flex h-1.5">
+          <div className="flex-1 bg-[#FF9933]" />
+          <div className="flex-1 bg-white/70" />
+          <div className="flex-1 bg-[#138808]" />
+        </div>
+
+        <div className="mx-auto max-w-6xl px-4 py-6">
+          {/* Logo + bilingual name */}
+          <div className="flex items-center gap-3">
+            <img src="/icon.svg" alt="" className="h-8 w-8" />
+            <div>
+              <div className="text-fluid-base font-bold tracking-tight">Safaai Sarathi &nbsp;<span className="font-normal opacity-70">·</span>&nbsp; <span className="font-semibold opacity-90">सफाई सारथी</span></div>
+              <div className="text-[0.65rem] font-medium uppercase tracking-widest text-white/60">Government of India &nbsp;·&nbsp; भारत सरकार</div>
+            </div>
           </div>
 
-          <p className="mt-2 max-w-2xl text-fluid-xs text-white/80">
+          <p className="mt-3 max-w-2xl text-fluid-xs text-white/75">
             {t('landing.footer.body', { city: stats?.city ?? 'Gandhinagar' })}
           </p>
 
-          <div className="mt-2.5 space-y-0.5 text-fluid-xs text-white/65">
+          <div className="mt-2.5 space-y-0.5 text-fluid-xs text-white/60">
             <p>{t('landing.footer.org')}</p>
             <p>{t('landing.footer.helplines')}</p>
           </div>
 
-          <p className="mt-3 border-t border-white/15 pt-3 text-fluid-xs text-white/55">
-            {t('landing.footer.rights', { year: new Date().getFullYear() })}
-          </p>
+          {/* Bottom bar with Ashoka Chakra wheel emoji and copyright */}
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/15 pt-3">
+            <p className="text-fluid-xs text-white/50">
+              {t('landing.footer.rights', { year: new Date().getFullYear() })}
+            </p>
+            <span className="text-fluid-xs text-white/40 flex items-center gap-1.5">
+              <span className="text-base">☸️</span> Satyameva Jayate &nbsp;·&nbsp; सत्यमेव जयते
+            </span>
+          </div>
         </div>
       </footer>
+
     </div>
   );
 }
