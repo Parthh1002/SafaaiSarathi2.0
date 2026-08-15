@@ -12,11 +12,15 @@ import {
   Phone,
   MessageCircle,
   Building2,
+  Zap,
+  Sparkles,
+  Users,
 } from 'lucide-react';
 import { publicApi } from '../lib/api';
 import { LanguageSwitcher, ThemeToggle } from '../components/ui';
 import { useT } from '../lib/i18n';
 import { formatNumber } from '../lib/format';
+
 
 interface Stats {
   city: string;
@@ -123,45 +127,117 @@ export default function Landing() {
 
         {scrolled ? (
           /* Scrolled: centered floating pill */
-          <div className="px-4 pt-2 sm:px-8">
-            <div className="mx-auto flex max-w-4xl items-center rounded-full bg-surface/95 px-3 py-2 shadow-xl backdrop-blur-lg ring-1 ring-line/60 sm:px-5">
-              <div className="flex w-1/3 items-center gap-2.5">
-                <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
-                <span className="hidden text-fluid-base font-bold tracking-tight text-ink sm:block">
+          <div className="px-4 pt-2.5 sm:px-6">
+            <div className="mx-auto flex max-w-5xl items-center justify-between rounded-full bg-surface/95 px-4 py-2 shadow-2xl backdrop-blur-xl ring-1 ring-line/60 sm:px-6">
+              {/* Left Brand */}
+              <div className="flex items-center gap-2.5 shrink-0">
+                <img src="/icon.svg" alt="" className="h-7 w-7 shrink-0" />
+                <span className="text-fluid-base font-bold tracking-tight text-ink whitespace-nowrap">
                   Safaai <span className="text-brand">Sarathi</span>
                 </span>
               </div>
-              <nav className="hidden w-1/3 items-center justify-center gap-1 md:flex">
-                {[['#how', t('landing.nav.how')], ['#why', t('landing.nav.why')], ['#staff', t('landing.nav.staff')]].map(([href, label]) => (
-                  <a key={href} href={href} className="rounded-full px-3 py-1.5 text-fluid-sm font-medium text-muted transition-colors hover:bg-brand/5 hover:text-brand">{label}</a>
-                ))}
+
+              {/* Center Nav Links with symbols & whitespace-nowrap */}
+              <nav className="hidden md:flex items-center gap-1.5">
+                <a
+                  href="#how"
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1 text-fluid-sm font-medium text-muted transition-all hover:bg-brand/10 hover:text-brand whitespace-nowrap"
+                >
+                  <Zap className="h-3.5 w-3.5 text-brand" />
+                  <span>{t('landing.nav.how')}</span>
+                </a>
+                <a
+                  href="#why"
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1 text-fluid-sm font-medium text-muted transition-all hover:bg-brand/10 hover:text-brand whitespace-nowrap"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-brand" />
+                  <span>{t('landing.nav.why')}</span>
+                </a>
+                <a
+                  href="#staff"
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1 text-fluid-sm font-medium text-muted transition-all hover:bg-brand/10 hover:text-brand whitespace-nowrap"
+                >
+                  <Building2 className="h-3.5 w-3.5 text-brand" />
+                  <span>{t('landing.nav.staff')}</span>
+                </a>
               </nav>
-              <div className="flex w-1/3 items-center justify-end gap-2">
+
+              {/* Right Actions */}
+              <div className="flex items-center gap-2 shrink-0">
                 <LanguageSwitcher compact />
                 <ThemeToggle />
-                <Link to="/login" className="btn-primary btn-sm ml-1 rounded-full px-4">{t('common.signIn')}</Link>
+                <Link to="/login" className="btn-primary btn-sm rounded-full px-4 py-1.5 font-semibold whitespace-nowrap shadow-sm">
+                  {t('common.signIn')}
+                </Link>
               </div>
             </div>
           </div>
         ) : (
-          /* Not scrolled: full-width white frosted bar */
-          <div className="w-full border-b border-line/40 bg-surface/90 backdrop-blur-md">
-            <div className="mx-auto flex max-w-6xl items-center px-4 py-2.5 sm:px-6">
-              <div className="flex w-1/3 items-center gap-2.5">
-                <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
-                <span className="text-fluid-base font-bold tracking-tight text-ink">
-                  Safaai <span className="text-brand">Sarathi</span>
-                </span>
+          /* Not scrolled: full-width white frosted bar with corner-to-corner layout */
+          <div className="w-full border-b border-line/30 bg-surface/90 backdrop-blur-md transition-all duration-300">
+            <div className="flex w-full items-center justify-between px-4 py-2.5 sm:px-8 lg:px-12">
+              {/* Left: Brand Logo & Title at Left Corner */}
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="relative flex items-center justify-center">
+                  <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0 transition-transform duration-300 hover:scale-105" />
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75"></span>
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand"></span>
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-fluid-base font-extrabold tracking-tight text-ink whitespace-nowrap leading-none">
+                    Safaai <span className="text-brand">Sarathi</span>
+                  </span>
+                  <span className="text-[10px] font-semibold text-muted tracking-wider uppercase leading-tight mt-0.5">
+                    Civic AI Platform
+                  </span>
+                </div>
               </div>
-              <nav className="hidden w-1/3 items-center justify-center gap-2 md:flex">
-                {[['#how', t('landing.nav.how')], ['#why', t('landing.nav.why')], ['#staff', t('landing.nav.staff')]].map(([href, label]) => (
-                  <a key={href} href={href} className="rounded-full px-3 py-1.5 text-fluid-sm font-medium text-muted transition-colors hover:bg-brand/5 hover:text-brand">{label}</a>
-                ))}
+
+              {/* Center: Nav links with unique custom symbols in a sleek pill & strictly single line */}
+              <nav className="hidden lg:flex items-center gap-1.5 rounded-full bg-surface/80 px-2 py-1 ring-1 ring-line/50 backdrop-blur-md shadow-sm">
+                <a
+                  href="#how"
+                  className="flex items-center gap-2 rounded-full px-3.5 py-1 text-fluid-sm font-medium text-muted transition-all duration-200 hover:bg-brand/10 hover:text-brand whitespace-nowrap"
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand/10 text-brand text-xs">
+                    <Zap className="h-3 w-3" />
+                  </span>
+                  <span>{t('landing.nav.how')}</span>
+                </a>
+                <span className="h-3.5 w-px bg-line/60" />
+                <a
+                  href="#why"
+                  className="flex items-center gap-2 rounded-full px-3.5 py-1 text-fluid-sm font-medium text-muted transition-all duration-200 hover:bg-brand/10 hover:text-brand whitespace-nowrap"
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand/10 text-brand text-xs">
+                    <Sparkles className="h-3 w-3" />
+                  </span>
+                  <span>{t('landing.nav.why')}</span>
+                </a>
+                <span className="h-3.5 w-px bg-line/60" />
+                <a
+                  href="#staff"
+                  className="flex items-center gap-2 rounded-full px-3.5 py-1 text-fluid-sm font-medium text-muted transition-all duration-200 hover:bg-brand/10 hover:text-brand whitespace-nowrap"
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand/10 text-brand text-xs">
+                    <Building2 className="h-3 w-3" />
+                  </span>
+                  <span>{t('landing.nav.staff')}</span>
+                </a>
               </nav>
-              <div className="flex w-1/3 items-center justify-end gap-2">
+
+              {/* Right: Actions at Right Corner */}
+              <div className="flex items-center gap-2.5 shrink-0">
                 <LanguageSwitcher compact />
                 <ThemeToggle />
-                <Link to="/login" className="btn-primary btn-sm ml-1 rounded-full px-4">{t('common.signIn')}</Link>
+                <Link
+                  to="/login"
+                  className="btn-primary btn-sm rounded-full px-5 py-2 font-semibold shadow-md shadow-brand/20 whitespace-nowrap hover:shadow-lg transition-all"
+                >
+                  {t('common.signIn')}
+                </Link>
               </div>
             </div>
           </div>
