@@ -92,62 +92,86 @@ export default function Landing() {
   return (
     <div className="min-h-dvh bg-surface">
       {/* ---- Nav ---- */}
-      <header
-        className={`fixed top-0 z-40 transition-all duration-500 ${
-          scrolled
-            ? 'inset-x-3 top-3 sm:inset-x-6'
-            : 'inset-x-0 top-0'
-        }`}
-      >
+      <header className="fixed top-0 z-40 w-full transition-all duration-500">
+        {/* Top gradient to ensure nav is always readable over hero image */}
         <div
-          className={`mx-auto flex max-w-6xl items-center justify-between transition-all duration-500 ${
-            scrolled
-              ? 'rounded-full bg-surface/90 px-4 py-2 shadow-lg backdrop-blur-md ring-1 ring-line/60'
-              : 'px-4 py-3 bg-transparent'
+          aria-hidden
+          className={`pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/40 to-transparent transition-opacity duration-300 ${
+            scrolled ? 'opacity-0' : 'opacity-100'
           }`}
-        >
-          <div className="flex items-center gap-3">
+        />
+        <div className={`mx-auto flex max-w-6xl items-center justify-between transition-all duration-500 ${
+          scrolled
+            ? 'mt-3 mx-4 sm:mx-6 rounded-full bg-surface/92 px-4 py-2 shadow-xl backdrop-blur-lg ring-1 ring-line/50'
+            : 'px-5 py-3.5'
+        }`}>
+          <div className="flex items-center gap-2.5">
             <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
-            <span className="text-fluid-base font-bold tracking-tight">
-              Safaai <span className="text-brand">Sarathi</span>
+            <span className={`text-fluid-base font-bold tracking-tight transition-colors duration-300 ${
+              scrolled ? 'text-ink' : 'text-white drop-shadow-sm'
+            }`}>
+              Safaai <span className={scrolled ? 'text-brand' : 'text-green-400'}>Sarathi</span>
             </span>
           </div>
 
-          <nav className="hidden items-center gap-1 md:flex">
-            <a href="#how" className="rounded-full px-3 py-1.5 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.how')}</a>
-            <a href="#why" className="rounded-full px-3 py-1.5 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.why')}</a>
-            <a href="#staff" className="rounded-full px-3 py-1.5 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.staff')}</a>
+          <nav className="hidden items-center gap-0.5 md:flex">
+            {[['#how', t('landing.nav.how')], ['#why', t('landing.nav.why')], ['#staff', t('landing.nav.staff')]].map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                className={`rounded-full px-3 py-1.5 text-fluid-sm font-medium transition-colors duration-300 hover:text-brand ${
+                  scrolled ? 'text-muted' : 'text-white/90 drop-shadow-sm hover:text-white'
+                }`}
+              >{label}</a>
+            ))}
           </nav>
 
           <div className="flex items-center gap-2">
-            <LanguageSwitcher compact />
-            <ThemeToggle />
-            <Link to="/login" className="btn-primary btn-sm ml-2 rounded-full px-4">{t('common.signIn')}</Link>
+            <div className={`transition-all duration-300 ${
+              scrolled ? '' : '[&_button]:text-white [&_button]:border-white/30 [&_button]:bg-white/10 [&_button]:backdrop-blur'
+            }`}>
+              <LanguageSwitcher compact />
+            </div>
+            <div className={`transition-all duration-300 ${
+              scrolled ? '' : '[&_button]:text-white [&_button]:border-white/30 [&_button]:bg-white/10'
+            }`}>
+              <ThemeToggle />
+            </div>
+            <Link
+              to="/login"
+              className={`btn-sm ml-1 rounded-full px-4 font-semibold transition-all duration-300 ${
+                scrolled
+                  ? 'btn-primary'
+                  : 'border border-white/60 bg-white/15 text-white backdrop-blur hover:bg-white/25'
+              }`}
+            >{t('common.signIn')}</Link>
           </div>
         </div>
       </header>
 
       {/* ---- Hero ---- */}
       <section className="relative overflow-hidden px-4 pb-10 pt-20 sm:pb-14 sm:pt-24">
-        {/* Background image with multi-stop gradient overlay */}
+        {/* Background image — Indian city street with civic workers */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&q=80&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1600&q=85&auto=format&fit=crop&crop=center"
             alt=""
             className="h-full w-full object-cover object-center"
           />
-          {/* Multi-stop gradient: 10% → 25% → 50% → 75% → 100% opacity */}
+          {/* Multi-stop gradient overlay: 10% → 25% → 50% → 75% → 100% opacity — light mode */}
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 dark:hidden"
             style={{
-              background: 'linear-gradient(to bottom, rgba(247,247,245,0.10) 0%, rgba(247,247,245,0.25) 20%, rgba(247,247,245,0.50) 45%, rgba(247,247,245,0.75) 65%, rgba(247,247,245,1.00) 100%)',
+              background:
+                'linear-gradient(to bottom, rgba(247,247,245,0.10) 0%, rgba(247,247,245,0.25) 20%, rgba(247,247,245,0.52) 45%, rgba(247,247,245,0.78) 68%, rgba(247,247,245,1.00) 100%)',
             }}
           />
           {/* Dark mode overlay */}
           <div
             className="absolute inset-0 hidden dark:block"
             style={{
-              background: 'linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.25) 20%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.80) 65%, rgba(0,0,0,1.00) 100%)',
+              background:
+                'linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.22) 20%, rgba(0,0,0,0.52) 45%, rgba(0,0,0,0.82) 68%, rgba(0,0,0,1.00) 100%)',
             }}
           />
         </div>
