@@ -25,9 +25,9 @@ const queryClient = new QueryClient({
   },
 });
 
-/** Landing route: 3D intro first, then the marketing page. */
+/** Landing route: 3D intro first on load/refresh, then the marketing page. */
 function Entry() {
-  const [introDone, setIntroDone] = useState(() => Boolean(sessionStorage.getItem('ss_intro_seen')));
+  const [introDone, setIntroDone] = useState(false);
 
   if (!introDone) {
     return (

@@ -367,13 +367,8 @@ export default function Splash({ onDone }: { onDone: () => void }) {
     typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   useEffect(() => {
-    if (sessionStorage.getItem('ss_intro_seen')) {
-      onDone();
-      return;
-    }
     if (reduceMotion) {
-      sessionStorage.setItem('ss_intro_seen', '1');
-      setTimeout(onDone, 600);
+      setTimeout(onDone, 500);
       return;
     }
 
@@ -384,7 +379,6 @@ export default function Splash({ onDone }: { onDone: () => void }) {
     const t1 = setTimeout(() => setPhase('hold'), 400);
     const t2 = setTimeout(() => setPhase('out'), 3400);
     const t3 = setTimeout(() => {
-      sessionStorage.setItem('ss_intro_seen', '1');
       onDone();
     }, 4000);
 
@@ -396,7 +390,6 @@ export default function Splash({ onDone }: { onDone: () => void }) {
   }, [onDone, reduceMotion]);
 
   const skip = () => {
-    sessionStorage.setItem('ss_intro_seen', '1');
     onDone();
   };
 
