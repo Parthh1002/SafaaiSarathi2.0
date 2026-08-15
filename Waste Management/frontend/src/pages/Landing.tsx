@@ -92,47 +92,63 @@ export default function Landing() {
   return (
     <div className="min-h-dvh bg-surface">
       {/* ---- Nav ---- */}
-      {/* ---- Nav ---- */}
       <header className="fixed top-0 z-40 w-full transition-all duration-500">
-        <div className={`transition-all duration-500 ${scrolled ? 'px-4 pt-3 sm:px-8' : 'px-0 pt-0'}`}>
-          <div
-            className={`mx-auto flex items-center justify-between transition-all duration-500 ${
-              scrolled
-                ? 'max-w-4xl rounded-full bg-surface/95 px-5 py-2 shadow-xl backdrop-blur-lg ring-1 ring-line/60'
-                : 'max-w-6xl border-b border-white/10 bg-surface/80 px-5 py-3 backdrop-blur-md'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
-              <span className="text-fluid-base font-bold tracking-tight text-ink">
-                Safaai <span className="text-brand">Sarathi</span>
-              </span>
-            </div>
+        {/* Tricolor strip — always visible at top */}
+        <div className={`flex h-1 w-full transition-all duration-500 ${scrolled ? 'opacity-0 h-0' : 'opacity-100'}`}>
+          <div className="flex-1 bg-[#FF9933]" />
+          <div className="flex-1 bg-white" />
+          <div className="flex-1 bg-[#138808]" />
+        </div>
 
-            <nav className="hidden items-center gap-0.5 md:flex">
-              {[['#how', t('landing.nav.how')], ['#why', t('landing.nav.why')], ['#staff', t('landing.nav.staff')]].map(([href, label]) => (
-                <a
-                  key={href}
-                  href={href}
-                  className="rounded-full px-3 py-1.5 text-fluid-sm font-medium text-muted transition-colors duration-200 hover:text-brand"
-                >{label}</a>
-              ))}
-            </nav>
-
-            <div className="flex items-center gap-2">
-              <LanguageSwitcher compact />
-              <ThemeToggle />
-              <Link
-                to="/login"
-                className="btn-primary btn-sm ml-1 rounded-full px-4"
-              >{t('common.signIn')}</Link>
+        {scrolled ? (
+          /* Scrolled: centered floating pill */
+          <div className="px-4 pt-2 sm:px-8">
+            <div className="mx-auto flex max-w-4xl items-center justify-between rounded-full bg-surface/95 px-5 py-2 shadow-xl backdrop-blur-lg ring-1 ring-line/60">
+              <div className="flex items-center gap-2.5">
+                <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
+                <span className="text-fluid-base font-bold tracking-tight text-ink">
+                  Safaai <span className="text-brand">Sarathi</span>
+                </span>
+              </div>
+              <nav className="hidden items-center gap-0.5 md:flex">
+                {[['#how', t('landing.nav.how')], ['#why', t('landing.nav.why')], ['#staff', t('landing.nav.staff')]].map(([href, label]) => (
+                  <a key={href} href={href} className="rounded-full px-3 py-1.5 text-fluid-sm font-medium text-muted transition-colors hover:text-brand">{label}</a>
+                ))}
+              </nav>
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher compact />
+                <ThemeToggle />
+                <Link to="/login" className="btn-primary btn-sm ml-1 rounded-full px-4">{t('common.signIn')}</Link>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          /* Not scrolled: full-width white frosted bar */
+          <div className="w-full border-b border-line/40 bg-surface/90 backdrop-blur-md">
+            <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-2.5">
+              <div className="flex items-center gap-2.5">
+                <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
+                <span className="text-fluid-base font-bold tracking-tight text-ink">
+                  Safaai <span className="text-brand">Sarathi</span>
+                </span>
+              </div>
+              <nav className="hidden items-center gap-0.5 md:flex">
+                {[['#how', t('landing.nav.how')], ['#why', t('landing.nav.why')], ['#staff', t('landing.nav.staff')]].map(([href, label]) => (
+                  <a key={href} href={href} className="rounded-full px-3 py-1.5 text-fluid-sm font-medium text-muted transition-colors hover:text-brand">{label}</a>
+                ))}
+              </nav>
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher compact />
+                <ThemeToggle />
+                <Link to="/login" className="btn-primary btn-sm ml-1 rounded-full px-4">{t('common.signIn')}</Link>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* ---- Hero ---- */}
-      <section className="relative overflow-hidden px-4 pb-10 pt-20 sm:pb-14 sm:pt-24">
+      <section className="relative overflow-hidden px-4 pb-10 pt-24 sm:pb-14 sm:pt-28">
         {/* Background image — Indian city street with civic workers */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <img
