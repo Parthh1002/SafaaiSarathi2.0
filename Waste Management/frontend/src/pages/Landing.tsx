@@ -249,7 +249,7 @@ export default function Landing() {
           <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step, i) => (
               <li key={step.key} className="card relative p-4">
-                <span className="absolute right-3.5 top-3.5 text-fluid-2xl font-bold text-ink/20 dark:text-white/25">{i + 1}</span>
+                <span className="absolute right-3.5 top-3.5 text-fluid-2xl font-bold text-ink/50 dark:text-white/40">{i + 1}</span>
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand/10 text-brand">
                   <step.icon className="h-5 w-5" />
                 </span>
