@@ -169,10 +169,10 @@ export default function Landing() {
               </nav>
 
               {/* Right Actions */}
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <LanguageSwitcher compact />
                 <ThemeToggle />
-                <Link to="/login" className="btn-primary btn-sm rounded-full px-4 py-1.5 font-semibold whitespace-nowrap shadow-sm">
+                <Link to="/login" className="btn-primary btn-sm rounded-full px-3.5 sm:px-4 py-1.5 text-xs sm:text-fluid-sm font-semibold whitespace-nowrap shadow-sm">
                   {t('common.signIn')}
                 </Link>
               </div>
@@ -181,21 +181,21 @@ export default function Landing() {
         ) : (
           /* Not scrolled: full-width white frosted bar with corner-to-corner layout */
           <div className="w-full border-b border-line/30 bg-surface/90 backdrop-blur-md transition-all duration-300">
-            <div className="flex w-full items-center justify-between px-4 py-2.5 sm:px-8 lg:px-12">
+            <div className="flex w-full items-center justify-between px-3 py-2 sm:px-8 lg:px-12">
               {/* Left: Brand Logo & Title at Left Corner */}
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <div className="relative flex items-center justify-center">
-                  <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0 transition-transform duration-300 hover:scale-105" />
-                  <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
+                  <img src="/icon.svg" alt="" className="h-7 w-7 sm:h-8 sm:w-8 shrink-0 transition-transform duration-300 hover:scale-105" />
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-2 w-2 sm:h-2.5 sm:w-2.5">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-75"></span>
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand"></span>
+                    <span className="relative inline-flex h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-brand"></span>
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-fluid-base font-extrabold tracking-tight text-ink whitespace-nowrap leading-none">
+                  <span className="text-sm sm:text-fluid-base font-extrabold tracking-tight text-ink whitespace-nowrap leading-none">
                     Safaai <span className="text-brand">Sarathi</span>
                   </span>
-                  <span className="text-[10px] font-semibold text-muted tracking-wider uppercase leading-tight mt-0.5">
+                  <span className="text-[9px] sm:text-[10px] font-semibold text-muted tracking-wider uppercase leading-tight mt-0.5">
                     Civic AI Platform
                   </span>
                 </div>
@@ -235,12 +235,12 @@ export default function Landing() {
               </nav>
 
               {/* Right: Actions at Right Corner */}
-              <div className="flex items-center gap-2.5 shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
                 <LanguageSwitcher compact />
                 <ThemeToggle />
                 <Link
                   to="/login"
-                  className="btn-primary btn-sm rounded-full px-5 py-2 font-semibold shadow-md shadow-brand/20 whitespace-nowrap hover:shadow-lg transition-all"
+                  className="btn-primary btn-sm rounded-full px-3.5 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-fluid-sm font-semibold shadow-md shadow-brand/20 whitespace-nowrap hover:shadow-lg transition-all"
                 >
                   {t('common.signIn')}
                 </Link>

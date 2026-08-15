@@ -92,10 +92,10 @@ export default function CitizenHome() {
         </Link>
       )}
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <Stat label={t('citizen.home.statActive')} value={stats?.active ?? 0} />
-        <Stat label={t('citizen.home.statResolved')} value={stats?.resolved ?? 0} tone="ok" icon={<CheckCircle2 className="h-4 w-4" />} />
-        <Stat label={t('citizen.home.statCredits')} value={stats?.credits ?? 0} tone="brand" icon={<Trophy className="h-4 w-4" />} />
+        <Stat label={t('citizen.home.statResolved')} value={stats?.resolved ?? 0} tone="ok" icon={<CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />} />
+        <Stat label={t('citizen.home.statCredits')} value={stats?.credits ?? 0} tone="brand" icon={<Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />} />
       </div>
 
       <section>
