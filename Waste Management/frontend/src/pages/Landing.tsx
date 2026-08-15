@@ -93,7 +93,7 @@ export default function Landing() {
     <div className="min-h-dvh bg-surface">
       {/* ---- Nav ---- */}
       <header
-        className={`sticky top-0 z-40 transition-all duration-300 ${
+        className={`fixed top-0 w-full z-40 transition-all duration-300 ${
           scrolled
             ? 'border-b border-line bg-surface/85 backdrop-blur-md shadow-sm py-2'
             : 'border-transparent bg-transparent py-3'
