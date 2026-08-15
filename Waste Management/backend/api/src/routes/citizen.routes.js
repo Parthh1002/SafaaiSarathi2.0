@@ -155,7 +155,7 @@ router.post(
       .parse(req.body);
 
     const file = fileFromRequest(req);
-    const photoUrl = file ? persist(file.buffer, file.mimetype) : null;
+    const photoUrl = file ? await persist(file.buffer, file.mimetype) : null;
 
     const result = await createComplaint({
       citizenId: req.user.id,
@@ -195,7 +195,7 @@ router.post(
     const result = await createComplaint({
       citizenId: req.user.id,
       photo: file,
-      photoUrl: file ? persist(file.buffer, file.mimetype, 'emergency') : null,
+      photoUrl: file ? await persist(file.buffer, file.mimetype, 'emergency') : null,
       latitude: body.latitude,
       longitude: body.longitude,
       address: body.address,

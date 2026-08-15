@@ -172,7 +172,7 @@ router.post(
     const file = fileFromRequest(req);
     if (!file) throw new HttpError(400, 'A resolution photo is required to close a complaint');
 
-    const resolutionPhotoUrl = persist(file.buffer, file.mimetype, 'resolution');
+    const resolutionPhotoUrl = await persist(file.buffer, file.mimetype, 'resolution');
     const note = req.body?.note?.slice(0, 500);
 
     const payload = await transition({

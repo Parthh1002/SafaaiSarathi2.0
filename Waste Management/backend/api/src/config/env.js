@@ -54,6 +54,12 @@ export const env = {
   storageDriver: process.env.STORAGE_DRIVER || 'local',
   uploadDir: path.join(apiRoot, 'uploads'),
 
+  supabase: {
+    url: process.env.SUPABASE_URL || '',
+    key: process.env.SUPABASE_ANON_KEY || '',
+    bucket: process.env.SUPABASE_BUCKET || 'uploads',
+  },
+
   smtpUrl: process.env.SMTP_URL || '',
   mailFrom: process.env.MAIL_FROM || 'Safaai Sarathi <no-reply@safaaisarathi.local>',
 

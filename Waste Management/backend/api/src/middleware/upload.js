@@ -21,15 +21,49 @@ export const upload = multer({
   },
 });
 
+import { createClient } from '@supabase/supabase-js';
+
+let supabaseClient = null;
+if (env.storageDriver === 'supabase' && env.supabase.url && env.supabase.key) {
+  supabaseClient = createClient(env.supabase.url, env.supabase.key);
+}
+
 export function ensureUploadDir() {
-  if (!fs.existsSync(env.uploadDir)) fs.mkdirSync(env.uploadDir, { recursive: true });
+  if (env.storageDriver === 'local' && !fs.existsSync(env.uploadDir)) {
+    fs.mkdirSync(env.uploadDir, { recursive: true });
+  }
   return env.uploadDir;
 }
 
-export function persist(buffer, mimetype = 'image/jpeg', prefix = 'complaint') {
-  ensureUploadDir();
+export async function persist(buffer, mimetype = 'image/jpeg', prefix = 'complaint') {
   const ext = (mimetype.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
   const name = `${prefix}-${Date.now().toString(36)}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
+
+  if (env.storageDriver === 'supabase' && supabaseClient) {
+    const { data, error } = await supabaseClient
+      .storage
+      .from(env.supabase.bucket)
+      .upload(name, buffer, {
+        contentType: mimetype,
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      throw new Error('Failed to upload image to Supabase');
+    }
+
+    const { data: publicUrlData } = supabaseClient
+      .storage
+      .from(env.supabase.bucket)
+      .getPublicUrl(name);
+
+    return publicUrlData.publicUrl;
+  }
+
+  // Fallback to local
+  ensureUploadDir();
   fs.writeFileSync(path.join(env.uploadDir, name), buffer);
   return `/uploads/${name}`;
 }

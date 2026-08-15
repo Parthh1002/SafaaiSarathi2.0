@@ -21,6 +21,7 @@
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
     "@prisma/client": "^6.2.1",
+    "@supabase/supabase-js": "^2.112.3",
     "axios": "^1.7.9",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -40,8 +41,8 @@
     "prisma": "^6.2.1"
   },
   "optionalDependencies": {
-    "ioredis": "^5.4.2",
     "@socket.io/redis-adapter": "^8.3.0",
+    "ioredis": "^5.4.2",
     "rate-limit-redis": "^4.2.0"
   }
 }
