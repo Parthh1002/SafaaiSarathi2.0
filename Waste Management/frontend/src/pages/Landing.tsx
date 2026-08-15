@@ -93,13 +93,19 @@ export default function Landing() {
     <div className="min-h-dvh bg-surface">
       {/* ---- Nav ---- */}
       <header
-        className={`fixed top-0 w-full z-40 transition-all duration-300 ${
+        className={`fixed top-0 z-40 transition-all duration-500 ${
           scrolled
-            ? 'border-b border-line bg-surface/85 backdrop-blur-md shadow-sm py-2'
-            : 'border-transparent bg-transparent py-3'
+            ? 'inset-x-3 top-3 sm:inset-x-6'
+            : 'inset-x-0 top-0'
         }`}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4">
+        <div
+          className={`mx-auto flex max-w-6xl items-center justify-between transition-all duration-500 ${
+            scrolled
+              ? 'rounded-full bg-surface/90 px-4 py-2 shadow-lg backdrop-blur-md ring-1 ring-line/60'
+              : 'px-4 py-3 bg-transparent'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
             <span className="text-fluid-base font-bold tracking-tight">
@@ -108,21 +114,43 @@ export default function Landing() {
           </div>
 
           <nav className="hidden items-center gap-1 md:flex">
-            <a href="#how" className="rounded-lg px-3 py-2 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.how')}</a>
-            <a href="#why" className="rounded-lg px-3 py-2 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.why')}</a>
-            <a href="#staff" className="rounded-lg px-3 py-2 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.staff')}</a>
+            <a href="#how" className="rounded-full px-3 py-1.5 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.how')}</a>
+            <a href="#why" className="rounded-full px-3 py-1.5 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.why')}</a>
+            <a href="#staff" className="rounded-full px-3 py-1.5 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.staff')}</a>
           </nav>
 
           <div className="flex items-center gap-2">
             <LanguageSwitcher compact />
             <ThemeToggle />
-            <Link to="/login" className="btn-primary btn-sm ml-2 px-4">{t('common.signIn')}</Link>
+            <Link to="/login" className="btn-primary btn-sm ml-2 rounded-full px-4">{t('common.signIn')}</Link>
           </div>
         </div>
       </header>
 
       {/* ---- Hero ---- */}
       <section className="relative overflow-hidden px-4 pb-10 pt-20 sm:pb-14 sm:pt-24">
+        {/* Background image with multi-stop gradient overlay */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&q=80&auto=format&fit=crop"
+            alt=""
+            className="h-full w-full object-cover object-center"
+          />
+          {/* Multi-stop gradient: 10% → 25% → 50% → 75% → 100% opacity */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(to bottom, rgba(247,247,245,0.10) 0%, rgba(247,247,245,0.25) 20%, rgba(247,247,245,0.50) 45%, rgba(247,247,245,0.75) 65%, rgba(247,247,245,1.00) 100%)',
+            }}
+          />
+          {/* Dark mode overlay */}
+          <div
+            className="absolute inset-0 hidden dark:block"
+            style={{
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.25) 20%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.80) 65%, rgba(0,0,0,1.00) 100%)',
+            }}
+          />
+        </div>
         {/* Indian Government tricolor accent strip */}
         <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 flex h-1">
           <div className="flex-1 bg-[#FF9933]" />
