@@ -20,9 +20,9 @@
     --elevated: 255 255 255;
     --sunken: 238 239 235;
     --line: 223 224 219;
-    --ink: 24 28 26;
-    --muted: 92 100 96;
-    --faint: 140 148 143;
+    --ink: 0 0 0; /* Pure black for text in light theme */
+    --muted: 71 85 105; /* Slightly darker slate for muted text */
+    --faint: 148 163 184;
 
     --brand: 21 128 61;
     --brand-soft: 220 240 228;
@@ -42,9 +42,9 @@
     --elevated: 14 16 15;
     --sunken: 8 9 8;
     --line: 38 42 39;
-    --ink: 237 241 238;
-    --muted: 150 158 153;
-    --faint: 105 113 108;
+    --ink: 255 255 255; /* Pure white for text in dark theme */
+    --muted: 156 163 175; /* Slightly lighter slate for muted text */
+    --faint: 107 114 128;
 
     --brand: 34 197 94;
     --brand-soft: 18 45 30;
