@@ -284,8 +284,17 @@ export function AccountModal({ isOpen, onClose, user, signOut, navigate, t, port
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <button type="button" className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
       <div className="relative w-full max-w-sm animate-scale-up overflow-hidden rounded-3xl border border-line/60 bg-surface/95 shadow-2xl backdrop-blur-xl">
-        {/* Banner */}
-        <div className="h-24 w-full bg-gradient-to-br from-brand/80 to-brand-dark/90" />
+        {/* Banner with close button */}
+        <div className="relative h-24 w-full bg-gradient-to-br from-brand/80 to-brand-dark/90">
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/20 text-white/80 backdrop-blur-md transition hover:bg-black/40 hover:text-white"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
         
         {/* Avatar */}
         <div className="relative -mt-12 flex justify-center">
