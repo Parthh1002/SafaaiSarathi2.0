@@ -92,59 +92,41 @@ export default function Landing() {
   return (
     <div className="min-h-dvh bg-surface">
       {/* ---- Nav ---- */}
+      {/* ---- Nav ---- */}
       <header className="fixed top-0 z-40 w-full transition-all duration-500">
-        {/* Top gradient to ensure nav is always readable over hero image */}
-        <div
-          aria-hidden
-          className={`pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/40 to-transparent transition-opacity duration-300 ${
-            scrolled ? 'opacity-0' : 'opacity-100'
-          }`}
-        />
-        <div className={`mx-auto flex max-w-6xl items-center justify-between transition-all duration-500 ${
-          scrolled
-            ? 'mt-3 mx-4 sm:mx-6 rounded-full bg-surface/92 px-4 py-2 shadow-xl backdrop-blur-lg ring-1 ring-line/50'
-            : 'px-5 py-3.5'
-        }`}>
-          <div className="flex items-center gap-2.5">
-            <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
-            <span className={`text-fluid-base font-bold tracking-tight transition-colors duration-300 ${
-              scrolled ? 'text-ink' : 'text-white drop-shadow-sm'
-            }`}>
-              Safaai <span className={scrolled ? 'text-brand' : 'text-green-400'}>Sarathi</span>
-            </span>
-          </div>
+        <div className={`transition-all duration-500 ${scrolled ? 'px-4 pt-3 sm:px-8' : 'px-0 pt-0'}`}>
+          <div
+            className={`mx-auto flex items-center justify-between transition-all duration-500 ${
+              scrolled
+                ? 'max-w-4xl rounded-full bg-surface/95 px-5 py-2 shadow-xl backdrop-blur-lg ring-1 ring-line/60'
+                : 'max-w-6xl border-b border-white/10 bg-surface/80 px-5 py-3 backdrop-blur-md'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
+              <span className="text-fluid-base font-bold tracking-tight text-ink">
+                Safaai <span className="text-brand">Sarathi</span>
+              </span>
+            </div>
 
-          <nav className="hidden items-center gap-0.5 md:flex">
-            {[['#how', t('landing.nav.how')], ['#why', t('landing.nav.why')], ['#staff', t('landing.nav.staff')]].map(([href, label]) => (
-              <a
-                key={href}
-                href={href}
-                className={`rounded-full px-3 py-1.5 text-fluid-sm font-medium transition-colors duration-300 hover:text-brand ${
-                  scrolled ? 'text-muted' : 'text-white/90 drop-shadow-sm hover:text-white'
-                }`}
-              >{label}</a>
-            ))}
-          </nav>
+            <nav className="hidden items-center gap-0.5 md:flex">
+              {[['#how', t('landing.nav.how')], ['#why', t('landing.nav.why')], ['#staff', t('landing.nav.staff')]].map(([href, label]) => (
+                <a
+                  key={href}
+                  href={href}
+                  className="rounded-full px-3 py-1.5 text-fluid-sm font-medium text-muted transition-colors duration-200 hover:text-brand"
+                >{label}</a>
+              ))}
+            </nav>
 
-          <div className="flex items-center gap-2">
-            <div className={`transition-all duration-300 ${
-              scrolled ? '' : '[&_button]:text-white [&_button]:border-white/30 [&_button]:bg-white/10 [&_button]:backdrop-blur'
-            }`}>
+            <div className="flex items-center gap-2">
               <LanguageSwitcher compact />
-            </div>
-            <div className={`transition-all duration-300 ${
-              scrolled ? '' : '[&_button]:text-white [&_button]:border-white/30 [&_button]:bg-white/10'
-            }`}>
               <ThemeToggle />
+              <Link
+                to="/login"
+                className="btn-primary btn-sm ml-1 rounded-full px-4"
+              >{t('common.signIn')}</Link>
             </div>
-            <Link
-              to="/login"
-              className={`btn-sm ml-1 rounded-full px-4 font-semibold transition-all duration-300 ${
-                scrolled
-                  ? 'btn-primary'
-                  : 'border border-white/60 bg-white/15 text-white backdrop-blur hover:bg-white/25'
-              }`}
-            >{t('common.signIn')}</Link>
           </div>
         </div>
       </header>
