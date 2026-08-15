@@ -73,10 +73,22 @@ const DIFFERENTIATORS = [
   { icon: ShieldCheck, key: '4' },
 ];
 
+const HERO_IMAGES = [
+  // Ahmedabad / Gandhinagar civic street feel
+  "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1600&q=85&auto=format&fit=crop&crop=center",
+  // Waste management / cleaning workers
+  "https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?w=1600&q=85&auto=format&fit=crop&crop=center",
+  // Clean city infrastructure
+  "https://images.unsplash.com/photo-1595278456488-82afcc706243?w=1600&q=85&auto=format&fit=crop&crop=center",
+  // Environment / green initiatives
+  "https://images.unsplash.com/photo-1621451537084-482c73073e0f?w=1600&q=85&auto=format&fit=crop&crop=center"
+];
+
 export default function Landing() {
   const t = useT();
   const [stats, setStats] = useState<Stats | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [bgIndex, setBgIndex] = useState(0);
 
   useEffect(() => {
     publicApi
@@ -86,7 +98,16 @@ export default function Landing() {
 
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    // Background image slider (6 seconds interval)
+    const interval = setInterval(() => {
+      setBgIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, 6000);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearInterval(interval);
+    };
   }, []);
 
   return (
@@ -149,13 +170,18 @@ export default function Landing() {
 
       {/* ---- Hero ---- */}
       <section className="relative overflow-hidden px-4 pb-10 pt-24 sm:pb-14 sm:pt-28">
-        {/* Background image — Indian city street with civic workers */}
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1600&q=85&auto=format&fit=crop&crop=center"
-            alt=""
-            className="h-full w-full object-cover object-center"
-          />
+        {/* Sliding Background images */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-black">
+          {HERO_IMAGES.map((img, i) => (
+            <img
+              key={img}
+              src={img}
+              alt=""
+              className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ease-in-out ${
+                i === bgIndex ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          ))}
           {/* Multi-stop gradient overlay: 10% → 25% → 50% → 75% → 100% opacity — light mode */}
           <div
             className="absolute inset-0 dark:hidden"
