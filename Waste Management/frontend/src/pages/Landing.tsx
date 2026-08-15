@@ -78,19 +78,20 @@ const DIFFERENTIATORS = [
 ];
 
 const HERO_IMAGES = [
-  // 1. Ahmedabad / Gandhinagar Smart City Corridor & Clean Urban Landscape
-  "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=1600&q=85&auto=format&fit=crop&crop=center",
-  // 2. Municipal Waste Collection & Smart Sanitation Vehicle on Duty
-  "https://images.unsplash.com/photo-1605600659908-0ef719419d41?w=1600&q=85&auto=format&fit=crop&crop=center",
-  // 3. Dedicated Municipal Sanitation Workers & Cleanliness Drive (Swachhata)
-  "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1600&q=85&auto=format&fit=crop&crop=center",
-  // 4. Automated Sustainable Waste Processing & Segregation Facility
-  "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=1600&q=85&auto=format&fit=crop&crop=center",
-  // 5. GIFT City / Gandhinagar Green Urban Civic Infrastructure
-  "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=1600&q=85&auto=format&fit=crop&crop=center",
-  // 6. Modern Clean Roadway & Smart Environmental Management
-  "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&q=85&auto=format&fit=crop&crop=center"
+  // 1. Ahmedabad / Gujarat Clean Urban Corridor
+  "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1600&q=80&auto=format&fit=crop",
+  // 2. Modern Clean City Riverfront & Architecture
+  "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=1600&q=80&auto=format&fit=crop",
+  // 3. Smart Sustainable Urban Greenery
+  "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1600&q=80&auto=format&fit=crop",
+  // 4. Modern Smart Civic Infrastructure & Roads
+  "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=1600&q=80&auto=format&fit=crop",
+  // 5. Municipal Cleanliness & Waste Vehicle Logistics
+  "https://images.unsplash.com/photo-1605600659908-0ef719419d41?w=1600&q=80&auto=format&fit=crop",
+  // 6. Clean City Morning Avenue
+  "https://images.unsplash.com/photo-1595278456488-82afcc706243?w=1600&q=80&auto=format&fit=crop"
 ];
+
 
 
 export default function Landing() {
@@ -258,27 +259,14 @@ export default function Landing() {
               key={img}
               src={img}
               alt=""
-              className={`absolute inset-0 h-full w-full object-cover object-center brightness-[0.95] dark:brightness-[0.7] transition-opacity duration-1000 ease-in-out ${
-                i === bgIndex ? 'opacity-65 dark:opacity-45' : 'opacity-0'
+              loading="eager"
+              className={`absolute inset-0 h-full w-full object-cover object-center brightness-[0.9] dark:brightness-[0.6] transition-opacity duration-1000 ease-in-out ${
+                i === bgIndex ? 'opacity-40 dark:opacity-30' : 'opacity-0'
               }`}
             />
           ))}
-          {/* Luminous frosted contrast mask — light mode (100% readable over any photo) */}
-          <div
-            className="absolute inset-0 backdrop-blur-[1.5px] dark:hidden"
-            style={{
-              background:
-                'radial-gradient(ellipse 90% 70% at 50% 35%, rgba(255,255,255,0.88) 0%, rgba(247,247,245,0.72) 55%, rgba(247,247,245,1.0) 100%)',
-            }}
-          />
-          {/* Luminous frosted contrast mask — dark mode */}
-          <div
-            className="absolute inset-0 hidden backdrop-blur-[1.5px] dark:block"
-            style={{
-              background:
-                'radial-gradient(ellipse 90% 70% at 50% 35%, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.72) 55%, rgba(15,23,42,1.0) 100%)',
-            }}
-          />
+          {/* Subtle gradient vignette */}
+          <div className="absolute inset-0 bg-gradient-to-b from-surface/60 via-surface/40 to-surface dark:from-surface/80 dark:via-surface/60 dark:to-surface" />
         </div>
 
         {/* Indian Government tricolor accent strip */}
@@ -291,33 +279,36 @@ export default function Landing() {
           aria-hidden
           className="pointer-events-none absolute -top-40 left-1/2 h-[60vmin] w-[90vmin] -translate-x-1/2 rounded-full bg-brand/10 blur-3xl"
         />
-        <div className="relative mx-auto max-w-4xl text-center">
+
+        {/* Premium Frosted Glass Hero Container for 100% Guaranteed Contrast & Legibility */}
+        <div className="relative mx-auto max-w-4xl rounded-3xl border border-line/60 bg-surface/85 p-6 text-center shadow-2xl backdrop-blur-xl sm:p-10">
           {/* Official government badge row */}
           <div className="mb-3 flex items-center justify-center gap-2">
             <div className="h-px flex-1 max-w-[80px] bg-gradient-to-r from-transparent to-line" />
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#FF9933]/30 bg-[#FF9933]/8 px-3 py-1 text-fluid-xs font-semibold tracking-wide text-[#b35900] dark:border-[#FF9933]/20 dark:bg-[#FF9933]/10 dark:text-[#ffb347]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#FF9933]/30 bg-[#FF9933]/10 px-3.5 py-1 text-fluid-xs font-bold tracking-wide text-[#b35900] dark:border-[#FF9933]/20 dark:bg-[#FF9933]/15 dark:text-[#ffb347]">
               <span className="text-[#000080] dark:text-[#6699ff]">🔵</span>
               भारत सरकार &nbsp;·&nbsp; Government of India
             </span>
             <div className="h-px flex-1 max-w-[80px] bg-gradient-to-l from-transparent to-line" />
           </div>
+
           <span className="chip border-brand/25 bg-brand/10 text-brand">
             <Building2 className="h-3.5 w-3.5" />
             {t('landing.hero.badge')}
           </span>
 
-          <h1 className="mt-3 text-balance text-fluid-3xl font-bold leading-[1.1] tracking-tight">
+          <h1 className="mt-3 text-balance text-fluid-3xl font-extrabold leading-[1.15] tracking-tight text-ink">
             {t('landing.hero.title1')} <span className="text-brand">{t('landing.hero.title2')}</span>
           </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-balance text-fluid-base text-muted">
+          <p className="mx-auto mt-3.5 max-w-2xl text-balance text-fluid-base font-normal text-muted leading-relaxed">
             {t('landing.hero.body')}
           </p>
 
-          <div className="mt-5 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
-            <Link to="/login" className="btn-primary w-full px-6 sm:w-auto">
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link to="/login" className="btn-primary w-full px-6 py-2.5 shadow-lg shadow-brand/25 sm:w-auto">
               {t('landing.hero.cta')} <ArrowRight className="h-4 w-4" />
             </Link>
-            <a href="#staff" className="btn-ghost w-full px-6 sm:w-auto">{t('landing.hero.staffCta')}</a>
+            <a href="#staff" className="btn-ghost w-full px-6 py-2.5 sm:w-auto">{t('landing.hero.staffCta')}</a>
           </div>
 
           {/* Live impact counters, straight from the database. */}
@@ -328,20 +319,21 @@ export default function Landing() {
               { label: t('landing.stat.avg'), value: stats?.avgResolutionHours ?? 0, suffix: 'h' },
               { label: t('landing.stat.wards'), value: stats?.wards ?? 0, suffix: '' },
             ].map((item) => (
-              <div key={item.label} className="card p-3.5">
-                <dd className="text-fluid-xl font-bold text-ink dark:text-white">
+              <div key={item.label} className="card p-3.5 bg-surface/90 border border-line/50 shadow-sm hover:shadow-md transition-shadow">
+                <dd className="text-fluid-xl font-extrabold text-ink">
                   {stats ? <Counter value={item.value} suffix={item.suffix} /> : <span className="text-muted">—</span>}
                 </dd>
-                <dt className="mt-0.5 text-fluid-xs text-muted">{item.label}</dt>
+                <dt className="mt-0.5 text-fluid-xs font-medium text-muted">{item.label}</dt>
               </div>
             ))}
           </dl>
           {!stats && (
-            <p className="mt-2 text-fluid-xs text-faint">
+            <p className="mt-2.5 text-fluid-xs text-faint">
               {t('landing.stat.pending')}
             </p>
           )}
         </div>
+
       </section>
 
       {/* ---- How it works ---- */}
