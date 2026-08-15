@@ -42,9 +42,36 @@ export default function ComplaintDetail() {
       </div>
       <p className="-mt-2 font-mono text-fluid-xs text-muted">{data.code}</p>
 
-      {data.photoUrl && (
-        <Card className="overflow-hidden p-0">
-          <img src={data.photoUrl} alt="Reported issue" className="aspect-[4/3] w-full object-cover" />
+      {/* Before & After Photo Comparison */}
+      {(data.photoUrl || data.resolutionPhotoUrl) && (
+        <Card className="overflow-hidden p-0 border-line shadow-sm">
+          <div className="border-b border-line bg-sunken px-4 py-2.5 flex items-center justify-between">
+            <span className="text-fluid-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-brand" /> Visual Resolution Evidence
+            </span>
+            <Badge tone={data.status === 'RESOLVED' ? 'ok' : 'brand'}>
+              {data.status === 'RESOLVED' ? 'Cleaned with Proof' : 'Under Investigation'}
+            </Badge>
+          </div>
+
+          <div className={`grid ${data.resolutionPhotoUrl ? 'grid-cols-2 divide-x divide-line' : 'grid-cols-1'}`}>
+            {data.photoUrl && (
+              <div className="relative">
+                <img src={data.photoUrl} alt="Citizen Reported Issue" className="aspect-[4/3] w-full object-cover" />
+                <span className="absolute bottom-2 left-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase backdrop-blur-sm">
+                  1. Citizen Photo
+                </span>
+              </div>
+            )}
+            {data.resolutionPhotoUrl && (
+              <div className="relative">
+                <img src={data.resolutionPhotoUrl} alt="Driver Cleaned Proof" className="aspect-[4/3] w-full object-cover" />
+                <span className="absolute bottom-2 left-2 rounded-md bg-emerald-600/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase backdrop-blur-sm">
+                  2. Driver Cleaned Proof ✅
+                </span>
+              </div>
+            )}
+          </div>
         </Card>
       )}
 

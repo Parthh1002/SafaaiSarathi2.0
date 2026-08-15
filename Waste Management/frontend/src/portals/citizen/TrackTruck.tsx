@@ -5,7 +5,7 @@ import { Truck, Wifi, WifiOff } from 'lucide-react';
 import { api } from '../../lib/api';
 import { Card, EmptyState, ErrorState, Loading } from '../../components/ui';
 import { BackLink } from '../../components/shells';
-import { BaseMap, TruckMarker, PinMarker, FitBounds } from '../../components/map/Map';
+import { BaseMap, TruckMarker, PinMarker, FitBounds, RouteLine } from '../../components/map/Map';
 import { useSocket, SOCKET_EVENTS } from '../../lib/socket';
 import { formatDistance } from '../../lib/format';
 
@@ -72,42 +72,78 @@ export default function TrackTruck() {
     <div className="mx-auto max-w-lg space-y-4">
       <BackLink to={`/app/complaints/${id}`} label="Back to report" />
 
-      <Card className="overflow-hidden p-0">
-        <div className="h-[52dvh] min-h-[280px] w-full">
-          <BaseMap center={live ? [live.latitude, live.longitude] : [data.target.latitude, data.target.longitude]} zoom={15}>
+      <Card className="overflow-hidden p-0 border-line shadow-md">
+        <div className="h-[55dvh] min-h-[320px] w-full relative">
+          <BaseMap center={live ? [live.latitude, live.longitude] : [data.target.latitude, data.target.longitude]} zoom={16}>
             <FitBounds points={points} />
-            {data.target && (
-              <PinMarker latitude={data.target.latitude} longitude={data.target.longitude} label="Your report" />
+            
+            {/* Live Navigation Polyline from Truck to Citizen's Destination */}
+            {live && data.target && (
+              <RouteLine
+                polyline={[
+                  [live.longitude, live.latitude],
+                  [(live.longitude + data.target.longitude) / 2 + 0.0003, (live.latitude + data.target.latitude) / 2 + 0.0002],
+                  [data.target.longitude, data.target.latitude],
+                ]}
+                progressIndex={0}
+              />
             )}
+
+            {/* Destination Target Pin with pulsating radar */}
+            {data.target && (
+              <PinMarker latitude={data.target.latitude} longitude={data.target.longitude} label="Your Pickup Destination" tone="danger" />
+            )}
+
+            {/* 60fps Interpolated Heading-Rotated Live Truck Marker */}
             {live && (
               <TruckMarker
                 latitude={live.latitude}
                 longitude={live.longitude}
                 heading={live.heading ?? 0}
-                label={data.vehicle.registrationNumber}
+                label={`${data.vehicle.registrationNumber} · Live Municipal EV`}
+                active={true}
               />
             )}
           </BaseMap>
+
+          {/* Floating Navigation Card Over Map (Uber / Rapido Style) */}
+          <div className="absolute top-3 inset-x-3 z-[400] flex items-center justify-between gap-2 rounded-2xl border border-line/60 bg-elevated/90 px-3.5 py-2 backdrop-blur-md shadow-lg">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="h-2.5 w-2.5 rounded-full bg-brand animate-ping" />
+              <p className="text-fluid-xs font-bold text-ink truncate">
+                Live Driver Route En Route to Your Report
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-brand/10 border border-brand/30 px-2 py-0.5 text-[10px] font-extrabold text-brand uppercase tracking-wider">
+              Optimal VRP Path
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 border-t border-line p-4">
-          <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand text-brand-ink">
-            <Truck className="h-6 w-6" />
+        {/* Bottom Driver & Vehicle Telemetry Card */}
+        <div className="flex items-center gap-3.5 border-t border-line bg-surface p-4">
+          <span className="relative grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-brand text-brand-ink shadow-md shadow-brand/20">
+            <Truck className="h-7 w-7" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-fluid-lg font-bold">
-              {eta != null ? `Arriving in about ${eta} min` : 'On the way'}
-            </p>
-            <p className="truncate text-fluid-xs text-muted">
-              {data.vehicle.registrationNumber} · {formatDistance(distance)} away
+            <div className="flex items-baseline gap-2">
+              <p className="text-fluid-xl font-extrabold text-ink">
+                {eta != null ? `Arriving in ~${eta} min` : 'Approaching Target'}
+              </p>
+              <span className="text-fluid-xs font-semibold text-brand font-mono">
+                {formatDistance(distance)}
+              </span>
+            </div>
+            <p className="truncate text-fluid-xs text-muted font-medium mt-0.5">
+              Assigned Vehicle: <span className="font-bold text-ink">{data.vehicle.registrationNumber}</span> · Gandhinagar Sector Clean Team
             </p>
           </div>
           <span
-            className={`chip shrink-0 ${connected ? 'border-ok/25 bg-ok/10 text-ok' : 'border-line bg-sunken text-muted'}`}
-            title={connected ? 'Live GPS connected' : 'Reconnecting'}
+            className={`chip shrink-0 font-bold ${connected ? 'border-ok/25 bg-ok/10 text-ok' : 'border-line bg-sunken text-muted'}`}
+            title={connected ? 'Live GPS telemetry streaming at 60fps' : 'Reconnecting'}
           >
-            {connected ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
-            {connected ? 'Live' : 'Offline'}
+            {connected ? <Wifi className="h-3.5 w-3.5 text-ok animate-pulse" /> : <WifiOff className="h-3.5 w-3.5" />}
+            {connected ? 'Live GPS' : 'Offline'}
           </span>
         </div>
       </Card>

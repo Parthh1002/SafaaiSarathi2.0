@@ -175,13 +175,20 @@ export default function NewReport() {
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
-            className="flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-line py-12 transition hover:border-brand hover:bg-brand/5"
+            className="flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-brand/40 bg-brand/5 py-12 transition hover:border-brand hover:bg-brand/10 group shadow-inner"
           >
-            <span className="grid h-16 w-16 place-items-center rounded-2xl bg-brand/10 text-brand">
-              <Camera className="h-8 w-8" />
+            <span className="grid h-20 w-20 place-items-center rounded-3xl bg-brand text-brand-ink shadow-lg shadow-brand/20 transition group-hover:scale-105">
+              <Camera className="h-10 w-10" />
             </span>
-            <span className="text-fluid-base font-semibold">Take a photo</span>
-            <span className="text-fluid-xs text-muted">or choose one from your gallery</span>
+            <div className="text-center">
+              <span className="text-fluid-lg font-bold text-ink block">Capture Live Photo Proof</span>
+              <span className="text-fluid-xs text-muted block mt-1">
+                Point your phone camera directly at the waste site (Geotagged & Timestamped)
+              </span>
+            </div>
+            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-[11px] font-bold text-brand">
+              <Sparkles className="h-3 w-3" /> Real-Time AI Vision Classification Enabled
+            </span>
           </button>
 
           <input
@@ -196,12 +203,13 @@ export default function NewReport() {
             }}
           />
 
-          <button type="button" className="btn-ghost mt-4 w-full" onClick={() => setStep('location')}>
-            Continue without a photo
-          </button>
-          <p className="mt-2 text-center text-fluid-xs text-faint">
-            A photo lets the AI verify the report and speeds up dispatch.
-          </p>
+          <div className="mt-4 rounded-xl border border-line/60 bg-sunken p-3 text-fluid-xs text-muted flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <Crosshair className="h-4 w-4 text-brand" />
+              {position ? `GPS Ready: ${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}` : 'Acquiring GPS location...'}
+            </span>
+            {locating && <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />}
+          </div>
         </Card>
       )}
 

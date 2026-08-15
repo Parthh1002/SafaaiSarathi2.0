@@ -62,13 +62,24 @@ export default function MyComplaints() {
             <li key={c.id}>
               <Link to={`/app/complaints/${c.id}`}>
                 <Card className="flex items-center gap-3 p-3.5 transition hover:shadow-lift">
-                  {c.photoUrl ? (
-                    <img src={c.photoUrl} alt="" className="h-16 w-16 shrink-0 rounded-xl object-cover" loading="lazy" />
-                  ) : (
-                    <span className="grid h-16 w-16 shrink-0 place-items-center rounded-xl bg-sunken text-faint">
-                      <Camera className="h-5 w-5" />
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {c.photoUrl ? (
+                      <img src={c.photoUrl} alt="Reported" className="h-16 w-16 rounded-xl object-cover" loading="lazy" />
+                    ) : (
+                      <span className="grid h-16 w-16 place-items-center rounded-xl bg-sunken text-faint">
+                        <Camera className="h-5 w-5" />
+                      </span>
+                    )}
+                    {c.resolutionPhotoUrl && (
+                      <img
+                        src={c.resolutionPhotoUrl}
+                        alt="Cleaned Proof"
+                        className="h-16 w-16 rounded-xl object-cover border-2 border-emerald-500 shadow-sm"
+                        title="Driver Cleaned Photo Proof"
+                        loading="lazy"
+                      />
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <p className="truncate text-fluid-sm font-semibold">{t(`category.${c.category}`)}</p>
