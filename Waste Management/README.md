@@ -22,30 +22,48 @@
 
 <br/>
 
-## 🎬 Visual Showcase & Real Dashboard Previews
+## 🎬 Real Application Previews & Unique Feature Showcase
 
 <div align="center">
 
-### 1️⃣ Cinematic 3D Intro & Interactive Landing Experience
-| 🚛 High-Impact 3D Driving Truck Intro (4s) | 🏛️ Official Landing Page (Glassmorphism & Live Stats) |
+### 1️⃣ Full-Width 3D Drive-by Intro & Official Civic Landing Page
+| 🚛 Full-Screen 3D Heavy Municipal Truck Intro | 🏛️ Official Landing Page (Glassmorphism & Live Database Stats) |
 | :---: | :---: |
-| <img src="../docs/assets/01_splash_intro.png" width="480" alt="3D Intro Screen" /> | <img src="../docs/assets/02_landing_page.png" width="480" alt="Landing Page" /> |
-| *Real-time Three.js 6-wheel municipal truck with active strobe & headlights* | *Live city impact metrics, tricolor civic branding & instant portal access* |
+| <img src="../docs/assets/01_splash_intro.png" width="490" alt="3D Intro Screen" /> | <img src="../docs/assets/landing_hero_live.png" width="490" alt="Landing Page" /> |
+| *Real-time Three.js 6x4 heavy municipal EV truck with active beacon, road lighting & dynamic drive-by motion* | *Live Gandhinagar database stats, Government of India tricolor strip, and glassmorphic quick-report hero* |
 
 <br/>
 
-### 2️⃣ Four Dedicated & Isolated Role Portals
-| 📱 Citizen Super-App (Instant AI Report & Live Track) | 🚛 Driver Navigator (Turn-by-turn Route & SOS) |
+### 2️⃣ Citizen Super-App: Live Vehicle Tracking & Gamified Green Credits
+| 📍 Real-Time Interpolated Truck Tracking & ETA | 🏆 Citizen Green Credits & Civic Karma Ledger |
 | :---: | :---: |
-| <img src="../docs/assets/04_citizen_dashboard.png" width="480" alt="Citizen Dashboard" /> | <img src="../docs/assets/05_driver_dashboard.png" width="480" alt="Driver Dashboard" /> |
-| *Point-in-polygon ward detection, duplicate similarity & Green Credits* | *Optimized pickup stops, battery/capacity tracker & 1-tap SOS triage* |
+| <img src="../docs/assets/citizen_live_tracking.png" width="490" alt="Citizen Live Tracking" /> | <img src="../docs/assets/citizen_green_credits.png" width="490" alt="Citizen Green Credits" /> |
+| *Live WebSocket heading-rotated GPS truck position, distance in metres & accurate 1-minute arrival ETA* | *Gamified civic reward system: +5 report, +15 verified, +25 emergency, -20 fake report penalty* |
 
 <br/>
 
-| 🛡️ Ward Officer Console (Live Queue & AI Escalations) | 👑 Super Admin Command Center (City-wide Analytics) |
+### 3️⃣ Multilingual Offline Directory & Glassmorphism Account Modal
+| 🌐 Zero-Dependency Multilingual Switcher (EN / HI / GU) | 👤 Universal Glassmorphic Profile & Account Management |
 | :---: | :---: |
-| <img src="../docs/assets/06_officer_dashboard.png" width="480" alt="Officer Console" /> | <img src="../docs/assets/07_admin_dashboard.png" width="480" alt="Admin Command Center" /> |
-| *Triage approval, photo proof enforcement, hotspot maps & SLA countdown* | *Master fleet control, model health metrics, compliance CSV & audit trail* |
+| <img src="../docs/assets/multilingual_directory.png" width="490" alt="Multilingual Directory" /> | <img src="../docs/assets/account_profile_modal.png" width="490" alt="Account Profile Modal" /> |
+| *Instant single-click switching between English, हिन्दी and ગુજરાતી with offline-cached helpline contacts* | *Sleek center-floating modal with gradient banner, role/ward badge, profile settings & safe signout* |
+
+<br/>
+
+### 4️⃣ Staff Execution & Operations: Driver Navigator & Officer Inspection Console
+| 🚛 Driver Turn-by-Turn Route & SOS Triage | 🛡️ Ward Officer Live Queue & Photo Proof Validation |
+| :---: | :---: |
+| <img src="../docs/assets/05_driver_dashboard.png" width="490" alt="Driver Dashboard" /> | <img src="../docs/assets/06_officer_dashboard.png" width="490" alt="Officer Console" /> |
+| *Optimized pickup stops with VRP Or-Opt solver, battery/capacity telemetry, and instant 1-tap SOS triage* | *Point-in-polygon ward triage, 30-min SLA countdown timer, and mathematically enforced photo-proof resolution* |
+
+<br/>
+
+### 5️⃣ Super Admin City Command Center
+<div align="center">
+  <img src="../docs/assets/07_admin_dashboard.png" width="850" alt="Admin Command Center" />
+  <br/>
+  <em>City-wide fleet telemetry, LightGBM model health monitoring (433 samples, 86.6% accuracy), compliance CSV exports & immutable audit trail</em>
+</div>
 
 </div>
 
