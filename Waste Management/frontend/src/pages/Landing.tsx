@@ -103,19 +103,19 @@ export default function Landing() {
         {scrolled ? (
           /* Scrolled: centered floating pill */
           <div className="px-4 pt-2 sm:px-8">
-            <div className="mx-auto flex max-w-4xl items-center justify-between rounded-full bg-surface/95 px-5 py-2 shadow-xl backdrop-blur-lg ring-1 ring-line/60">
-              <div className="flex items-center gap-2.5">
+            <div className="mx-auto flex max-w-4xl items-center rounded-full bg-surface/95 px-3 py-2 shadow-xl backdrop-blur-lg ring-1 ring-line/60 sm:px-5">
+              <div className="flex w-1/3 items-center gap-2.5">
                 <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
-                <span className="text-fluid-base font-bold tracking-tight text-ink">
+                <span className="hidden text-fluid-base font-bold tracking-tight text-ink sm:block">
                   Safaai <span className="text-brand">Sarathi</span>
                 </span>
               </div>
-              <nav className="hidden items-center gap-0.5 md:flex">
+              <nav className="hidden w-1/3 items-center justify-center gap-1 md:flex">
                 {[['#how', t('landing.nav.how')], ['#why', t('landing.nav.why')], ['#staff', t('landing.nav.staff')]].map(([href, label]) => (
-                  <a key={href} href={href} className="rounded-full px-3 py-1.5 text-fluid-sm font-medium text-muted transition-colors hover:text-brand">{label}</a>
+                  <a key={href} href={href} className="rounded-full px-3 py-1.5 text-fluid-sm font-medium text-muted transition-colors hover:bg-brand/5 hover:text-brand">{label}</a>
                 ))}
               </nav>
-              <div className="flex items-center gap-2">
+              <div className="flex w-1/3 items-center justify-end gap-2">
                 <LanguageSwitcher compact />
                 <ThemeToggle />
                 <Link to="/login" className="btn-primary btn-sm ml-1 rounded-full px-4">{t('common.signIn')}</Link>
@@ -125,19 +125,19 @@ export default function Landing() {
         ) : (
           /* Not scrolled: full-width white frosted bar */
           <div className="w-full border-b border-line/40 bg-surface/90 backdrop-blur-md">
-            <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-2.5">
-              <div className="flex items-center gap-2.5">
+            <div className="mx-auto flex max-w-6xl items-center px-4 py-2.5 sm:px-6">
+              <div className="flex w-1/3 items-center gap-2.5">
                 <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
                 <span className="text-fluid-base font-bold tracking-tight text-ink">
                   Safaai <span className="text-brand">Sarathi</span>
                 </span>
               </div>
-              <nav className="hidden items-center gap-0.5 md:flex">
+              <nav className="hidden w-1/3 items-center justify-center gap-2 md:flex">
                 {[['#how', t('landing.nav.how')], ['#why', t('landing.nav.why')], ['#staff', t('landing.nav.staff')]].map(([href, label]) => (
-                  <a key={href} href={href} className="rounded-full px-3 py-1.5 text-fluid-sm font-medium text-muted transition-colors hover:text-brand">{label}</a>
+                  <a key={href} href={href} className="rounded-full px-3 py-1.5 text-fluid-sm font-medium text-muted transition-colors hover:bg-brand/5 hover:text-brand">{label}</a>
                 ))}
               </nav>
-              <div className="flex items-center gap-2">
+              <div className="flex w-1/3 items-center justify-end gap-2">
                 <LanguageSwitcher compact />
                 <ThemeToggle />
                 <Link to="/login" className="btn-primary btn-sm ml-1 rounded-full px-4">{t('common.signIn')}</Link>
@@ -246,18 +246,33 @@ export default function Landing() {
             </p>
           </div>
 
-          <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((step, i) => (
-              <li key={step.key} className="card relative p-4">
-                <span className="absolute right-3.5 top-3.5 text-fluid-2xl font-bold text-ink/50 dark:text-white/40">{i + 1}</span>
-                <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand/10 text-brand">
-                  <step.icon className="h-5 w-5" />
-                </span>
-                <h3 className="mt-3 text-fluid-base font-semibold">{t(`landing.how.${step.key}.title`)}</h3>
-                <p className="mt-1 text-fluid-sm text-muted">{t(`landing.how.${step.key}.body`)}</p>
-              </li>
-            ))}
-          </ol>
+          <div className="relative mx-auto mt-12 max-w-4xl">
+            {/* Vertical Line */}
+            <div className="absolute bottom-4 left-[27px] top-4 w-0.5 bg-brand/20 md:left-1/2 md:-ml-px" />
+            
+            <div className="space-y-8 md:space-y-12">
+              {STEPS.map((step, i) => (
+                <div key={step.key} className={`relative flex flex-col md:flex-row md:items-center gap-4 md:gap-8 ${i % 2 === 1 ? 'md:flex-row-reverse' : ''}`}>
+                  {/* Timeline Dot */}
+                  <div className="absolute left-2 top-2 flex h-10 w-10 items-center justify-center rounded-full bg-brand/10 text-brand ring-4 ring-elevated md:left-1/2 md:top-1/2 md:-ml-5 md:-mt-5">
+                    <step.icon className="h-5 w-5" />
+                  </div>
+                  
+                  {/* Content Card */}
+                  <div className={`ml-14 md:ml-0 md:w-1/2 ${i % 2 === 0 ? 'md:pr-12 text-left md:text-right' : 'md:pl-12 text-left'}`}>
+                    <div className="card group relative overflow-hidden p-5 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-brand/5 border-transparent hover:border-brand/20">
+                      <div className="absolute -right-4 -top-4 opacity-5 transition-transform duration-500 group-hover:scale-110 group-hover:opacity-10">
+                        <step.icon className="h-24 w-24" />
+                      </div>
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-brand">Step {i + 1}</span>
+                      <h3 className="text-fluid-lg font-bold text-ink">{t(`landing.how.${step.key}.title`)}</h3>
+                      <p className="mt-2 text-fluid-sm leading-relaxed text-muted">{t(`landing.how.${step.key}.body`)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
