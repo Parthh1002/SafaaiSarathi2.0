@@ -76,32 +76,48 @@ const DIFFERENTIATORS = [
 export default function Landing() {
   const t = useT();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     publicApi
       .get<Stats>('/stats')
       .then((r) => setStats(r.data))
       .catch(() => setStats(null));
+
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
     <div className="min-h-dvh bg-surface">
       {/* ---- Nav ---- */}
-      <header className="sticky top-0 z-40 border-b border-line bg-surface/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-          <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
-          <span className="text-fluid-base font-bold tracking-tight">
-            Safaai <span className="text-brand">Sarathi</span>
-          </span>
+      <header
+        className={`sticky top-0 z-40 transition-all duration-300 ${
+          scrolled
+            ? 'border-b border-line bg-surface/85 backdrop-blur-md shadow-sm py-2'
+            : 'border-transparent bg-transparent py-3'
+        }`}
+      >
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
+            <span className="text-fluid-base font-bold tracking-tight">
+              Safaai <span className="text-brand">Sarathi</span>
+            </span>
+          </div>
 
-          <nav className="ml-auto hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-1 md:flex">
             <a href="#how" className="rounded-lg px-3 py-2 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.how')}</a>
             <a href="#why" className="rounded-lg px-3 py-2 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.why')}</a>
             <a href="#staff" className="rounded-lg px-3 py-2 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.staff')}</a>
           </nav>
 
-          <div className="ml-auto flex items-center gap-2 md:ml-2"><LanguageSwitcher compact /><ThemeToggle /></div>
-          <Link to="/login" className="btn-primary btn-sm px-4">{t('common.signIn')}</Link>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher compact />
+            <ThemeToggle />
+            <Link to="/login" className="btn-primary btn-sm ml-2 px-4">{t('common.signIn')}</Link>
+          </div>
         </div>
       </header>
 
