@@ -1,0 +1,25 @@
+{
+  "name": "safaai-sarathi",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Safaai Sarathi — AI-powered civic waste management platform (citizen reporting, live tracking, hotspot prediction, route optimisation).",
+  "type": "module",
+  "workspaces": [],
+  "scripts": {
+    "install:all": "npm install && npm --prefix backend/api install && npm --prefix backend/ai install && npm --prefix frontend install",
+    "db:generate": "npm --prefix backend/api run db:generate",
+    "db:push": "npm --prefix backend/api run db:push",
+    "db:migrate": "npm --prefix backend/api run db:migrate",
+    "db:studio": "npm --prefix backend/api run db:studio",
+    "seed": "npm --prefix backend/api run seed",
+    "dev": "concurrently -n AI,API,WEB -c magenta,green,cyan \"npm:dev:ai\" \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm --prefix backend/api run dev",
+    "dev:web": "npm --prefix frontend run dev",
+    "dev:ai": "npm --prefix backend/ai run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "concurrently -n AI,API -c magenta,green \"npm --prefix backend/ai start\" \"npm --prefix backend/api start\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

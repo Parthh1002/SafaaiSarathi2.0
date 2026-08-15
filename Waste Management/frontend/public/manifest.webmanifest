@@ -1,0 +1,20 @@
+{
+  "name": "Safaai Sarathi",
+  "short_name": "Safaai",
+  "description": "AI-verified civic waste management — report, track and resolve.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f7f5",
+  "theme_color": "#15803d",
+  "categories": ["government", "utilities"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Report an issue", "url": "/app/report" },
+    { "name": "Emergency report", "url": "/app/emergency" },
+    { "name": "Track my truck", "url": "/app/track" }
+  ]
+}

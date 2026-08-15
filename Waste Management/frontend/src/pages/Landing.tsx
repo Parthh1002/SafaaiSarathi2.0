@@ -1,0 +1,309 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  ArrowRight,
+  Camera,
+  BrainCircuit,
+  Truck,
+  ShieldCheck,
+  Siren,
+  MapPinned,
+  TrendingUp,
+  Phone,
+  MessageCircle,
+  Building2,
+} from 'lucide-react';
+import { publicApi } from '../lib/api';
+import { LanguageSwitcher, ThemeToggle } from '../components/ui';
+import { useT } from '../lib/i18n';
+import { formatNumber } from '../lib/format';
+
+interface Stats {
+  city: string;
+  complaintsTotal: number;
+  complaintsResolved: number;
+  resolutionRatePct: number;
+  avgResolutionHours: number;
+  wards: number;
+  vehicles: number;
+  citizens: number;
+}
+
+/** Counts up to the real value once it arrives — never a decorative number. */
+function Counter({ value, suffix = '' }: { value: number; suffix?: string }) {
+  const [shown, setShown] = useState(0);
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setShown(value);
+      return;
+    }
+    const start = performance.now();
+    const duration = 1100;
+    let frame: number;
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      setShown(value * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [value]);
+
+  const decimals = value % 1 !== 0 ? 1 : 0;
+  return (
+    <span className="tabular-nums">
+      {decimals ? shown.toFixed(1) : formatNumber(shown)}
+      {suffix}
+    </span>
+  );
+}
+
+const STEPS = [
+  { icon: Camera, key: '1' },
+  { icon: BrainCircuit, key: '2' },
+  { icon: Truck, key: '3' },
+  { icon: ShieldCheck, key: '4' },
+];
+
+const DIFFERENTIATORS = [
+  { icon: Siren, key: '1' },
+  { icon: MapPinned, key: '2' },
+  { icon: TrendingUp, key: '3' },
+  { icon: ShieldCheck, key: '4' },
+];
+
+export default function Landing() {
+  const t = useT();
+  const [stats, setStats] = useState<Stats | null>(null);
+
+  useEffect(() => {
+    publicApi
+      .get<Stats>('/stats')
+      .then((r) => setStats(r.data))
+      .catch(() => setStats(null));
+  }, []);
+
+  return (
+    <div className="min-h-dvh bg-surface">
+      {/* ---- Nav ---- */}
+      <header className="sticky top-0 z-40 border-b border-line bg-surface/85 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
+          <img src="/icon.svg" alt="" className="h-8 w-8 shrink-0" />
+          <span className="text-fluid-base font-bold tracking-tight">
+            Safaai <span className="text-brand">Sarathi</span>
+          </span>
+
+          <nav className="ml-auto hidden items-center gap-1 md:flex">
+            <a href="#how" className="rounded-lg px-3 py-2 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.how')}</a>
+            <a href="#why" className="rounded-lg px-3 py-2 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.why')}</a>
+            <a href="#staff" className="rounded-lg px-3 py-2 text-fluid-sm text-muted hover:text-ink">{t('landing.nav.staff')}</a>
+          </nav>
+
+          <div className="ml-auto flex items-center gap-2 md:ml-2"><LanguageSwitcher compact /><ThemeToggle /></div>
+          <Link to="/login" className="btn-primary btn-sm px-4">{t('common.signIn')}</Link>
+        </div>
+      </header>
+
+      {/* ---- Hero ---- */}
+      <section className="relative overflow-hidden px-4 pb-16 pt-12 sm:pt-20">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-40 left-1/2 h-[60vmin] w-[90vmin] -translate-x-1/2 rounded-full bg-brand/10 blur-3xl"
+        />
+        <div className="relative mx-auto max-w-4xl text-center">
+          <span className="chip border-brand/25 bg-brand/10 text-brand">
+            <Building2 className="h-3.5 w-3.5" />
+            {t('landing.hero.badge')}
+          </span>
+
+          <h1 className="mt-5 text-balance text-fluid-3xl font-bold leading-[1.08] tracking-tight">
+            {t('landing.hero.title1')} <span className="text-brand">{t('landing.hero.title2')}</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-2xl text-balance text-fluid-lg text-muted">
+            {t('landing.hero.body')}
+          </p>
+
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link to="/login" className="btn-primary w-full px-6 sm:w-auto">
+              {t('landing.hero.cta')} <ArrowRight className="h-4 w-4" />
+            </Link>
+            <a href="#staff" className="btn-ghost w-full px-6 sm:w-auto">{t('landing.hero.staffCta')}</a>
+          </div>
+
+          {/* Live impact counters, straight from the database. */}
+          <dl className="mx-auto mt-12 grid max-w-3xl grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+            {[
+              { label: t('landing.stat.handled'), value: stats?.complaintsTotal ?? 0, suffix: '' },
+              { label: t('landing.stat.rate'), value: stats?.resolutionRatePct ?? 0, suffix: '%' },
+              { label: t('landing.stat.avg'), value: stats?.avgResolutionHours ?? 0, suffix: 'h' },
+              { label: t('landing.stat.wards'), value: stats?.wards ?? 0, suffix: '' },
+            ].map((item) => (
+              <div key={item.label} className="card p-4">
+                <dd className="text-fluid-xl font-bold text-brand">
+                  {stats ? <Counter value={item.value} suffix={item.suffix} /> : <span className="text-muted">—</span>}
+                </dd>
+                <dt className="mt-1 text-fluid-xs text-muted">{item.label}</dt>
+              </div>
+            ))}
+          </dl>
+          {!stats && (
+            <p className="mt-3 text-fluid-xs text-faint">
+              {t('landing.stat.pending')}
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* ---- How it works ---- */}
+      <section id="how" className="border-t border-line bg-elevated px-4 py-16">
+        <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-fluid-2xl font-bold tracking-tight">{t('landing.how.title')}</h2>
+            <p className="mt-3 text-fluid-base text-muted">
+              {t('landing.how.body')}
+            </p>
+          </div>
+
+          <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {STEPS.map((step, i) => (
+              <li key={step.key} className="card relative p-5">
+                <span className="absolute right-4 top-4 text-fluid-2xl font-bold text-sunken">{i + 1}</span>
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/10 text-brand">
+                  <step.icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-4 text-fluid-base font-semibold">{t(`landing.how.${step.key}.title`)}</h3>
+                <p className="mt-1.5 text-fluid-sm text-muted">{t(`landing.how.${step.key}.body`)}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* ---- Differentiators ---- */}
+      <section id="why" className="px-4 py-16">
+        <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-fluid-2xl font-bold tracking-tight">{t('landing.why.title')}</h2>
+            <p className="mt-3 text-fluid-base text-muted">
+              {t('landing.why.body')}
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
+            {DIFFERENTIATORS.map((item) => (
+              <div key={item.key} className="card p-5 sm:p-6">
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/10 text-brand">
+                  <item.icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-4 text-fluid-lg font-semibold">{t(`landing.why.${item.key}.title`)}</h3>
+                <p className="mt-2 text-fluid-sm text-muted">{t(`landing.why.${item.key}.body`)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---- Zero-install channels ---- */}
+      <section className="border-y border-line bg-elevated px-4 py-16">
+        <div className="mx-auto grid max-w-6xl items-center gap-8 md:grid-cols-2">
+          <div>
+            <h2 className="text-fluid-2xl font-bold tracking-tight">{t('landing.channels.title')}</h2>
+            <p className="mt-3 text-fluid-base text-muted">
+              {t('landing.channels.body')}
+            </p>
+            <div className="mt-6 space-y-3">
+              <div className="flex gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
+                  <MessageCircle className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="text-fluid-base font-semibold">{t('landing.channels.whatsapp')}</h3>
+                  <p className="text-fluid-sm text-muted">{t('landing.channels.whatsappBody')}</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
+                  <Phone className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="text-fluid-base font-semibold">{t('landing.channels.ivr')}</h3>
+                  <p className="text-fluid-sm text-muted">{t('landing.channels.ivrBody')}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-6">
+            <h3 className="text-fluid-base font-semibold">{t('landing.models.title')}</h3>
+            <p className="mt-2 text-fluid-sm text-muted">
+              {t('landing.models.body')}
+            </p>
+            <ul className="mt-4 grid gap-2 text-fluid-sm">
+              {['YOLOv8-nano — waste classification', 'CLIP embeddings — duplicate merging', 'LightGBM — hotspot forecasting', 'OSRM / OR-Tools — route optimisation'].map((t) => (
+                <li key={t} className="flex items-center gap-2 text-muted">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ---- Staff entry points ---- */}
+      <section id="staff" className="px-4 py-16">
+        <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-fluid-2xl font-bold tracking-tight">{t('landing.portals.title')}</h2>
+            <p className="mt-3 text-fluid-base text-muted">
+              {t('landing.portals.body')}
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            {[
+              { to: '/driver/login', title: t('landing.portal.driver'), body: t('landing.portal.driverBody'), icon: Truck },
+              { to: '/officer/login', title: t('landing.portal.officer'), body: t('landing.portal.officerBody'), icon: MapPinned },
+              { to: '/admin/login', title: t('landing.portal.admin'), body: t('landing.portal.adminBody'), icon: ShieldCheck },
+            ].map((portal) => (
+              <Link key={portal.to} to={portal.to} className="card group p-5 transition hover:shadow-lift">
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand/10 text-brand">
+                  <portal.icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-4 flex items-center gap-1.5 text-fluid-lg font-semibold">
+                  {portal.title}
+                  <ArrowRight className="h-4 w-4 text-muted transition group-hover:translate-x-0.5 group-hover:text-brand" />
+                </h3>
+                <p className="mt-1.5 text-fluid-sm text-muted">{portal.body}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Deep-green footer, everything left-aligned and kept compact. */}
+      <footer className="bg-[#0f4d2a] px-4 py-6 text-white">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex items-center gap-2">
+            <img src="/icon.svg" alt="" className="h-7 w-7" />
+            <span className="text-fluid-base font-bold tracking-tight">Safaai Sarathi</span>
+          </div>
+
+          <p className="mt-2 max-w-2xl text-fluid-xs text-white/80">
+            {t('landing.footer.body', { city: stats?.city ?? 'Gandhinagar' })}
+          </p>
+
+          <div className="mt-2.5 space-y-0.5 text-fluid-xs text-white/65">
+            <p>{t('landing.footer.org')}</p>
+            <p>{t('landing.footer.helplines')}</p>
+          </div>
+
+          <p className="mt-3 border-t border-white/15 pt-3 text-fluid-xs text-white/55">
+            {t('landing.footer.rights', { year: new Date().getFullYear() })}
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}

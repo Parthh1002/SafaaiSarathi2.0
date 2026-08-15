@@ -1,0 +1,30 @@
+node_modules/
+dist/
+build/
+.vite/
+
+# env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# local db data
+.data/
+
+# uploaded collection evidence
+server/uploads/
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# api uploads (complaint photos)
+api/uploads/
+web/dist/

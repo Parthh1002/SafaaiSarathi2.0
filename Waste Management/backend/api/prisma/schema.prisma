@@ -1,0 +1,592 @@
+// Safaai Sarathi — PostgreSQL schema (plan §8)
+//
+// PostGIS is not installed on this machine and enabling it needs admin rights,
+// so geometry is stored as plain lat/lng doubles plus a pre-computed bounding
+// box on wards. All distance / nearest-truck / point-in-ward maths runs in
+// src/lib/geo.js. The column layout is deliberately PostGIS-shaped: when the
+// extension is available, `latitude`/`longitude` become
+// `geography(Point,4326)` and the bbox filters become GiST index lookups
+// without any change to the application's query surface.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------- enums ----
+
+enum Role {
+  CITIZEN
+  DRIVER
+  OFFICER
+  ADMIN
+}
+
+enum ComplaintStatus {
+  PENDING
+  VERIFIED
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum WasteCategory {
+  GARBAGE_PILE
+  OVERFLOWING_BIN
+  DEAD_ANIMAL
+  CONSTRUCTION_DEBRIS
+  MEDICAL_WASTE
+  ILLEGAL_DUMPING
+  SEWAGE_OVERFLOW
+  BURNING_WASTE
+  OTHER
+}
+
+enum VehicleStatus {
+  IDLE
+  ON_ROUTE
+  OFFLINE
+  MAINTENANCE
+}
+
+enum RouteStatus {
+  DRAFT
+  PUBLISHED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum StopStatus {
+  PENDING
+  DONE
+  SKIPPED
+}
+
+enum NotificationType {
+  COMPLAINT_UPDATE
+  ASSIGNMENT
+  EMERGENCY
+  ESCALATION
+  TRUCK_NEARBY
+  CREDIT_AWARDED
+  SYSTEM
+}
+
+enum SosStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum ReportChannel {
+  APP
+  WEB
+  WHATSAPP
+  IVR
+}
+
+// ------------------------------------------------------- identity & auth ----
+
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  email           String?   @unique
+  phone           String?   @unique
+  passwordHash    String? // null when the account is Google-only
+  role            Role      @default(CITIZEN)
+  wardId          String?
+  isActive        Boolean   @default(true)
+  emailVerifiedAt DateTime?
+  language        String    @default("en") // en | hi | gu
+  avatarColor     String    @default("#16a34a")
+
+  // Officer / Admin 2FA (plan §6.3) — TOTP via otplib, no auth SaaS.
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean @default(false)
+
+  greenCredits Int       @default(0)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  ward                Ward?            @relation(fields: [wardId], references: [id], onDelete: SetNull)
+  officerWards        WardOfficer[]
+  oauthIdentities     OAuthIdentity[]
+  refreshTokens       RefreshToken[]
+  emailTokens         EmailToken[]
+  complaints          Complaint[]      @relation("ComplaintCitizen")
+  assignedComplaints  Complaint[]      @relation("ComplaintAssigner")
+  resolvedComplaints  Complaint[]      @relation("ComplaintResolver")
+  complaintEvents     ComplaintEvent[]
+  drivenVehicles      Vehicle[]        @relation("VehicleDriver")
+  routes              Route[]
+  escalationsReceived Escalation[]     @relation("EscalationTarget")
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+  creditEntries       GreenCredit[]
+  sosAlerts           SosAlert[]       @relation("SosDriver")
+  sosAcknowledged     SosAlert[]       @relation("SosResponder")
+
+  @@index([role])
+  @@index([wardId])
+  @@map("users")
+}
+
+/// Google sign-in linkage — raw OAuth2/OIDC, no Firebase (plan §6.2).
+model OAuthIdentity {
+  id             String   @id @default(cuid())
+  userId         String
+  provider       String // "google"
+  providerUserId String
+  email          String?
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("oauth_identities")
+}
+
+/// Rotated on every use and revocable server-side, so a session can be killed.
+model RefreshToken {
+  id           String    @id @default(cuid())
+  userId       String
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  userAgent    String?
+  ip           String?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+/// Email verification + password reset tokens (stored hashed, with expiry).
+model EmailToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  purpose   String // "verify" | "reset"
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_tokens")
+}
+
+/// Phone/OTP login for drivers (pre-registered by admin, no self-signup).
+model OtpCode {
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String
+  purpose    String    @default("driver_login")
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, purpose])
+  @@map("otp_codes")
+}
+
+// ------------------------------------------------------------- geography ----
+
+model Ward {
+  id   String @id @default(cuid())
+  name String
+  code String @unique
+  zone String @default("Zone 1")
+
+  /// GeoJSON Polygon. Becomes geometry(Polygon,4326) under PostGIS.
+  boundary  Json
+  centerLat Float
+  centerLng Float
+
+  /// Pre-computed bbox so "which ward is this point in" is an indexed
+  /// pre-filter followed by an exact ray-cast in geo.js.
+  minLat Float
+  maxLat Float
+  minLng Float
+  maxLng Float
+
+  population Int      @default(0)
+  households Int      @default(0)
+  slaMinutes Int      @default(1440)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  residents   User[]
+  officers    WardOfficer[]
+  complaints  Complaint[]
+  vehicles    Vehicle[]
+  routes      Route[]
+  predictions HotspotPrediction[]
+  contacts    EmergencyContact[]
+
+  @@index([minLat, maxLat, minLng, maxLng])
+  @@map("wards")
+}
+
+/// An officer can be scoped to more than one ward (plan §2.3).
+model WardOfficer {
+  id        String   @id @default(cuid())
+  wardId    String
+  officerId String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  ward    Ward @relation(fields: [wardId], references: [id], onDelete: Cascade)
+  officer User @relation(fields: [officerId], references: [id], onDelete: Cascade)
+
+  @@unique([wardId, officerId])
+  @@map("ward_officers")
+}
+
+// ------------------------------------------------------------- complaints ----
+
+model Complaint {
+  id        String  @id @default(cuid())
+  code      String  @unique // human-readable ticket, e.g. SS-7F3K2Q
+  citizenId String
+  wardId    String?
+
+  category     WasteCategory
+  aiCategory   WasteCategory?
+  aiConfidence Float          @default(0)
+  aiVerified   Boolean        @default(false)
+  reviewNeeded Boolean        @default(false) // confidence < threshold -> human review
+  fraudScore   Float          @default(0)
+  fraudSignals Json?
+
+  status      ComplaintStatus @default(PENDING)
+  severity    Severity        @default(MEDIUM)
+  isEmergency Boolean         @default(false)
+  channel     ReportChannel   @default(WEB)
+
+  description String?
+  latitude    Float
+  longitude   Float
+  address     String?
+  photoUrl    String?
+  thumbUrl    String?
+
+  assignedVehicleId  String?
+  assignedById       String?
+  assignedAt         DateTime?
+  resolvedById       String?
+  resolvedAt         DateTime?
+  resolutionPhotoUrl String?
+  resolutionNote     String?
+
+  slaMinutes      Int       @default(1440)
+  dueAt           DateTime?
+  escalationCount Int       @default(0)
+  upvotes         Int       @default(0)
+  duplicateOfId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  citizen          User                 @relation("ComplaintCitizen", fields: [citizenId], references: [id], onDelete: Cascade)
+  ward             Ward?                @relation(fields: [wardId], references: [id], onDelete: SetNull)
+  assignedVehicle  Vehicle?             @relation(fields: [assignedVehicleId], references: [id], onDelete: SetNull)
+  assignedBy       User?                @relation("ComplaintAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+  resolvedBy       User?                @relation("ComplaintResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  duplicateOf      Complaint?           @relation("ComplaintDuplicates", fields: [duplicateOfId], references: [id], onDelete: SetNull)
+  duplicates       Complaint[]          @relation("ComplaintDuplicates")
+  duplicateLinks   ComplaintDuplicate[] @relation("DuplicateParent")
+  duplicateOfLinks ComplaintDuplicate[] @relation("DuplicateChild")
+  events           ComplaintEvent[]
+  escalations      Escalation[]
+  creditEntries    GreenCredit[]
+
+  @@index([status])
+  @@index([wardId, status])
+  @@index([isEmergency, status])
+  @@index([createdAt])
+  @@index([latitude, longitude])
+  @@map("complaints")
+}
+
+/// "5 people also reported this" — CLIP-style similarity + proximity + time.
+model ComplaintDuplicate {
+  id                   String   @id @default(cuid())
+  parentComplaintId    String
+  duplicateComplaintId String
+  similarityScore      Float
+  method               String   @default("geo+category+time")
+  distanceMeters       Float?
+  createdAt            DateTime @default(now())
+
+  parent    Complaint @relation("DuplicateParent", fields: [parentComplaintId], references: [id], onDelete: Cascade)
+  duplicate Complaint @relation("DuplicateChild", fields: [duplicateComplaintId], references: [id], onDelete: Cascade)
+
+  @@unique([parentComplaintId, duplicateComplaintId])
+  @@map("complaint_duplicates")
+}
+
+/// Status timeline shown to the citizen (Pending -> Verified -> ... -> Resolved).
+model ComplaintEvent {
+  id          String          @id @default(cuid())
+  complaintId String
+  status      ComplaintStatus
+  note        String?
+  actorId     String?
+  createdAt   DateTime        @default(now())
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  actor     User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([complaintId, createdAt])
+  @@map("complaint_events")
+}
+
+// ---------------------------------------------------------------- fleet ----
+
+model Vehicle {
+  id                 String        @id @default(cuid())
+  registrationNumber String        @unique
+  wardId             String?
+  driverId           String?       @unique
+  status             VehicleStatus @default(OFFLINE)
+  model              String        @default("Tata Ace")
+  capacityKg         Int           @default(2000)
+  maintenanceFlag    Boolean       @default(false)
+
+  /// Denormalised last ping so the fleet map is a single read.
+  lastLat     Float?
+  lastLng     Float?
+  lastHeading Float?
+  lastSpeed   Float?
+  lastPingAt  DateTime?
+
+  odometerKm Float    @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  ward       Ward?             @relation(fields: [wardId], references: [id], onDelete: SetNull)
+  driver     User?             @relation("VehicleDriver", fields: [driverId], references: [id], onDelete: SetNull)
+  locations  VehicleLocation[]
+  routes     Route[]
+  complaints Complaint[]
+  sosAlerts  SosAlert[]
+
+  @@index([wardId, status])
+  @@map("vehicles")
+}
+
+/// Every ping, kept for replay, distance stats and future ETA models (§4.5).
+model VehicleLocation {
+  id         String   @id @default(cuid())
+  vehicleId  String
+  latitude   Float
+  longitude  Float
+  heading    Float?
+  speed      Float?
+  accuracy   Float?
+  recordedAt DateTime @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, recordedAt])
+  @@map("vehicle_locations")
+}
+
+model Route {
+  id        String      @id @default(cuid())
+  vehicleId String
+  driverId  String?
+  wardId    String?
+  date      String // YYYY-MM-DD
+  status    RouteStatus @default(DRAFT)
+  label     String?
+
+  /// Ordered stop list; each entry mirrors RouteStop shape in routing.service.js.
+  orderedStops     Json
+  polylineGeometry Json // [[lng,lat], ...] — Leaflet draws this directly
+
+  baselineKm  Float  @default(0)
+  distanceKm  Float  @default(0)
+  durationMin Int    @default(0)
+  actualKm    Float  @default(0)
+  savedKm     Float  @default(0)
+  fuelSaved   Float  @default(0)
+  co2SavedKg  Float  @default(0)
+  solver      String @default("safaai-node-2opt")
+  solveMs     Int    @default(0)
+
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver  User?   @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  ward    Ward?   @relation(fields: [wardId], references: [id], onDelete: SetNull)
+
+  @@unique([vehicleId, date])
+  @@index([wardId, date])
+  @@map("routes")
+}
+
+// -------------------------------------------------- ops, audit, comms ----
+
+model Escalation {
+  id             String    @id @default(cuid())
+  complaintId    String
+  escalatedToId  String?
+  level          Int       @default(1)
+  reason         String
+  escalatedAt    DateTime  @default(now())
+  acknowledgedAt DateTime?
+
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  escalatedTo User?     @relation("EscalationTarget", fields: [escalatedToId], references: [id], onDelete: SetNull)
+
+  @@index([complaintId])
+  @@map("escalations")
+}
+
+/// Immutable record of every privileged action (plan §2.4, §6.3).
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  action      String
+  targetTable String
+  targetId    String?
+  before      Json?
+  after       Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([targetTable, targetId])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  payload   Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+/// Points for verified genuine reports — drives the citizen leaderboard.
+model GreenCredit {
+  id           String   @id @default(cuid())
+  userId       String
+  delta        Int
+  balanceAfter Int
+  reason       String
+  reasonCode   String
+  complaintId  String?
+  createdAt    DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  complaint Complaint? @relation(fields: [complaintId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("green_credits")
+}
+
+/// Driver SOS — instant alert to nearest officer + admin with live location.
+model SosAlert {
+  id               String    @id @default(cuid())
+  driverId         String
+  vehicleId        String?
+  latitude         Float
+  longitude        Float
+  message          String?
+  status           SosStatus @default(OPEN)
+  acknowledgedById String?
+  acknowledgedAt   DateTime?
+  createdAt        DateTime  @default(now())
+
+  driver         User     @relation("SosDriver", fields: [driverId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  acknowledgedBy User?    @relation("SosResponder", fields: [acknowledgedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("sos_alerts")
+}
+
+/// "Tomorrow this zone likely overflows" (plan §2.3, §7).
+model HotspotPrediction {
+  id             String   @id @default(cuid())
+  wardId         String
+  forDate        String // YYYY-MM-DD
+  predictedCount Float
+  riskScore      Int
+  confidence     Float    @default(0)
+  drivers        Json? // top contributing features, shown in the UI
+  modelVersion   String   @default("hotspot-v1")
+  createdAt      DateTime @default(now())
+
+  ward Ward @relation(fields: [wardId], references: [id], onDelete: Cascade)
+
+  @@unique([wardId, forDate])
+  @@map("hotspot_predictions")
+}
+
+/// Community directory — cached offline on the citizen app.
+model EmergencyContact {
+  id         String   @id @default(cuid())
+  name       String
+  category   String // helpline | fire | animal_control | pest_control | police | hospital
+  phone      String
+  wardId     String?
+  isCityWide Boolean  @default(true)
+  address    String?
+  createdAt  DateTime @default(now())
+
+  ward Ward? @relation(fields: [wardId], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@map("emergency_contacts")
+}
+
+/// Model health panel (plan §2.4) — one row per inference batch summary.
+model ModelHealthSample {
+  id                String   @id @default(cuid())
+  modelVersion      String
+  avgConfidence     Float
+  lowConfidenceRate Float
+  falsePositiveRate Float    @default(0)
+  sampleCount       Int
+  recordedAt        DateTime @default(now())
+
+  @@index([modelVersion, recordedAt])
+  @@map("model_health_samples")
+}
