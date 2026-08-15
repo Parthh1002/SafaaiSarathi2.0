@@ -18,6 +18,13 @@
 
 <br/>
 
+![Visitors](https://visitor-badge.laobi.icu/badge?page_id=Parthh1002.SafaaiSarathi2.0&left_color=000&right_color=16A34A&left_text=Platform%20Visits)
+![GitHub Repo stars](https://img.shields.io/github/stars/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=10B981)
+![GitHub forks](https://img.shields.io/github/forks/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=059669)
+![GitHub last commit](https://img.shields.io/github/last-commit/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=047857)
+
+<br/>
+
 > **🚀 "Transforming Municipal Waste Management from Passive Grievance Redressal into Proactive, Real-time AI Triage & Dynamic Fleet Logistics."**
 
 [🌐 **LIVE PLATFORM**](https://safaai-sarathi2-0.vercel.app) &nbsp;•&nbsp; [⚙️ **API ENDPOINT**](https://safaaisarathi2-0.onrender.com) &nbsp;•&nbsp; [📑 **ARCHITECTURE**](#-system-architecture)
@@ -212,7 +219,23 @@ Safaai Sarathi is **not** a single dashboard with a role dropdown. Each portal i
 ---
 
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=111827&height=60&text=🚀%20QUICKSTART%20GUIDE&fontColor=ffffff&fontSize=30&stroke=000000" alt="Quickstart Banner"/>
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=111827&height=60&text=📈%20ROADMAP%20&%20FUTURE%20SCOPE&fontColor=ffffff&fontSize=30&stroke=000000" alt="Roadmap Banner"/>
+</div>
+
+<br/>
+
+- [x] **Phase 1:** Core Portals, AI Triage & Database Architecture.
+- [x] **Phase 2:** Live GPS Tracking, Real-time WebSockets & VRP Routing.
+- [x] **Phase 3:** Gamification, 3D Landing Page & Multilingual Support.
+- [ ] **Phase 4:** Drone-based automated scanning & API integrations with Swachhata.
+- [ ] **Phase 5:** Hardware IoT bin sensors integration.
+
+<br/>
+
+---
+
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0f172a&height=60&text=🚀%20QUICKSTART%20GUIDE&fontColor=ffffff&fontSize=30&stroke=000000" alt="Quickstart Banner"/>
 </div>
 
 <br/>
