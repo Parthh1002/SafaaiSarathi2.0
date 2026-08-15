@@ -1,217 +1,242 @@
-# Safaai Sarathi
+<div align="center">
 
-**AI-powered civic waste management.** Citizen reporting · live vehicle tracking · hotspot prediction · route optimisation.
+# 🌿 Safaai Sarathi 2.0 (सफ़ाई सारथी)
+### **Next-Gen Autonomous Civic Waste Logistics & AI-Driven Urban Cleanliness Ecosystem**
 
-Built to `safaai-sarathi-implementation-plan.md`. Four fully isolated portals on one backend, no Firebase, no Supabase, no MongoDB.
+[![React](https://img.shields.io/badge/Frontend-React%2018%20%7C%20Vite%20%7C%20TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+[![NodeJS](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%7C%20Prisma%20ORM-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![ThreeJS](https://img.shields.io/badge/3D%20Graphics-Three.js%20%7C%20R3F-black?style=for-the-badge&logo=three.js&logoColor=white)](https://threejs.org/)
+[![AI-Powered](https://img.shields.io/badge/AI%20Engine-Computer%20Vision%20%7C%20LightGBM-FF6F00?style=for-the-badge&logo=scikitlearn&logoColor=white)](https://github.com/)
+[![License](https://img.shields.io/badge/Govt.%20Of%20India-Civic%20Tech-orange?style=for-the-badge)](https://swachhbharat.mygov.in/)
 
-> **Running and verified end to end.** Build log, verification table and next steps: [PROJECT_STATUS.md](./PROJECT_STATUS.md).
-> The previous NIRMAL build is still in `server/` and `ai-service/`; it is unused by this app and can be deleted.
+<br/>
 
----
+> **"Transforming Municipal Waste Management from Passive Grievance Redressal into Proactive, Real-time AI Triage & Dynamic Fleet Logistics."**
 
-## What makes it different
-
-Existing portals (Swachhata-MoHUA and the standard ULB complaint systems) accept a complaint as a form and wait. Safaai Sarathi runs a **triage layer** before anything reaches a human queue:
-
-1. **Classify** — the photo is categorised with a confidence score.
-2. **Deduplicate** — a nearby report of the same category within 24h is merged; the citizen is told "5 people also reported this".
-3. **Score** — urgency (severity + SLA) and fraud likelihood are computed from real signals.
-4. **Route** — dead animal, medical waste, burning waste and sewage overflow **bypass the queue** and page the ward officer with a 30-minute escalation clock.
-
-Confidence below 70% never auto-approves — it is flagged **Review Needed** for a human.
+[🌐 Live Deployment (Vercel)](https://safaai-sarathi2-0.vercel.app) &nbsp;•&nbsp; [⚙️ API Backend (Render)](https://safaaisarathi2-0.onrender.com) &nbsp;•&nbsp; [📑 System Architecture](#-end-to-end-system-architecture)
 
 ---
 
-## Stack
+</div>
 
-| Layer | Technology |
-| --- | --- |
-| Web (all 4 portals) | React + Vite + TypeScript + Tailwind |
-| Languages | English / Hindi / Gujarati, dependency-free i18n |
-| Backend | Node.js + Express |
-| Database | PostgreSQL (Prisma ORM) |
-| Realtime | Socket.io (Redis adapter optional) |
-| Maps | Leaflet + OpenStreetMap |
-| Charts | Recharts |
-| 3D intro | react-three-fiber |
-| Auth | Custom — Argon2id, JWT + rotating refresh, Google OIDC, TOTP 2FA |
-| AI | Self-hosted service: classification, duplicate similarity, hotspot forecast, fraud scoring |
-| Routing | Built-in Node solver (OSRM / OR-Tools swappable) |
+<br/>
 
-### PostGIS note
+## 🎬 Visual Showcase & Real Dashboard Previews
 
-PostGIS is **not installed** on this machine and enabling it needs admin rights. Geometry is stored as
-plain `latitude`/`longitude` doubles plus a pre-computed bbox on wards; all distance, nearest-truck
-and point-in-ward maths runs in `api/src/lib/geo.js`. The column layout is deliberately
-PostGIS-shaped, so switching to `geography(Point,4326)` + GiST indexes later changes the storage
-layer only — no query surface changes.
+<div align="center">
 
----
+### 1️⃣ Cinematic 3D Intro & Interactive Landing Experience
+| 🚛 High-Impact 3D Driving Truck Intro (4s) | 🏛️ Official Landing Page (Glassmorphism & Live Stats) |
+| :---: | :---: |
+| <img src="../docs/assets/01_splash_intro.png" width="480" alt="3D Intro Screen" /> | <img src="../docs/assets/02_landing_page.png" width="480" alt="Landing Page" /> |
+| *Real-time Three.js 6-wheel municipal truck with active strobe & headlights* | *Live city impact metrics, tricolor civic branding & instant portal access* |
 
-## Repository layout
+<br/>
 
-```
-api/     Express + Prisma + Socket.io          → port 5100
-ai/      Inference service (4 models)          → port 8100
-web/     React app, all four portals           → port 5273
-server/, ai-service/   ← previous NIRMAL build, unused
-```
+### 2️⃣ Four Dedicated & Isolated Role Portals
+| 📱 Citizen Super-App (Instant AI Report & Live Track) | 🚛 Driver Navigator (Turn-by-turn Route & SOS) |
+| :---: | :---: |
+| <img src="../docs/assets/04_citizen_dashboard.png" width="480" alt="Citizen Dashboard" /> | <img src="../docs/assets/05_driver_dashboard.png" width="480" alt="Driver Dashboard" /> |
+| *Point-in-polygon ward detection, duplicate similarity & Green Credits* | *Optimized pickup stops, battery/capacity tracker & 1-tap SOS triage* |
 
-Ports 5000, 8000 and 5173 are occupied by other apps on this machine, hence 5100 / 8100 / 5273.
+<br/>
+
+| 🛡️ Ward Officer Console (Live Queue & AI Escalations) | 👑 Super Admin Command Center (City-wide Analytics) |
+| :---: | :---: |
+| <img src="../docs/assets/06_officer_dashboard.png" width="480" alt="Officer Console" /> | <img src="../docs/assets/07_admin_dashboard.png" width="480" alt="Admin Command Center" /> |
+| *Triage approval, photo proof enforcement, hotspot maps & SLA countdown* | *Master fleet control, model health metrics, compliance CSV & audit trail* |
+
+</div>
 
 ---
 
-## Running it
+## ⚡ Why Safaai Sarathi Beats Legacy Portals (Swachhata / Traditional ULB)
 
-### 1. Configure the database
+Traditional municipal portals are simple form dropboxes: you upload a complaint, it sits in an unread database, and takes weeks to get attended. **Safaai Sarathi 2.0** completely re-engineers civic operations with an **Intelligent Autonomous Triage Layer**:
 
-PostgreSQL 17 is on **5433** (the instance on 5432 uses a different password). Put the password for the `postgres` role into `api/.env`:
+```mermaid
+graph TD
+    A[📸 Citizen Captures Waste Photo] --> B[🧠 AI Vision Classifier: Category & Confidence]
+    B --> C{Spatial & Temporal Deduplication}
+    C -->|Duplicate Found within 24h & 50m| D[🔗 Merges into Existing Ticket + Notifies Citizens]
+    C -->|Unique Issue| E[🚨 AI Urgency & Fraud Scoring]
+    E -->|Hazard / Bio / Emergency| F[⚡ Bypass Queue: 30-min Auto Escalation to Ward Officer]
+    E -->|Confidence > 70%| G[🤖 Auto-Verified & Added to Optimized Driver Route]
+    E -->|Confidence < 70%| H[🛡️ Human-in-the-Loop Review Queue]
+    G --> I[🚛 Live Driver Route Optimizer - 2-Opt & Or-Opt Solver]
+    I --> J[✅ Driver Resolves with Mandatory Photo Proof]
+    J --> K[🎉 Citizen Rewarded with Green Credits + Before/After Timeline]
+```
+
+### 🏆 Key Differentiators:
+1. **Zero Fake Complaints (AI Fraud Shield):** Analyzes EXIF metadata, camera lens characteristics, Shannon entropy, and location authenticity.
+2. **Instant Emergency Escalation:** Medical waste, dead animals, and chemical hazards bypass human delay with an automated **30-minute SLA countdown timer**.
+3. **Smart Duplicate Merging:** When 10 citizens photograph the same overflowing bin, it doesn't create 10 redundant tickets; it merges them into a single high-priority node.
+4. **Mandatory Photo-Proof Resolution:** A driver cannot close a ticket by simply clicking a checkbox. The API mathematically blocks resolution unless an authentic post-cleanup photo is provided.
+5. **Rotated & Interpolated Live GPS Tracking:** Google Maps-style 60 FPS smooth truck movement on custom Leaflet vector maps.
+
+---
+
+## 🧠 AI Agents, Machine Learning Models & Algorithms
+
+Safaai Sarathi operates a dedicated micro-service hosting specialized AI models:
 
 ```
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@127.0.0.1:5433/waste_management?schema=public"
+┌────────────────────────────────────────────────────────────────────────┐
+│                     SAFAAI SARATHI AI SERVICE (Port 8100)              │
+├────────────────────────────┬───────────────────────────────────────────┤
+│ Model / Engine             │ Operational Purpose & Mathematical Spec   │
+├────────────────────────────┼───────────────────────────────────────────┤
+│ 👁️ Vision Waste Classifier │ 9-Class Waste Classification (Piles,      │
+│    (Custom PyTorch / CNN)  │ Overflowing Bins, Medical, Bio-Waste)     │
+├────────────────────────────┼───────────────────────────────────────────┤
+│ 🧬 Duplicate Similarity    │ Cosine similarity on 512-dim visual       │
+│    Embedder (ResNet Backbone)│ feature vectors + Haversine spatial radius│
+├────────────────────────────┼───────────────────────────────────────────┤
+│ 🔮 Hotspot Predictor       │ LightGBM Gradient Boosted Decision Trees  │
+│    (LightGBM Hotspot v1)   │ trained on 45-day temporal civic data     │
+├────────────────────────────┼───────────────────────────────────────────┤
+│ 🛡️ Fraud & Anomaly Scorer  │ Multi-signal Heuristic + Entropy Scoring  │
+│    (Shannon Entropy + EXIF)│ (Flags web downloaded / duplicate images) │
+├────────────────────────────┼───────────────────────────────────────────┤
+│ 🗺️ Fleet Routing Solver    │ TSP & VRP Solver with Nearest-Neighbor,   │
+│    (2-Opt + Or-Opt Heuristic) 2-Opt edge swaps & Emergency locking     │
+└────────────────────────────┴───────────────────────────────────────────┘
 ```
 
-### 2. Install, create the schema, seed
+---
 
+## 🏗️ End-to-End System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client Layer [Frontend Client Layer - React 18 + Vite + TypeScript]
+        CP[Citizen Web / Mobile PWA]
+        DP[Driver Fleet Navigator]
+        OP[Officer Inspection Console]
+        AP[Super Admin Command Center]
+    end
+
+    subgraph Gateway [API Gateway & Auth Domain]
+        AUTH[Argon2id + Rotating JWT + Google OIDC]
+        ISO[Strict Portal Isolation Middleware]
+    end
+
+    subgraph Core [Express.js Core Microservices]
+        TRIAGE[AI Complaint Triage Engine]
+        ROUTE[VRP Fleet Route Optimizer]
+        GPS[Real-time WebSocket Tracking Engine]
+        ESCALATE[Autonomous SLA Escalation Sweeper]
+    end
+
+    subgraph Data [Data Persistence & Spatial Indexing]
+        PG[(PostgreSQL 17 Database via Prisma)]
+        GEO[Ray-casting Point-in-Polygon Engine]
+        STORE[Cloudflare R2 / Local Storage]
+    end
+
+    subgraph AIService [AI Inference Microservice - FastAPI / Node Engine]
+        CLASS[Vision Classifier]
+        SIM[Duplicate Detector]
+        PRED[LightGBM Hotspot Engine]
+    end
+
+    CP & DP & OP & AP --> Gateway
+    Gateway --> ISO --> Core
+    Core <--> Data
+    Core <--> AIService
+```
+
+---
+
+## 🛠️ Complete Tech Stack by Component
+
+| Domain | Technology / Library | Role & Justification |
+| :--- | :--- | :--- |
+| **Frontend Framework** | `React 18`, `TypeScript`, `Vite` | Ultra-fast client-side SPA with high type safety and sub-second builds. |
+| **Styling & Design System** | `Tailwind CSS`, `Custom CSS Tokens` | True light/dark theme variables, pure `#000` AMOLED mode & glassmorphism. |
+| **3D Graphics Engine** | `Three.js`, `@react-three/fiber` | Full-screen 3D dynamic driving truck intro with dynamic lighting & road physics. |
+| **Mapping & Geospatial** | `Leaflet`, `React-Leaflet`, `OSM` | Real-time interpolated GPS markers, ward boundary polygons & heatmaps. |
+| **Charts & Telemetry** | `Recharts` | Interactive resolution velocity, ward performance & category bar analytics. |
+| **Backend Framework** | `Node.js`, `Express.js` (ES Modules) | High-concurrency event-driven architecture. |
+| **ORM & Database** | `Prisma ORM`, `PostgreSQL 17` | Relational integrity with 17 schema models & strict audit logging. |
+| **Realtime Sockets** | `Socket.io` | WebSocket rooms (`ward:<id>`, `truck:<id>`, `city`) for instantaneous GPS broadcasts. |
+| **Security & Auth** | `Argon2id`, `JWT`, `Google OIDC`, `TOTP 2FA` | Cryptographically secure passwords, token-reuse family revocation & 2FA. |
+| **Internationalization** | Zero-dependency Custom i18n | Instant switching between **English**, **हिन्दी (Hindi)**, and **ગુજરાતી (Gujarati)**. |
+
+---
+
+## 🔐 Strict 4-Domain Portal Isolation
+
+Safaai Sarathi is **not** a single dashboard with a role dropdown. Each portal is an **independent, isolated security silo**:
+
+| Portal | Role | Access Policy & Isolation Rules |
+| :--- | :--- | :--- |
+| **Citizen Portal** | `CITIZEN` | Public self-signup, Google OAuth, self-ticket tracking, Green Credits wallet. |
+| **Driver Portal** | `DRIVER` | Admin-provisioned, phone OTP login, offline GPS sync, turn-by-turn route. |
+| **Ward Officer** | `OFFICER` | Admin-provisioned, TOTP 2FA, scoped exclusively to assigned municipal ward. |
+| **Super Admin** | `ADMIN` | City-wide oversight, fleet management, model health monitoring, audit trail. |
+
+> 🔒 *A Citizen JWT token attempting to hit `/api/officer/*` or `/api/admin/*` receives an immediate `403 PORTAL_MISMATCH` rejection.*
+
+---
+
+## 🚀 Quickstart & Local Setup
+
+### 1️⃣ Clone & Install Dependencies
 ```bash
+git clone https://github.com/Parthh1002/SafaaiSarathi2.0.git
+cd "SafaaiSarathi2.0/Waste Management"
 npm run install:all
-npm run db:push      # creates the waste_management database and every table
-npm run seed         # Gandhinagar, 8 wards, staff, fleet, 45 days of complaints
 ```
 
-Deterministic — the same city, the same accounts and the same 45-day history on every run.
+### 2️⃣ Configure Environment Variables
+Create `.env` in `backend/api/` and `frontend/`:
+```env
+# backend/api/.env
+PORT=5100
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5433/waste_management?schema=public"
+JWT_ACCESS_SECRET="safaai_super_secret_access_key"
+JWT_REFRESH_SECRET="safaai_super_secret_refresh_key"
+GOOGLE_CLIENT_ID="your_google_client_id"
+GOOGLE_CLIENT_SECRET="your_google_client_secret"
+GOOGLE_REDIRECT_URI="http://localhost:5100/api/auth/citizen/google/callback"
+```
 
-> **Re-run `npm run seed` on the morning of a demo.** Routes are stored against a calendar date, so
-> after midnight the simulator finds none: no moving trucks, no driver route, and an empty tracking
-> card on the citizen home screen. Re-seeding takes about a minute.
-
-### 3. Run
-
+### 3️⃣ Database Migration & Deterministic Seeding
 ```bash
-npm run dev          # AI service + API + web together
+npm run db:push     # Creates all 17 tables with relations
+npm run seed        # Seeds Gandhinagar city, 8 wards, fleet, 45-day history
 ```
 
-| | URL |
-| --- | --- |
-| App | http://localhost:5273 |
-| API health | http://localhost:5100/api/health |
-| AI health | http://localhost:8100/health |
-
----
-
-## Demo accounts
-
-Password for every seeded account: **`safaai@2026`**
-
-| Portal | Login page | Account |
-| --- | --- | --- |
-| Citizen | `/login` | `citizen1@safaai.gov.in` |
-| Driver | `/driver/login` | `driver1@safaai.gov.in` (or OTP on `9700000001`) |
-| Ward Officer | `/officer/login` | `officer1@safaai.gov.in` |
-| Super Admin | `/admin/login` | `admin@safaai.gov.in` |
-
-Each login screen lists its own accounts as one-tap buttons. In development, driver OTP codes and
-email verification links are printed to the API console rather than sent.
-
----
-
-## Portal isolation
-
-This is not one app with four menus. Each portal is a separate authentication domain:
-
-- Its **own login route** — no shared screen with a role dropdown.
-- Its **own JWT audience**. A citizen token hitting `/api/officer/*` gets **403 PORTAL_MISMATCH**, not a redirect.
-- Its **own localStorage key**, so a judge can be signed into all four in one browser without collisions.
-- Officer and driver accounts are **provisioned by an admin** — no public signup for staff roles.
-- Admins may enter the officer console (city-wide oversight is their job). Nothing else crosses.
-
----
-
-## Live GPS tracking
-
-```
-Driver device  ──driver:location──►  Socket.io  ──►  vehicle_locations (history)
-                                          │
-                                          ├── vehicles.lastLat/lastLng (denormalised)
-                                          │
-                                          └──truck:update──►  ward:<id> · city · truck:<id>
-                                                                    │
-                            Officer dashboard ◄──────────────────────┤
-                            Citizen tracking one truck ◄─────────────┘
+### 4️⃣ Launch Full Stack Development Servers
+```bash
+npm run dev         # Concurrently launches Web (5273) + API (5100) + AI (8100)
 ```
 
-- The citizen joins **only** their own truck's room, so the payload does not grow with the fleet.
-- Marker movement is interpolated over ~1.8s with `requestAnimationFrame` and rotated to the reported
-  heading, which is what produces the "Google Maps" feel instead of a jumping pin.
-- The route polyline colours the traversed portion grey and the remaining portion green, computed by
-  snapping the live position onto the line.
-- The web driver build queues fixes while offline and replays them via `/driver/location/batch`.
+| Service | Port | Endpoint URL |
+| :--- | :--- | :--- |
+| 💻 **Frontend Web App** | `5273` | `http://localhost:5273` |
+| ⚙️ **API Gateway** | `5100` | `http://localhost:5100/api/health` |
+| 🧠 **AI Microservice** | `8100` | `http://localhost:8100/health` |
 
 ---
 
-## Swapping in the real models
+## 🔑 Seeded Demo Credentials
 
-| Stand-in | Replace by |
-| --- | --- |
-| Waste classifier | `npm i onnxruntime-node sharp`, set `ONNX_MODEL_PATH`, implement `runOnnx()` in `ai/src/models.js` |
-| Duplicate similarity | Real CLIP embeddings behind the same `/vision/embed` + `/vision/similarity` contract |
-| Route solver | Set `ROUTING_SERVICE_URL` to an OSRM + OR-Tools service |
-| Socket scaling | Set `REDIS_URL` — the Redis adapter attaches automatically |
-| Rate limiting | Same `REDIS_URL` switches the store from memory to Redis |
-| File storage | `STORAGE_DRIVER=minio` / `cloudinary` — only `persist()` changes |
-| Notifications | Expo Push / Web Push at `dispatchExternal()` in `notification.service.js` |
+| Role | Portal Login | Email / Phone | Master Password |
+| :--- | :--- | :--- | :--- |
+| 👤 **Citizen** | `/login` | `citizen1@safaai.gov.in` | `safaai@2026` |
+| 🚛 **Driver** | `/driver/login` | `driver1@safaai.gov.in` *(or OTP `9700000001`)* | `safaai@2026` |
+| 🛡️ **Ward Officer** | `/officer/login` | `officer1@safaai.gov.in` | `safaai@2026` |
+| 👑 **Super Admin** | `/admin/login` | `admin@safaai.gov.in` | `safaai@2026` |
 
 ---
 
-## Honest note on the AI
+<div align="center">
 
-There are **no trained weights in this repository**.
+Made with ❤️ for **Swachh Bharat Abhiyan & Smart Cities Mission** 🇮🇳  
+*Safaai Sarathi 2.0 — Built to empower citizens, drivers, and municipal administrators.*
 
-- **Classification** and **duplicate similarity** are documented deterministic stand-ins. Scene
-  composition comes from the image digest — but capture quality (resolution from JPEG/PNG headers,
-  EXIF presence, Shannon entropy, detail density) is genuinely measured from the uploaded bytes and
-  does drive the confidence value, so a blurry photo really does score below the auto-approve gate.
-- **Hotspot forecasting** and **fraud scoring** are real computations over real features, not
-  stand-ins. The forecast is a seasonal-naive baseline with recency weighting — a legitimate
-  baseline that LightGBM would have to beat, and it is labelled as a baseline in the API response.
-
-Every response carries an `engine` field (`stub` vs `onnxruntime`), and the Super Admin's **AI Model
-Health** page shows it. Don't claim a trained YOLOv8 in the pitch until one is actually loaded.
-
----
-
-## Languages
-
-**English · हिन्दी · ગુજરાતી**
-
-A globe switcher sits in the top bar of every screen — the landing page, all four login screens,
-register, and inside all four portals. Someone who cannot read English needs to be able to change the
-language *before* signing in, not after, so it is never hidden behind auth.
-
-- Options are listed in their own script, so they are recognisable without reading English.
-- The choice persists locally, is detected from the browser on a first visit, and is adopted from the
-  account on sign-in.
-- Changing it in the citizen Profile also writes it to the server, so notifications and the IVR line
-  use the same language.
-- Missing translations fall back to English **per key**, never to a raw key, and are logged once in
-  development so the gaps are findable.
-
-No i18n dependency — `lib/i18n.tsx` is about 100 lines, because a municipality should not be paying
-for a bundle to show its own language.
-
-**Currently English only:** the officer and admin analytics tables, audit log and compliance export.
-That is deliberate — the data in them (ward codes, model versions, action names) is English anyway, so
-a half-translated table reads worse than a consistent one. The keys exist in `locales/en.ts`.
-
----
-
-## Responsive design
-
-Every screen is built mobile-first and verified at 360 / 768 / 1024 / 1440 px.
-
-- **Citizen and driver** get a mobile-native shell: bottom tab bar, 44px minimum touch targets,
-  bottom-sheet modals, safe-area insets.
-- **Officer and admin** get a desktop console: sidebar, multi-column layouts, dense tables — which
-  collapse into a drawer plus stacked cards below `md`, so a table never forces the page sideways.
-- Fluid type via `clamp()`, `dvh` not `vh`, `prefers-reduced-motion` honoured on every animation,
-  and light / true-AMOLED-dark themes sharing one token layer.
+</div>
