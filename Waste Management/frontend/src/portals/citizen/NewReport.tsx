@@ -80,32 +80,40 @@ export default function NewReport() {
   // Safely compress image to speed up upload/inference without crashing backend
   async function compressImage(file: File): Promise<Blob> {
     return new Promise((resolve, reject) => {
+      if (!file.type.match(/image\/(jpeg|png|webp)/i)) {
+          return reject(new Error('Unsupported format for canvas compression'));
+      }
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = (event) => {
         const img = new Image();
-        img.src = event.target?.result as string;
         img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800;
-          const MAX_HEIGHT = 800;
-          let width = img.width;
-          let height = img.height;
+          try {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let width = img.width;
+            let height = img.height;
 
-          if (width > height) {
-            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-          } else {
-            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+            if (width > height) {
+              if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+            } else {
+              if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error('Compression failed'));
+            }, 'image/jpeg', 0.7);
+          } catch(e) {
+            reject(e);
           }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          canvas.toBlob((blob) => {
-            if (blob) resolve(blob);
-            else reject(new Error('Compression failed'));
-          }, 'image/jpeg', 0.7);
         };
+        img.onerror = () => reject(new Error('Image load failed'));
+        img.src = event.target?.result as string;
       };
       reader.onerror = (error) => reject(error);
     });
@@ -115,8 +123,15 @@ export default function NewReport() {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    abortControllerRef.current = new AbortController();
-    const currentSignal = abortControllerRef.current.signal;
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    const currentSignal = abortController.signal;
+    
+    let isTimeout = false;
+    const timeoutId = setTimeout(() => {
+        isTimeout = true;
+        if (!currentSignal.aborted) abortController.abort();
+    }, 15000);
 
     setFile(selected);
     setPreview(URL.createObjectURL(selected));
@@ -126,11 +141,23 @@ export default function NewReport() {
     setCategoryConfirmed(false);
 
     try {
-      const compressedBlob = await compressImage(selected);
+      let finalBlob: Blob = selected;
+      let finalName = selected.name;
+      
+      try {
+        finalBlob = await compressImage(selected);
+        finalName = 'photo.jpg';
+      } catch (err) {
+        console.warn('Compression skipped, using original file:', err);
+        if (!finalName.match(/\.(jpg|jpeg|png|webp)$/i)) {
+           finalName = 'photo.jpg';
+        }
+      }
+      
       if (currentSignal.aborted) return;
       
       const form = new FormData();
-      form.append('file', compressedBlob, 'photo.jpg');
+      form.append('file', finalBlob, finalName);
       
       let visionUrl = import.meta.env.VITE_VISION_API_URL || 'http://localhost:8100';
       if (visionUrl.endsWith('/')) {
@@ -150,26 +177,26 @@ export default function NewReport() {
       setVisionAi(data);
       
       if (data.status === 'success' && data.predicted_category) {
-         const mappedCategory = data.predicted_category.toUpperCase();
-         setCategory(mappedCategory);
-         if (!data.needs_manual_review) {
-            setCategoryConfirmed(true);
-         }
+         setCategory(data.predicted_category);
       } else {
          setCategory('');
       }
     } catch (err: any) {
-      if (err.name === 'AbortError') return;
+      if (err.name === 'AbortError' && !isTimeout) {
+         return; // User clicked Retake, so silent exit. The new request will handle UI state.
+      }
+      
       setVisionAi({
          status: 'no_detection',
          predicted_category: null,
          confidence: 0,
          needs_manual_review: true,
-         remark: 'API call failed. Category detect nahi hui, manually select karein.'
+         remark: 'API call failed or timed out. Category detect nahi hui, manually select karein.'
       });
       setCategory('');
     } finally {
-      if (!currentSignal.aborted) {
+      clearTimeout(timeoutId);
+      if (!currentSignal.aborted || isTimeout) {
         setClassifying(false);
       }
     }
