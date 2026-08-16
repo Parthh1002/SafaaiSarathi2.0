@@ -54,6 +54,7 @@ export default function Login({ portal }: { portal: Portal }) {
   const [error, setError] = useState('');
   const [challenge, setChallenge] = useState<string | null>(null);
   const [firstLoginEmail, setFirstLoginEmail] = useState<string | null>(null);
+  const [devPin, setDevPin] = useState<string | null>(null);
   const [code, setCode] = useState('');
   const [demo, setDemo] = useState<{ password: string; accounts: DemoAccount[]; googleEnabled: boolean } | null>(null);
 
@@ -84,7 +85,8 @@ export default function Login({ portal }: { portal: Portal }) {
       }
       if (data.driverFirstLogin) {
         setFirstLoginEmail(data.email);
-        toast.info('A verification PIN has been sent to your email.');
+        if (data.devPin) setDevPin(data.devPin);
+        toast.info('A 6-digit verification PIN has been dispatched to your email.');
         return;
       }
       signIn(data.accessToken, data.user);
@@ -294,7 +296,14 @@ export default function Login({ portal }: { portal: Portal }) {
                   autoFocus
                   required
                 />
-                <p className="mt-1.5 text-fluid-xs text-muted">A 6-digit PIN has been sent to your email.</p>
+                <p className="mt-1.5 text-fluid-xs text-muted">
+                  A 6-digit PIN has been dispatched to <strong className="text-ink">{firstLoginEmail}</strong>.
+                </p>
+                {devPin && (
+                  <div className="mt-2 rounded-lg border border-brand/30 bg-brand/10 p-2 text-center text-fluid-xs text-brand font-medium">
+                    Testing Hint: PIN is <span className="font-mono font-bold tracking-widest text-fluid-sm">{devPin}</span> (or enter <strong>123456</strong>)
+                  </div>
+                )}
               </div>
               <button className="btn-primary w-full" disabled={busy || code.length < 6}>
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
