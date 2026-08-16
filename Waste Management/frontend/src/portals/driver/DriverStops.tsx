@@ -1,6 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Camera, CheckCircle2, Loader2, Navigation, Play, RefreshCw, SkipForward, AlertCircle, BellRing } from 'lucide-react';
+import {
+  Camera,
+  CheckCircle2,
+  Loader2,
+  Navigation,
+  Play,
+  RefreshCw,
+  AlertCircle,
+  Clock,
+  ListChecks,
+  MapPin,
+  FileCheck,
+  Truck,
+} from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { Badge, Card, EmptyState, ErrorState, Loading, Modal, toast } from '../../components/ui';
 import { STATUS_TONE, timeAgo } from '../../lib/format';
@@ -18,7 +31,7 @@ export default function DriverStops() {
   const [preview, setPreview] = useState('');
   const [note, setNote] = useState('');
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['driver', 'tasks', filter],
     queryFn: async () => {
       const res = await api('driver').get(`/driver/tasks?status=${filter}`);
@@ -31,12 +44,12 @@ export default function DriverStops() {
 
   // Real-time task assignment listener over Socket.io
   useSocket('driver', vehicleId ? [`truck:${vehicleId}`] : [], {
-    [SOCKET_EVENTS.ASSIGNMENT_NEW]: (payload: any) => {
+    [SOCKET_EVENTS.ASSIGNMENT_NEW]: () => {
       queryClient.invalidateQueries({ queryKey: ['driver'] });
       playNotificationSound();
       toast.info('🔔 New collection task assigned by Ward Officer!');
     },
-    'new_task_assigned': (payload: any) => {
+    new_task_assigned: () => {
       queryClient.invalidateQueries({ queryKey: ['driver'] });
       playNotificationSound();
       toast.info('🔔 New task dispatched to your truck!');
@@ -54,14 +67,14 @@ export default function DriverStops() {
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
       gain.gain.setValueAtTime(0.3, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.35);
     } catch {
-      // AudioContext not allowed before user gesture
+      /* ignore */
     }
   }
 
@@ -69,7 +82,7 @@ export default function DriverStops() {
     mutationFn: async (id: string) => (await api('driver').post(`/driver/tasks/${id}/start`)).data,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['driver'] });
-      toast.success('Collection started — live status updated');
+      toast.success('Collection started — citizen notified');
     },
     onError: (err) => toast.error(errorMessage(err)),
   });
@@ -84,10 +97,10 @@ export default function DriverStops() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['driver'] });
-      toast.success('Task marked collected with photo proof!');
+      toast.success('Task marked collected with clean photo proof!');
       closeSheet();
     },
-    onError: (err) => toast.error(errorMessage(err, 'Failed to complete task. Please try uploading again.')),
+    onError: (err) => toast.error(errorMessage(err, 'Failed to complete task. Please upload again.')),
   });
 
   function closeSheet() {
@@ -101,221 +114,297 @@ export default function DriverStops() {
   if (error) return <ErrorState message="Could not load your tasks" onRetry={() => refetch()} />;
 
   const tasks = data?.tasks ?? [];
+  const counts = data?.counts ?? { total: 0, pending: 0, inProgress: 0, completed: 0 };
 
   return (
-    <div className="space-y-4">
-      {/* Header & Filter Tabs */}
-      <div className="flex flex-col gap-2.5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-fluid-xl font-bold tracking-tight">Collection Tasks</h1>
-            <p className="text-fluid-xs text-muted">
-              {tasks.length} {filter.toLowerCase()} stop{tasks.length === 1 ? '' : 's'} · Updates live via Socket.io
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="btn-ghost btn-sm rounded-xl p-2"
-            title="Refresh tasks"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
+    <div className="space-y-5">
+      {/* Top Header & Refresh */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
+        <div>
+          <h1 className="text-fluid-xl font-bold tracking-tight text-ink">Collection Tasks</h1>
+          <p className="text-fluid-xs text-muted">
+            {counts.total} total stops assigned · Updates in real-time via Socket.io
+          </p>
         </div>
 
-        {/* Filter Chips */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {(['ALL', 'PENDING', 'IN_PROGRESS', 'COMPLETED'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setFilter(tab)}
-              className={`rounded-xl px-3 py-1.5 text-fluid-xs font-semibold transition ${
-                filter === tab
-                  ? 'bg-brand text-brand-ink shadow-sm'
-                  : 'bg-sunken text-muted hover:text-ink'
-              }`}
-            >
-              {tab === 'ALL' ? 'All Tasks' : tab === 'PENDING' ? 'Assigned' : tab === 'IN_PROGRESS' ? 'In Progress' : 'Completed'}
-            </button>
-          ))}
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="btn-ghost btn-sm flex items-center gap-1.5 rounded-xl border border-line bg-elevated shadow-xs"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin text-brand' : 'text-muted'}`} />
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      {/* Responsive Layout Grid */}
+      <div className="grid gap-5 lg:grid-cols-12 items-start">
+        {/* Left Column: Tasks List & Filters (8 of 12 cols) */}
+        <div className="lg:col-span-8 space-y-4">
+          {/* Filter Bar */}
+          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {(
+              [
+                { id: 'ALL', label: 'All Tasks', count: counts.total },
+                { id: 'PENDING', label: 'Assigned', count: counts.pending },
+                { id: 'IN_PROGRESS', label: 'In Progress', count: counts.inProgress },
+                { id: 'COMPLETED', label: 'Completed', count: counts.completed },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setFilter(tab.id)}
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-fluid-xs font-semibold transition ${
+                  filter === tab.id
+                    ? 'bg-brand text-brand-ink shadow-sm'
+                    : 'border border-line bg-elevated text-muted hover:bg-sunken hover:text-ink'
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                    filter === tab.id ? 'bg-brand-ink/20 text-brand-ink' : 'bg-sunken text-muted'
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Tasks Container */}
+          {!tasks.length ? (
+            <Card className="p-8 text-center">
+              <EmptyState
+                title="No tasks in this view"
+                hint="When an officer assigns collection stops, they appear here instantly without refreshing."
+                icon={<CheckCircle2 className="h-10 w-10 text-ok" />}
+              />
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {tasks.map((task: any) => {
+                const isEmergency = task.isEmergency || task.priority === 'CRITICAL';
+                const isDone = task.status === 'RESOLVED' || task.status === 'COMPLETED';
+                const inProg = task.status === 'IN_PROGRESS';
+
+                return (
+                  <Card
+                    key={task.id}
+                    className={`overflow-hidden border p-4 sm:p-5 transition shadow-xs hover:shadow-md ${
+                      isEmergency ? 'border-danger/40 bg-danger/5' : inProg ? 'border-brand/40 bg-brand/5' : 'bg-surface'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="space-y-1.5 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-fluid-xs font-bold text-ink">#{task.code}</span>
+                          <Badge tone={STATUS_TONE[task.status] || 'neutral'}>{task.status}</Badge>
+                          {isEmergency && <Badge tone="danger">Emergency (30m SLA)</Badge>}
+                          <span className="text-[11px] text-muted">{timeAgo(task.createdAt)}</span>
+                        </div>
+
+                        <h3 className="text-fluid-base font-bold text-ink leading-snug">
+                          {t(`category.${task.category}`)}
+                        </h3>
+
+                        <p className="flex items-center gap-1.5 text-fluid-xs text-muted">
+                          <MapPin className="h-3.5 w-3.5 shrink-0 text-brand" />
+                          <span className="truncate">{task.address || 'Reported Location'}</span>
+                        </p>
+
+                        {task.description && (
+                          <p className="rounded-lg bg-sunken/60 p-2 text-fluid-xs text-muted italic">
+                            "{task.description}"
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Photo Thumbnail if available */}
+                      {task.photoUrl && (
+                        <a
+                          href={task.photoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 overflow-hidden rounded-xl border border-line"
+                        >
+                          <img
+                            src={task.photoUrl}
+                            alt="Waste photo"
+                            className="h-20 w-20 sm:h-24 sm:w-24 object-cover transition hover:scale-105"
+                          />
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line/60 pt-3">
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${task.latitude},${task.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-ghost btn-sm flex items-center gap-1.5 rounded-xl border border-line text-fluid-xs font-semibold hover:bg-sunken"
+                      >
+                        <Navigation className="h-3.5 w-3.5 text-brand" /> GPS Directions
+                      </a>
+
+                      <div className="flex items-center gap-2">
+                        {!isDone && !inProg && (
+                          <button
+                            type="button"
+                            onClick={() => start.mutate(task.id)}
+                            disabled={start.isPending}
+                            className="btn-primary btn-sm flex items-center gap-1.5 rounded-xl"
+                          >
+                            <Play className="h-3.5 w-3.5" /> Start Trip
+                          </button>
+                        )}
+
+                        {!isDone && (
+                          <button
+                            type="button"
+                            onClick={() => setResolving(task)}
+                            className="btn-sm flex items-center gap-1.5 rounded-xl bg-ok text-white font-bold shadow-xs hover:bg-ok/90"
+                          >
+                            <Camera className="h-3.5 w-3.5" /> Mark Collected
+                          </button>
+                        )}
+
+                        {isDone && (
+                          <span className="flex items-center gap-1 text-fluid-xs font-bold text-ok">
+                            <CheckCircle2 className="h-4 w-4" /> Cleaned & Verified
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Driver KPI Summary & Guidelines (4 of 12 cols) */}
+        <div className="lg:col-span-4 space-y-4">
+          <Card className="p-5 shadow-xs border-brand/20 bg-gradient-to-br from-surface to-brand/5">
+            <h2 className="text-fluid-xs font-bold uppercase tracking-wider text-muted">Today's Shift Progress</h2>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-line bg-surface p-3 text-center">
+                <span className="block text-fluid-xl font-extrabold text-brand tabular-nums">{counts.completed}</span>
+                <span className="text-[11px] font-semibold text-muted">Completed</span>
+              </div>
+              <div className="rounded-xl border border-line bg-surface p-3 text-center">
+                <span className="block text-fluid-xl font-extrabold text-warn tabular-nums">{counts.pending + counts.inProgress}</span>
+                <span className="text-[11px] font-semibold text-muted">Pending</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-5 shadow-xs space-y-3">
+            <div className="flex items-center gap-2">
+              <FileCheck className="h-5 w-5 text-brand" />
+              <h3 className="text-fluid-sm font-bold">Clean-Up Protocol</h3>
+            </div>
+            <ul className="space-y-2 text-fluid-xs text-muted leading-relaxed">
+              <li className="flex items-start gap-2">
+                <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-brand/10 text-[10px] font-bold text-brand mt-0.5">1</span>
+                <span>Reach the marked GPS coordinate and hit <strong>Start Trip</strong>.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-brand/10 text-[10px] font-bold text-brand mt-0.5">2</span>
+                <span>Safely load all waste into the collection compactor / truck.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-brand/10 text-[10px] font-bold text-brand mt-0.5">3</span>
+                <span>Take a clear photo of the <strong>cleaned location</strong> as verification proof.</span>
+              </li>
+            </ul>
+          </Card>
         </div>
       </div>
 
-      {tasks.length === 0 ? (
-        <EmptyState
-          title="No tasks in this view"
-          hint="When an officer assigns collection stops, they appear here instantly without refreshing."
-          icon={<CheckCircle2 className="h-8 w-8 text-muted" />}
-        />
-      ) : (
-        <ul className="space-y-3">
-          {tasks.map((c: any) => (
-            <li key={c.id}>
-              <Card className={`p-4 transition ${c.isEmergency ? 'border-danger/50 shadow-danger/10' : ''}`}>
-                <div className="flex items-start gap-3">
-                  {c.photoUrl ? (
-                    <img
-                      src={c.photoUrl}
-                      alt=""
-                      className="h-20 w-20 shrink-0 rounded-xl object-cover border border-line"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <span className="grid h-20 w-20 shrink-0 place-items-center rounded-xl bg-sunken text-faint">
-                      <Camera className="h-6 w-6" />
-                    </span>
-                  )}
+      {/* Completion Modal */}
+      {resolving && (
+        <Modal
+          open={Boolean(resolving)}
+          onClose={closeSheet}
+          title={`Proof of Cleanup: #${resolving.code}`}
+          footer={
+            <div className="flex gap-2 w-full">
+              <button type="button" onClick={closeSheet} className="btn-ghost flex-1 rounded-xl">
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => resolve.mutate()}
+                disabled={!photo || resolve.isPending}
+                className="btn-primary flex-1 flex items-center justify-center gap-1.5 rounded-xl font-bold"
+              >
+                {resolve.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                Submit Proof
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-fluid-xs text-muted">
+              Upload a clear photo of the cleaned site to notify the citizen and complete this ticket.
+            </p>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-fluid-sm font-bold text-ink">
-                        {t(`category.${c.category}`)}
-                      </span>
-                      {c.isEmergency && <Badge tone="danger">Emergency</Badge>}
-                      <Badge tone={STATUS_TONE[c.status]}>{c.status}</Badge>
-                    </div>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) {
+                  setPhoto(f);
+                  setPreview(URL.createObjectURL(f));
+                }
+              }}
+            />
 
-                    <p className="mt-1 line-clamp-2 text-fluid-xs text-muted">
-                      {c.address || c.description || 'Reported Location'}
-                    </p>
-
-                    <div className="mt-1 flex items-center gap-2 font-mono text-fluid-xs text-faint">
-                      <span>{c.code}</span>
-                      {c.distanceKm != null && (
-                        <span className="font-semibold text-brand">· {c.distanceKm} km away</span>
-                      )}
-                      <span>· {timeAgo(c.createdAt)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Clean Photo Proof Thumbnail if completed */}
-                {c.resolutionPhotoUrl && (
-                  <div className="mt-3 rounded-xl border border-line/60 bg-sunken/40 p-2">
-                    <p className="text-fluid-xs font-semibold text-muted">Proof of Work (Clean photo):</p>
-                    <img
-                      src={c.resolutionPhotoUrl}
-                      alt="Proof of work"
-                      className="mt-1 h-28 w-full rounded-lg object-cover"
-                    />
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                {c.status !== 'RESOLVED' && (
-                  <div className="mt-3.5 grid grid-cols-3 gap-2">
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${c.latitude},${c.longitude}&travelmode=driving`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn-ghost btn-sm flex items-center justify-center gap-1 text-fluid-xs"
-                    >
-                      <Navigation className="h-3.5 w-3.5 text-brand" /> Navigate
-                    </a>
-
-                    <button
-                      type="button"
-                      className="btn-ghost btn-sm flex items-center justify-center gap-1 text-fluid-xs"
-                      disabled={c.status === 'IN_PROGRESS' || start.isPending}
-                      onClick={() => start.mutate(c.id)}
-                    >
-                      {start.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                      {c.status === 'IN_PROGRESS' ? 'On Site' : 'Start'}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn-primary btn-sm flex items-center justify-center gap-1 text-fluid-xs"
-                      onClick={() => setResolving(c)}
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Mark Done
-                    </button>
-                  </div>
-                )}
-              </Card>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Proof of Work Modal — Photo upload is mandatory */}
-      <Modal
-        open={Boolean(resolving)}
-        onClose={closeSheet}
-        title="Proof of Work — Clean Photo"
-        footer={
-          <button
-            className="btn-primary w-full"
-            disabled={!photo || resolve.isPending}
-            onClick={() => resolve.mutate()}
-          >
-            {resolve.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Uploading & Resolving…
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="h-4 w-4" /> Submit Clean Proof & Complete
-              </>
-            )}
-          </button>
-        }
-      >
-        <div className="space-y-4">
-          <div className="rounded-xl border border-brand/20 bg-brand/5 p-3 text-fluid-xs text-muted">
-            <span className="font-semibold text-brand">Mandatory Step:</span> Take a clear photo of the cleaned site. The photo is timestamped, saved as verified proof of work, and updated live on the Citizen and Officer dashboards.
-          </div>
-
-          <button
-            type="button"
-            onClick={() => fileInput.current?.click()}
-            className="flex w-full flex-col items-center gap-2.5 rounded-2xl border-2 border-dashed border-line py-8 transition hover:border-brand bg-sunken/50"
-          >
             {preview ? (
-              <div className="relative w-full px-2">
-                <img src={preview} alt="Clean preview" className="h-44 w-full rounded-xl object-cover" />
-                <span className="mt-2 block text-center text-fluid-xs font-semibold text-brand">Tap to retake photo</span>
+              <div className="relative overflow-hidden rounded-2xl border border-line">
+                <img src={preview} alt="Clean proof" className="h-48 w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => fileInput.current?.click()}
+                  className="absolute bottom-2 right-2 rounded-xl bg-black/70 px-3 py-1.5 text-fluid-xs font-bold text-white backdrop-blur"
+                >
+                  Retake Photo
+                </button>
               </div>
             ) : (
-              <>
-                <span className="grid h-14 w-14 place-items-center rounded-2xl bg-brand/10 text-brand">
-                  <Camera className="h-7 w-7" />
-                </span>
-                <span className="text-fluid-sm font-semibold">Capture "Cleaned" Photo</span>
-                <span className="text-fluid-xs text-faint">Camera or Gallery</span>
-              </>
+              <button
+                type="button"
+                onClick={() => fileInput.current?.click()}
+                className="flex h-40 w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/40 bg-brand/5 text-brand transition hover:bg-brand/10"
+              >
+                <Camera className="h-8 w-8" />
+                <span className="text-fluid-xs font-bold">Take Clean Proof Photo</span>
+              </button>
             )}
-          </button>
 
-          <input
-            ref={fileInput}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="sr-only"
-            onChange={(e) => {
-              const selected = e.target.files?.[0];
-              if (selected) {
-                setPhoto(selected);
-                setPreview(URL.createObjectURL(selected));
-              }
-            }}
-          />
-
-          <div>
-            <label className="label" htmlFor="note">Resolution Note (optional)</label>
-            <textarea
-              id="note"
-              className="field min-h-[64px] resize-y py-2 text-fluid-sm"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g. 2 bins emptied, area swept clean."
-              maxLength={500}
-            />
+            <div>
+              <label className="label" htmlFor="driver-note">
+                Cleanup Note (Optional)
+              </label>
+              <textarea
+                id="driver-note"
+                className="field resize-none h-20 text-fluid-xs"
+                placeholder="e.g. Cleared 250kg debris, area sanitized."
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
-      </Modal>
+        </Modal>
+      )}
     </div>
   );
 }
