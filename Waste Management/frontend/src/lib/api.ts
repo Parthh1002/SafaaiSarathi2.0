@@ -53,7 +53,7 @@ export function api(portal: Portal): AxiosInstance {
   const client = axios.create({
     baseURL: `${BASE}/api`,
     withCredentials: true, // carries the httpOnly refresh cookie
-    timeout: 25_000,
+    timeout: 120_000,
   });
 
   client.interceptors.request.use((config) => {
@@ -130,6 +130,6 @@ export function errorMessage(err: unknown, fallback = 'Something went wrong'): s
 }
 
 /** Public endpoints need no portal token. */
-export const publicApi = axios.create({ baseURL: `${BASE}/api/public`, timeout: 15_000 });
+export const publicApi = axios.create({ baseURL: `${BASE}/api/public`, timeout: 120_000 });
 
 export const assetUrl = (path?: string | null) => (path ? `${BASE}${path}` : null);
