@@ -236,11 +236,11 @@ export default function UserManagement() {
             <input id="name" className="field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
           <div>
-            <label className="label" htmlFor="uemail">Email</label>
+            <label className="label" htmlFor="uemail">Email {form.role === 'DRIVER' && '(used for OTP login)'}</label>
             <input id="uemail" type="email" className="field" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
           <div>
-            <label className="label" htmlFor="uphone">Phone {form.role === 'DRIVER' && '(used for OTP login)'}</label>
+            <label className="label" htmlFor="uphone">Phone</label>
             <input id="uphone" className="field" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           </div>
           <div>

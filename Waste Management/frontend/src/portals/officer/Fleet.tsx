@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Phone, Route as RouteIcon, Truck, Wifi, WifiOff, Wrench } from 'lucide-react';
+import { Loader2, Phone, Route as RouteIcon, Truck, Wifi, WifiOff, Wrench, UserPlus } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { Badge, Card, EmptyState, ErrorState, Loading, Modal, SectionTitle, toast } from '../../components/ui';
 import { BaseMap, TruckMarker, RouteLine, PinMarker, FitBounds } from '../../components/map/Map';
@@ -17,6 +17,20 @@ export default function Fleet() {
   const [live, setLive] = useState<Record<string, any>>({});
   const [optimising, setOptimising] = useState<string | null>(null);
   const [plan, setPlan] = useState<any | null>(null);
+  const [creatingDriver, setCreatingDriver] = useState(false);
+  const [driverForm, setDriverForm] = useState({ name: '', email: '', phone: '', password: '', wardId: '' });
+
+  const createDriver = useMutation({
+    mutationFn: async () =>
+      (await api('officer').post('/officer/drivers', driverForm)).data,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['officer', 'fleet'] });
+      toast.success('Driver registered successfully');
+      setCreatingDriver(false);
+      setDriverForm({ name: '', email: '', phone: '', password: '', wardId: '' });
+    },
+    onError: (err) => toast.error(errorMessage(err, 'Could not register driver')),
+  });
 
   const fleet = useQuery({
     queryKey: ['officer', 'fleet'],
@@ -75,7 +89,15 @@ export default function Fleet() {
 
   return (
     <div className="space-y-5">
-      <SectionTitle title="Fleet & drivers" subtitle={`${vehicles.length} vehicles assigned to your wards`} />
+      <SectionTitle 
+        title="Fleet & drivers" 
+        subtitle={`${vehicles.length} vehicles assigned to your wards`} 
+        action={
+          <button type="button" className="btn-primary btn-sm" onClick={() => setCreatingDriver(true)}>
+            <UserPlus className="h-3.5 w-3.5" /> Register Driver
+          </button>
+        }
+      />
 
       {positioned.length > 0 && (
         <Card className="overflow-hidden p-0">
@@ -234,6 +256,55 @@ export default function Fleet() {
             </p>
           </div>
         )}
+      {/* Driver Registration */}
+      <Modal
+        open={creatingDriver}
+        onClose={() => setCreatingDriver(false)}
+        title="Register a Driver"
+        footer={
+          <button
+            className="btn-primary w-full"
+            disabled={!driverForm.name || !driverForm.password || createDriver.isPending}
+            onClick={() => createDriver.mutate()}
+          >
+            {createDriver.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+            Register Driver
+          </button>
+        }
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="label" htmlFor="dname">Full name</label>
+            <input id="dname" className="field" value={driverForm.name} onChange={(e) => setDriverForm({ ...driverForm, name: e.target.value })} />
+          </div>
+          <div>
+            <label className="label" htmlFor="demail">Email (used for OTP verification)</label>
+            <input id="demail" type="email" className="field" value={driverForm.email} onChange={(e) => setDriverForm({ ...driverForm, email: e.target.value })} />
+          </div>
+          <div>
+            <label className="label" htmlFor="dphone">Phone</label>
+            <input id="dphone" className="field" value={driverForm.phone} onChange={(e) => setDriverForm({ ...driverForm, phone: e.target.value })} />
+          </div>
+          <div>
+            <label className="label" htmlFor="dpass">Temporary Password</label>
+            <input id="dpass" className="field" value={driverForm.password} onChange={(e) => setDriverForm({ ...driverForm, password: e.target.value })} placeholder="At least 8 characters" />
+          </div>
+          <div>
+            <label className="label">Ward</label>
+            <div className="flex flex-wrap gap-1.5">
+              {(wards.data ?? []).map((w: any) => (
+                <button
+                  key={w.id}
+                  type="button"
+                  onClick={() => setDriverForm({ ...driverForm, wardId: w.id })}
+                  className={`chip transition ${driverForm.wardId === w.id ? 'border-brand bg-brand/10 text-brand' : 'text-muted hover:bg-sunken'}`}
+                >
+                  {w.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </Modal>
     </div>
   );

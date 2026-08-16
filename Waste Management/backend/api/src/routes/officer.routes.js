@@ -13,6 +13,7 @@ import { optimizeRoute, drivablePolyline } from '../services/routing.service.js'
 import { serializeVehicle, today } from '../services/tracking.service.js';
 import { emitTo } from '../sockets/realtime.js';
 import { notify } from '../services/notification.service.js';
+import { hashPassword } from '../lib/password.js';
 
 const router = Router();
 router.use(requirePortal(PORTALS.OFFICER), loadUser);
@@ -494,6 +495,47 @@ router.post(
       payload: { sosId: alert.id },
     });
     res.json(alert);
+  })
+);
+
+router.post(
+  '/drivers',
+  writeLimiter,
+  audited('driver_create', 'users'),
+  asyncHandler(async (req, res) => {
+    const { ids } = await scope(req);
+    const body = z
+      .object({
+        name: z.string().min(2).max(80),
+        email: z.string().email(),
+        phone: z.string().min(8).max(15),
+        password: z.string().min(8),
+        wardId: z.string(),
+      })
+      .parse(req.body);
+
+    if (ids !== null && !ids.includes(body.wardId)) {
+      throw new HttpError(403, 'You can only create drivers for your own wards');
+    }
+
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ email: body.email.toLowerCase() }, { phone: body.phone }] }
+    });
+    if (existing) throw new HttpError(409, 'An account with that email or phone already exists');
+
+    const user = await prisma.user.create({
+      data: {
+        name: body.name,
+        email: body.email.toLowerCase(),
+        phone: body.phone,
+        role: 'DRIVER',
+        passwordHash: await hashPassword(body.password),
+        wardId: body.wardId,
+        emailVerifiedAt: null, // Force first login flow
+      },
+    });
+
+    res.status(201).json({ id: user.id, name: user.name, email: user.email, role: user.role });
   })
 );
 

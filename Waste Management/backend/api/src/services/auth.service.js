@@ -79,6 +79,32 @@ export async function loginWithPassword({ email, phone, password, expectedRole, 
     throw new HttpError(401, 'Invalid credentials');
   }
 
+  // Driver first login verification via email
+  if (user.role === ROLES.DRIVER && !user.emailVerifiedAt && user.email) {
+    const code = numericOtp(6);
+    await prisma.otpCode.create({
+      data: {
+        phone: user.email,
+        codeHash: hashToken(code),
+        purpose: 'driver_first_login',
+        expiresAt: new Date(Date.now() + 10 * 60_000), // 10 minutes
+      },
+    });
+
+    const { sendMail } = await import('../lib/mail.js');
+    await sendMail({
+      to: user.email,
+      subject: 'Your Safaai Sarathi Driver PIN',
+      text: `Your driver login verification PIN is: ${code}. It expires in 10 minutes.`,
+    });
+
+    return {
+      driverFirstLogin: true,
+      email: user.email,
+      user: { id: user.id, name: user.name, role: user.role },
+    };
+  }
+
   // Officer/Admin must clear TOTP before a session is issued (plan §6.3).
   if (user.twoFactorEnabled) {
     return {
@@ -228,6 +254,31 @@ export async function verifyDriverOtp({ phone, code, res, req }) {
   return completeLogin(driver, { res, req, expectedRole: ROLES.DRIVER });
 }
 
+// ---- Driver First Login OTP Verification --------------------------------
+
+export async function verifyDriverFirstLogin({ email, code, res, req }) {
+  const row = await prisma.otpCode.findFirst({
+    where: { phone: email, purpose: 'driver_first_login', consumedAt: null, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (!row) throw new HttpError(401, 'Code expired. Request a new one.');
+  if (row.attempts >= 5) throw new HttpError(429, 'Too many attempts. Request a new code.');
+
+  if (row.codeHash !== hashToken(String(code))) {
+    await prisma.otpCode.update({ where: { id: row.id }, data: { attempts: { increment: 1 } } });
+    throw new HttpError(401, 'Incorrect code');
+  }
+
+  await prisma.otpCode.update({ where: { id: row.id }, data: { consumedAt: new Date() } });
+  
+  const driver = await prisma.user.findFirst({ where: { email, role: ROLES.DRIVER }, include: { ward: true } });
+  if (!driver) throw new HttpError(404, 'Driver account not found');
+
+  await prisma.user.update({ where: { id: driver.id }, data: { emailVerifiedAt: new Date() } });
+
+  return completeLogin(driver, { res, req, expectedRole: ROLES.DRIVER });
+}
+
 // ---- Session lifecycle ---------------------------------------------------
 
 export async function refreshSession({ rawToken, res, req, expectedPortal }) {
@@ -275,5 +326,6 @@ export default {
   consumeEmailToken,
   requestDriverOtp,
   verifyDriverOtp,
+  verifyDriverFirstLogin,
   refreshSession,
 };

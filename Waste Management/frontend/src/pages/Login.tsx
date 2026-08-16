@@ -53,11 +53,9 @@ export default function Login({ portal }: { portal: Portal }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [challenge, setChallenge] = useState<string | null>(null);
+  const [firstLoginEmail, setFirstLoginEmail] = useState<string | null>(null);
   const [code, setCode] = useState('');
   const [demo, setDemo] = useState<{ password: string; accounts: DemoAccount[]; googleEnabled: boolean } | null>(null);
-  const [mode, setMode] = useState<'password' | 'otp'>('password');
-  const [phone, setPhone] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
 
   const redirectTo = (location.state as { from?: string })?.from || HOME_ROUTE[portal];
 
@@ -84,12 +82,17 @@ export default function Login({ portal }: { portal: Portal }) {
         toast.info(t('auth.enterAuthCode'));
         return;
       }
+      if (data.driverFirstLogin) {
+        setFirstLoginEmail(data.email);
+        toast.info('A verification PIN has been sent to your email.');
+        return;
+      }
       signIn(data.accessToken, data.user);
       navigate(redirectTo, { replace: true });
     } catch (err) {
       setError(errorMessage(err, t('auth.signInFailed')));
     } finally {
-      // setBusy is handled differently if bypassed
+      setBusy(false);
     }
   }
 
@@ -108,31 +111,16 @@ export default function Login({ portal }: { portal: Portal }) {
     }
   }
 
-  async function requestOtp(e: FormEvent) {
+  async function submitDriverFirstLogin(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError('');
     try {
-      const { data } = await api(portal).post('/auth/driver/otp/request', { phone });
-      setOtpSent(true);
-      toast.info(data.devHint || 'Code sent to your phone');
-    } catch (err) {
-      setError(errorMessage(err, 'Could not send code'));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function verifyOtp(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError('');
-    try {
-      const { data } = await api(portal).post('/auth/driver/otp/verify', { phone, code });
+      const { data } = await api(portal).post('/auth/driver/first-login-verify', { email: firstLoginEmail, code });
       signIn(data.accessToken, data.user);
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(errorMessage(err, 'Incorrect code'));
+      setError(errorMessage(err, 'Incorrect verification PIN'));
     } finally {
       setBusy(false);
     }
@@ -290,54 +278,37 @@ export default function Login({ portal }: { portal: Portal }) {
                 {t('common.back')}
               </button>
             </form>
-          ) : portal === 'driver' && mode === 'otp' ? (
-            /* ---- Driver OTP ---- */
-            <form onSubmit={otpSent ? verifyOtp : requestOtp} className="mt-4 space-y-3">
+          ) : firstLoginEmail ? (
+            /* ---- Driver First Login Verify ---- */
+            <form onSubmit={submitDriverFirstLogin} className="mt-4 space-y-3">
               <div>
-                <label className="label" htmlFor="phone">{t('auth.phone')}</label>
+                <label className="label" htmlFor="code">Email Verification PIN</label>
                 <input
-                  id="phone"
-                  className="field"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 12))}
-                  inputMode="tel"
-                  autoComplete="tel"
-                  placeholder="9700000001"
-                  disabled={otpSent}
+                  id="code"
+                  className="field text-center text-fluid-lg tracking-[0.4em]"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="000000"
+                  autoFocus
                   required
                 />
+                <p className="mt-1.5 text-fluid-xs text-muted">A 6-digit PIN has been sent to your email.</p>
               </div>
-              {otpSent && (
-                <div>
-                  <label className="label" htmlFor="otp">{t('auth.otpCode')}</label>
-                  <input
-                    id="otp"
-                    className="field text-center text-fluid-lg tracking-[0.4em]"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    placeholder="000000"
-                    autoFocus
-                    required
-                  />
-                  <p className="mt-1.5 text-fluid-xs text-muted">{t('auth.otpDevHint')}</p>
-                </div>
-              )}
-              <button className="btn-primary w-full" disabled={busy}>
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Smartphone className="h-4 w-4" />}
-                {otpSent ? t('auth.verifySignIn') : t('auth.sendCode')}
+              <button className="btn-primary w-full" disabled={busy || code.length < 6}>
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                Verify & Sign In
               </button>
               <button
                 type="button"
                 className="btn-ghost w-full"
                 onClick={() => {
-                  setMode('password');
-                  setOtpSent(false);
+                  setFirstLoginEmail(null);
                   setCode('');
                 }}
               >
-                {t('auth.usePassword')}
+                {t('common.back')}
               </button>
             </form>
           ) : (
@@ -374,12 +345,6 @@ export default function Login({ portal }: { portal: Portal }) {
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                 {t('common.signIn')}
               </button>
-
-              {portal === 'driver' && (
-                <button type="button" className="btn-ghost w-full" onClick={() => setMode('otp')}>
-                  <Smartphone className="h-4 w-4" /> {t('auth.otpSignIn')}
-                </button>
-              )}
 
               {portal === 'citizen' && (
                 <>
@@ -428,7 +393,6 @@ export default function Login({ portal }: { portal: Portal }) {
                     onClick={() => {
                       setEmail(account.email);
                       setPassword(demo!.password);
-                      setMode('password');
                     }}
                     className="rounded-lg border border-line px-2 py-1 text-fluid-xs font-medium text-muted transition hover:border-brand hover:bg-brand/5 hover:text-brand"
                   >

@@ -157,6 +157,15 @@ router.post(
   })
 );
 
+router.post(
+  '/driver/first-login-verify',
+  loginLimiter,
+  asyncHandler(async (req, res) => {
+    const { email, code } = z.object({ email: z.string().email(), code: z.string().min(6).max(6) }).parse(req.body);
+    res.json(await auth.verifyDriverFirstLogin({ email, code, res, req }));
+  })
+);
+
 // ---- Google OAuth 2.0 / OIDC (citizens only) ------------------------------
 
 const oauthStates = new Map();

@@ -21,6 +21,9 @@ export const env = {
 
   databaseUrl: process.env.DATABASE_URL || '',
 
+  brevoSmtpLogin: process.env.BREVO_SMTP_LOGIN,
+  brevoSmtpPassword: process.env.BREVO_SMTP_PASSWORD,
+  smtpFrom: process.env.SMTP_FROM,
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET || 'dev_access_secret_change_me',
     accessTtl: process.env.JWT_ACCESS_TTL || '15m',

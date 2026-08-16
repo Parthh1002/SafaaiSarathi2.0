@@ -192,7 +192,7 @@ router.post(
         role: body.role,
         passwordHash: await hashPassword(body.password),
         wardId: body.wardId,
-        emailVerifiedAt: new Date(), // provisioned accounts are pre-verified
+        emailVerifiedAt: body.role === 'DRIVER' ? null : new Date(), // provisioned drivers must verify email on first login
       },
     });
 

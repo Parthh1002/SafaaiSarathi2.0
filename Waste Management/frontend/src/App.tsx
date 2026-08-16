@@ -25,19 +25,7 @@ const queryClient = new QueryClient({
   },
 });
 
-/** Landing route: 3D intro first on load/refresh, then the marketing page. */
-function Entry() {
-  const [introDone, setIntroDone] = useState(false);
-
-  if (!introDone) {
-    return (
-      <Suspense fallback={<div className="min-h-dvh bg-surface" />}>
-        <Splash onDone={() => setIntroDone(true)} />
-      </Suspense>
-    );
-  }
-  return <Landing />;
-}
+// The Entry component was removed as Splash is now global in App.
 
 /** Google redirects back here with the access token in the query string. */
 function GoogleReturn() {
@@ -63,6 +51,16 @@ const suspense = (node: React.ReactNode) => (
 );
 
 export default function App() {
+  const [introDone, setIntroDone] = useState(false);
+
+  if (!introDone) {
+    return (
+      <Suspense fallback={<div className="min-h-dvh bg-surface" />}>
+        <Splash onDone={() => setIntroDone(true)} />
+      </Suspense>
+    );
+  }
+
   return (
     <I18nProvider>
       <QueryClientProvider client={queryClient}>
@@ -70,7 +68,7 @@ export default function App() {
         <Toaster />
         <Routes>
           {/* ---- Public ---- */}
-          <Route path="/" element={<Entry />} />
+          <Route path="/" element={<Landing />} />
 
           {/* ---- Citizen portal ---- */}
           <Route
