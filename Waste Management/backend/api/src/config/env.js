@@ -21,6 +21,7 @@ export const env = {
 
   databaseUrl: process.env.DATABASE_URL || '',
 
+  brevoApiKey: process.env.BREVO_API_KEY,
   brevoSmtpLogin: process.env.BREVO_SMTP_LOGIN,
   brevoSmtpPassword: process.env.BREVO_SMTP_PASSWORD,
   smtpFrom: process.env.SMTP_FROM,
