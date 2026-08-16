@@ -78,7 +78,7 @@ export default function SchedulePickup() {
         (pos) => {
           setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
           if (!address) {
-            setAddress(`GPS Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)} (Gandhinagar)`);
+            setAddress(`Sector 6, Gandhinagar, Gujarat 382006 (Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)})`);
           }
         },
         () => {
@@ -140,31 +140,31 @@ export default function SchedulePickup() {
                   else if (step === 'when') setStep('what');
                   else if (step === 'what') setStep('where');
                 }}
-                className="inline-flex items-center gap-1 rounded-lg bg-elevated px-2 py-1 text-fluid-xs font-semibold text-muted hover:bg-sunken cursor-pointer"
+                className="p-1.5 rounded-xl border border-line bg-surface hover:bg-sunken text-muted hover:text-ink cursor-pointer"
+                title="Go to previous step"
               >
-                <ChevronLeft className="h-4 w-4" /> Back
+                <ChevronLeft className="h-4 w-4" />
               </button>
             )}
-            <h1 className="text-fluid-xl font-bold tracking-tight text-ink">
-              Request Scheduled Waste Pickup
-            </h1>
+            <h1 className="text-fluid-xl font-bold tracking-tight text-ink">Schedule Event Pickup</h1>
           </div>
           <p className="text-fluid-xs text-muted">
-            Pre-schedule municipal collection for events, weddings, society functions, or renovations.
+            Book advance municipal waste collection for upcoming weddings, festivals, or home renovations.
           </p>
         </div>
 
-        {/* Step Indicator */}
-        <div className="flex items-center gap-1.5 bg-elevated/80 p-1.5 rounded-2xl border border-line shadow-xs">
+        {/* Step Indicator Badges */}
+        <div className="flex items-center gap-1.5 bg-surface border border-line p-1.5 rounded-2xl">
           {[
             { id: 'where', label: '1. Where' },
             { id: 'what', label: '2. What' },
             { id: 'when', label: '3. When' },
-            { id: 'review', label: '4. Confirm' },
+            { id: 'review', label: '4. Review' },
           ].map((s, i) => {
-            const steps: Step[] = ['where', 'what', 'when', 'review'];
-            const done = steps.indexOf(step) > i;
             const current = step === s.id;
+            const stepOrder = ['where', 'what', 'when', 'review'];
+            const done = stepOrder.indexOf(step) > i;
+
             return (
               <div
                 key={s.id}
@@ -255,8 +255,12 @@ export default function SchedulePickup() {
               Pin Exact Pickup Coordinates on Map
             </label>
             <div className="h-[280px] w-full overflow-hidden rounded-2xl border border-line">
-              <BaseMap center={position} zoom={15} minHeight="280px">
-                <LocationPicker position={position} onChange={setPosition} />
+              <BaseMap center={[position.lat, position.lng]} zoom={15}>
+                <LocationPicker
+                  latitude={position.lat}
+                  longitude={position.lng}
+                  onChange={(lat, lng) => setPosition({ lat, lng })}
+                />
               </BaseMap>
             </div>
           </div>
@@ -277,79 +281,84 @@ export default function SchedulePickup() {
       {step === 'what' && (
         <Card className="p-6 border border-line shadow-xs space-y-6">
           <div>
-            <h2 className="text-fluid-base font-bold text-ink mb-1">Event Details & Waste Categories</h2>
-            <p className="text-fluid-xs text-muted">Describe the event reason and multi-select expected waste types.</p>
+            <h2 className="text-fluid-base font-bold text-ink mb-1">Occasion & Expected Waste</h2>
+            <p className="text-fluid-xs text-muted">Describe the event reason and multi-select expected waste streams.</p>
           </div>
 
           {/* Event Reason */}
           <div className="space-y-1.5">
             <label className="block text-fluid-xs font-bold text-ink">
-              Occasion / Reason for Advance Pickup <span className="text-danger">*</span>
+              Event / Occasion Name <span className="text-danger">*</span>
             </label>
             <input
               type="text"
               className="field w-full"
-              placeholder="e.g. Daughter's Wedding Reception / Diwali Society Cleanup"
+              placeholder="e.g. Wedding Reception, Diwali Society Deep-Clean, Kitchen Renovation"
               value={eventReason}
               onChange={(e) => setEventReason(e.target.value)}
             />
           </div>
 
-          {/* Categories Multi-Select */}
+          {/* Expected Categories Multi-select */}
           <div className="space-y-2">
             <label className="block text-fluid-xs font-bold text-ink">
-              Expected Waste Categories (Select all that apply)
+              Expected Waste Categories (Select All That Apply)
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {WASTE_CATEGORIES_OPTIONS.map((cat) => {
                 const Icon = cat.icon;
-                const isSelected = selectedCategories.includes(cat.id);
+                const selected = selectedCategories.includes(cat.id);
                 return (
                   <button
                     key={cat.id}
                     type="button"
                     onClick={() => toggleCategory(cat.id)}
-                    className={`flex items-start gap-3 p-3 rounded-2xl border text-left transition cursor-pointer ${
-                      isSelected
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border transition text-left cursor-pointer ${
+                      selected
                         ? 'border-brand bg-brand/10 text-brand ring-2 ring-brand/20 shadow-xs'
-                        : 'border-line bg-surface hover:bg-sunken'
+                        : 'border-line bg-surface hover:bg-sunken text-ink'
                     }`}
                   >
-                    <div className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${
-                      isSelected ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'
+                    <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${
+                      selected ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'
                     }`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold text-fluid-xs text-ink truncate">{cat.label}</p>
-                      <p className="text-[11px] text-muted truncate">{cat.desc}</p>
+                      <p className="font-bold text-fluid-xs truncate">{cat.label}</p>
+                      <p className="text-[11px] text-muted truncate mt-0.5">{cat.desc}</p>
                     </div>
-                    {isSelected && <Check className="h-4 w-4 text-brand shrink-0 mt-0.5" />}
+                    {selected && <Check className="h-4 w-4 text-brand shrink-0 mt-0.5" />}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Expected Quantity */}
+          {/* Estimated Quantity */}
           <div className="space-y-2">
-            <label className="block text-fluid-xs font-bold text-ink">Estimated Waste Quantity</label>
+            <label className="block text-fluid-xs font-bold text-ink">
+              Estimated Waste Volume
+            </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {QUANTITY_OPTIONS.map((q) => (
-                <button
-                  key={q.id}
-                  type="button"
-                  onClick={() => setExpectedQuantity(q.id as any)}
-                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                    expectedQuantity === q.id
-                      ? 'border-brand bg-brand/10 text-brand ring-2 ring-brand/20 shadow-xs'
-                      : 'border-line bg-surface hover:bg-sunken'
-                  }`}
-                >
-                  <p className="font-bold text-fluid-sm text-ink">{q.label}</p>
-                  <p className="text-[11px] text-muted mt-1 leading-snug">{q.desc}</p>
-                </button>
-              ))}
+              {QUANTITY_OPTIONS.map((q) => {
+                const selected = expectedQuantity === q.id;
+                return (
+                  <button
+                    key={q.id}
+                    type="button"
+                    onClick={() => setExpectedQuantity(q.id as any)}
+                    className={`p-3.5 rounded-2xl border transition text-left cursor-pointer ${
+                      selected
+                        ? 'border-brand bg-brand/10 text-brand ring-2 ring-brand/20 shadow-xs'
+                        : 'border-line bg-surface hover:bg-sunken text-ink'
+                    }`}
+                  >
+                    <p className="font-bold text-fluid-sm">{q.label}</p>
+                    <p className="text-[11px] text-muted mt-1 leading-snug">{q.desc}</p>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -359,7 +368,7 @@ export default function SchedulePickup() {
             onClick={() => setStep('when')}
             className="btn-primary w-full py-3 font-bold shadow-md shadow-brand/20 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>Next: Target Date & Time</span>
+            <span>Next: Target Date & Time Slot</span>
             <ArrowRight className="h-4 w-4" />
           </button>
         </Card>
@@ -369,52 +378,62 @@ export default function SchedulePickup() {
       {step === 'when' && (
         <Card className="p-6 border border-line shadow-xs space-y-6">
           <div>
-            <h2 className="text-fluid-base font-bold text-ink mb-1">Target Date & Time Slot</h2>
-            <p className="text-fluid-xs text-muted">Schedule your pickup at least 24 hours in advance.</p>
+            <h2 className="text-fluid-base font-bold text-ink mb-1">Target Date & Preferred Time Slot</h2>
+            <p className="text-fluid-xs text-muted">
+              Book at least 24 hours in advance so the ward officer can schedule a dedicated compactor.
+            </p>
           </div>
 
           {/* Date Picker */}
           <div className="space-y-1.5">
             <label className="block text-fluid-xs font-bold text-ink">
-              Pickup Date (Min 24h lead time) <span className="text-danger">*</span>
+              Scheduled Pickup Date (Min 24h Ahead) <span className="text-danger">*</span>
             </label>
             <input
               type="date"
               min={tomorrow}
               max={maxDate}
-              className="field w-full font-mono text-fluid-sm"
               value={scheduledDate}
               onChange={(e) => setScheduledDate(e.target.value)}
+              className="field w-full sm:w-80"
             />
           </div>
 
-          {/* Time Slot Picker */}
+          {/* Time Slot Selection */}
           <div className="space-y-2">
-            <label className="block text-fluid-xs font-bold text-ink">Preferred Collection Time Window</label>
+            <label className="block text-fluid-xs font-bold text-ink">
+              Preferred Collection Window
+            </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {TIME_SLOT_OPTIONS.map((slot) => (
-                <button
-                  key={slot.id}
-                  type="button"
-                  onClick={() => setScheduledTimeSlot(slot.id as any)}
-                  className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                    scheduledTimeSlot === slot.id
-                      ? 'border-brand bg-brand/10 text-brand ring-2 ring-brand/20 shadow-xs'
-                      : 'border-line bg-surface hover:bg-sunken'
-                  }`}
-                >
-                  <Clock className="h-4 w-4 text-brand mb-1.5" />
-                  <p className="font-bold text-fluid-sm text-ink">{slot.label}</p>
-                  <p className="text-[11px] text-muted mt-0.5">{slot.time}</p>
-                </button>
-              ))}
+              {TIME_SLOT_OPTIONS.map((slot) => {
+                const selected = scheduledTimeSlot === slot.id;
+                return (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    onClick={() => setScheduledTimeSlot(slot.id as any)}
+                    className={`p-4 rounded-2xl border transition text-left cursor-pointer ${
+                      selected
+                        ? 'border-brand bg-brand/10 text-brand ring-2 ring-brand/20 shadow-xs'
+                        : 'border-line bg-surface hover:bg-sunken text-ink'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <Clock className="h-4 w-4 text-brand" />
+                      {selected && <Check className="h-4 w-4 text-brand" />}
+                    </div>
+                    <p className="font-bold text-fluid-sm">{slot.label}</p>
+                    <p className="text-[11px] text-muted mt-0.5">{slot.time}</p>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Additional Notes */}
           <div className="space-y-1.5">
             <label className="block text-fluid-xs font-bold text-ink">
-              Gate Access or Special Instructions (Optional)
+              Special Gate Instructions / Landmarks (Optional)
             </label>
             <textarea
               rows={2}

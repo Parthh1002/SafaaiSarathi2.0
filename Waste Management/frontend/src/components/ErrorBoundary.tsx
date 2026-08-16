@@ -46,6 +46,11 @@ export class ErrorBoundary extends Component<Props, State> {
               <p className="text-fluid-xs text-muted leading-relaxed">
                 A rendering issue occurred while loading this view on your device.
               </p>
+              {this.state.error?.message && (
+                <div className="mt-2 rounded-xl bg-danger/10 p-3 text-left font-mono text-[11px] text-danger break-words max-h-32 overflow-y-auto">
+                  {this.state.error.message}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
