@@ -23,7 +23,7 @@ if (env.brevoSmtpLogin && env.brevoSmtpPassword) {
  * or fallback to Nodemailer Brevo SMTP.
  */
 export async function sendMail({ to, subject, text, html }) {
-  const senderEmail = env.smtpFrom ? env.smtpFrom.replace(/.*<([^>]+)>.*/, '$1') : (env.brevoSmtpLogin || 'no-reply@safaaisarathi.in');
+  const senderEmail = env.brevoSmtpLogin || (env.smtpFrom ? env.smtpFrom.replace(/.*<([^>]+)>.*/, '$1') : 'no-reply@safaaisarathi.in');
   const senderName = 'Safaai Sarathi';
 
   // 1. Try Brevo REST API first (over HTTPS, never blocked by cloud firewalls)
