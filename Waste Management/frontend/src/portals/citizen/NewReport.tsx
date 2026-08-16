@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Camera, Check, Crosshair, Loader2, RefreshCw, Sparkles, Users } from 'lucide-react';
+import { Camera, Check, Crosshair, Loader2, RefreshCw, Sparkles, Users, AlertTriangle, ArrowRight, MapPin, X } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { Badge, Card, DegradedNotice, Meter, toast } from '../../components/ui';
 import { BaseMap, LocationPicker } from '../../components/map/Map';
@@ -419,7 +419,10 @@ export default function NewReport() {
 
           <button 
             className="btn-primary w-full" 
-            onClick={() => setStep('location')} 
+            onClick={() => {
+              setStep('location');
+              locate(); // Fetch fresh GPS coordinates exactly when user is at the location step
+            }} 
             disabled={classifying || !categoryConfirmed}
           >
             Next: confirm location
@@ -448,6 +451,14 @@ export default function NewReport() {
               </div>
             </Card>
           )}
+
+          <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 text-fluid-xs text-warn flex items-start gap-2.5 shadow-sm">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="min-w-0 font-medium">
+              <span className="block font-bold text-warn mb-1">STRICT REQUIREMENT FOR ACCURATE TRACKING</span>
+              Please do not leave your current location until the complaint is successfully submitted. We are capturing live high-accuracy GPS coordinates to direct the collection vehicle to this exact spot.
+            </div>
+          </div>
 
           <Card className="overflow-hidden p-0">
             <div className="h-64 w-full sm:h-80">
