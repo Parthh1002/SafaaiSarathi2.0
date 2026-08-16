@@ -18,14 +18,12 @@ import { useT } from '../../lib/i18n';
 
 type Step = 'capture' | 'review' | 'location';
 
-interface Classification {
-  category: string;
+interface VisionClassification {
+  status: 'success' | 'no_detection';
+  predicted_category: string | null;
   confidence: number;
-  alternatives: { category: string; label: string; confidence: number }[];
-  modelVersion: string;
-  degraded?: boolean;
-  degradedReason?: string;
-  capture?: { quality?: string };
+  needs_manual_review: boolean;
+  remark: string;
 }
 
 export default function NewReport() {
@@ -38,8 +36,9 @@ export default function NewReport() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
   const [classifying, setClassifying] = useState(false);
-  const [ai, setAi] = useState<Classification | null>(null);
-  const [category, setCategory] = useState<string>('GARBAGE_PILE');
+  const [visionAi, setVisionAi] = useState<VisionClassification | null>(null);
+  const [category, setCategory] = useState<string>('');
+  const [categoryConfirmed, setCategoryConfirmed] = useState(false);
   const [description, setDescription] = useState('');
   const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
@@ -81,16 +80,41 @@ export default function NewReport() {
     setPreview(URL.createObjectURL(selected));
     setStep('review');
     setClassifying(true);
-    setAi(null);
+    setVisionAi(null);
+    setCategoryConfirmed(false);
 
     try {
       const form = new FormData();
-      form.append('photo', selected);
-      const { data } = await api('citizen').post<Classification>('/citizen/classify', form);
-      setAi(data);
-      setCategory(data.category);
+      form.append('file', selected);
+      
+      const res = await fetch('http://localhost:8100/api/classify-waste', {
+        method: 'POST',
+        body: form
+      });
+      
+      if (!res.ok) throw new Error('API failed');
+      const data: VisionClassification = await res.json();
+      
+      setVisionAi(data);
+      
+      if (data.status === 'success' && data.predicted_category) {
+         const mappedCategory = data.predicted_category.toUpperCase();
+         setCategory(mappedCategory);
+         if (!data.needs_manual_review) {
+            setCategoryConfirmed(true);
+         }
+      } else {
+         setCategory('');
+      }
     } catch (err) {
-      toast.error(errorMessage(err, 'Could not analyse the photo'));
+      setVisionAi({
+         status: 'no_detection',
+         predicted_category: null,
+         confidence: 0,
+         needs_manual_review: true,
+         remark: 'API call failed. Category detect nahi hui, manually select karein.'
+      });
+      setCategory('');
     } finally {
       setClassifying(false);
     }
@@ -98,7 +122,7 @@ export default function NewReport() {
 
   // Warn about an existing nearby report before a duplicate is filed.
   useEffect(() => {
-    if (step !== 'location' || !position) return;
+    if (step !== 'location' || !position || !category) return;
     api('citizen')
       .get('/citizen/complaints/check-duplicate', {
         params: { latitude: position.lat, longitude: position.lng, category },
@@ -108,7 +132,7 @@ export default function NewReport() {
   }, [step, position, category]);
 
   async function submit() {
-    if (!position) return;
+    if (!position || !category) return;
     setSubmitting(true);
     try {
       const form = new FormData();
@@ -135,7 +159,7 @@ export default function NewReport() {
     }
   }
 
-  const verdict = ai ? confidenceLabel(ai.confidence) : null;
+  const verdict = visionAi ? confidenceLabel(visionAi.confidence / 100) : null;
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
@@ -223,7 +247,7 @@ export default function NewReport() {
                 <div className="absolute inset-0 grid place-items-center bg-black/55 backdrop-blur-sm">
                   <div className="flex flex-col items-center gap-2 text-white">
                     <Loader2 className="h-8 w-8 animate-spin" />
-                    <p className="text-fluid-sm font-medium">Analysing the photo…</p>
+                    <p className="text-fluid-sm font-medium">AI photo check kar raha hai...</p>
                   </div>
                 </div>
               )}
@@ -236,37 +260,52 @@ export default function NewReport() {
               </button>
             </div>
 
-            {ai && (
+            {visionAi && visionAi.status === 'success' && (
               <div className="space-y-3 p-4">
-                {ai.degraded && <DegradedNotice reason={ai.degradedReason} />}
-
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-brand" />
-                  <p className="text-fluid-sm font-semibold">AI thinks this is</p>
+                  <p className="text-fluid-sm font-semibold">AI detected: {t(`category.${category}`)} ({visionAi.confidence}% confident)</p>
                   {verdict && <Badge tone={verdict.tone}>{verdict.label}</Badge>}
                 </div>
+                
+                <p className="text-fluid-xs text-muted italic">{visionAi.remark}</p>
 
-                <p className="text-fluid-lg font-bold">{t(`category.${ai.category}`)}</p>
-                <Meter value={ai.confidence * 100} tone={verdict?.tone === 'ok' ? 'ok' : 'warn'} label="Confidence" />
+                {!visionAi.needs_manual_review && (
+                  <div className="mt-2 flex items-center gap-2 rounded-xl border border-ok/30 bg-ok/10 p-2.5 text-fluid-xs text-ok">
+                    <Check className="h-4 w-4 shrink-0" />
+                    <span>Auto-approved by AI. You can proceed.</span>
+                  </div>
+                )}
 
-                {ai.confidence < 0.7 && (
+                {visionAi.needs_manual_review && (
                   <p className="rounded-xl border border-warn/30 bg-warn/10 p-2.5 text-fluid-xs text-warn">
-                    Below the automatic-approval threshold, so a ward officer will review this before dispatch.
+                    AI confidence kam hai, please confirm category below.
                   </p>
                 )}
-                <p className="text-fluid-xs text-faint">Model {ai.modelVersion}</p>
+              </div>
+            )}
+            
+            {visionAi && visionAi.status === 'no_detection' && (
+              <div className="space-y-3 p-4">
+                <p className="rounded-xl border border-warn/30 bg-warn/10 p-2.5 text-fluid-xs text-warn">
+                  {visionAi.remark}
+                </p>
               </div>
             )}
           </Card>
 
-          <div>
-            <label className="label">Category — change it if the AI got it wrong</label>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(CATEGORY_LABELS).map(([id, label]) => (
+          {(!visionAi || visionAi.needs_manual_review || visionAi.status === 'no_detection' || !categoryConfirmed) && (
+            <div>
+              <label className="label">Category — select or confirm the correct one</label>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(CATEGORY_LABELS).map(([id, label]) => (
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setCategory(id)}
+                  onClick={() => {
+                    setCategory(id);
+                    setCategoryConfirmed(true);
+                  }}
                   className={`min-h-touch rounded-xl border px-3 py-2 text-left text-fluid-xs font-medium transition ${
                     category === id ? 'border-brand bg-brand/10 text-brand' : 'border-line bg-elevated text-muted hover:bg-sunken'
                   }`}
@@ -276,6 +315,7 @@ export default function NewReport() {
               ))}
             </div>
           </div>
+          )}
 
           <div>
             <label className="label" htmlFor="description">Anything else? (optional)</label>
@@ -289,7 +329,11 @@ export default function NewReport() {
             />
           </div>
 
-          <button className="btn-primary w-full" onClick={() => setStep('location')} disabled={classifying}>
+          <button 
+            className="btn-primary w-full" 
+            onClick={() => setStep('location')} 
+            disabled={classifying || !categoryConfirmed}
+          >
             Next: confirm location
           </button>
         </div>
