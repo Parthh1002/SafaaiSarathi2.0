@@ -541,4 +541,155 @@ router.post(
   })
 );
 
+// ------------------------------------------------ Scheduled Pickup Requests ----
+
+const scheduledPickupSchema = z.object({
+  locationType: z.enum(['MY_HOME', 'COMMON_PLOT_SOCIETY']).default('MY_HOME'),
+  address: z.string().min(3).max(300),
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
+  eventReason: z.string().min(3).max(200),
+  expectedCategories: z.array(z.string()).min(1),
+  expectedQuantity: z.enum(['SMALL', 'MEDIUM', 'LARGE']).default('MEDIUM'),
+  scheduledDate: z.string().refine((d) => !isNaN(Date.parse(d)), 'Invalid target date'),
+  scheduledTimeSlot: z.enum(['MORNING', 'AFTERNOON', 'EVENING']).default('MORNING'),
+  additionalNotes: z.string().max(500).optional().nullable(),
+});
+
+/** POST /api/citizen/scheduled-pickup — Create advance event pickup request */
+router.post(
+  '/scheduled-pickup',
+  writeLimiter,
+  asyncHandler(async (req, res) => {
+    const body = scheduledPickupSchema.parse(req.body);
+    const targetDate = new Date(body.scheduledDate);
+    const now = new Date();
+
+    // Lead-time validation: minimum 24 hours ahead
+    const hoursAhead = (targetDate.getTime() - now.getTime()) / 3600_000;
+    if (hoursAhead < 20) {
+      throw new HttpError(400, 'Scheduled pickup requires at least 24 hours advance notice.');
+    }
+
+    // Auto-detect ward from coordinates
+    const ward = await wardForPoint({ latitude: body.latitude, longitude: body.longitude });
+
+    const code = `SP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+    const request = await prisma.scheduledPickupRequest.create({
+      data: {
+        code,
+        citizenId: req.user.id,
+        wardId: ward?.id ?? req.user.wardId ?? null,
+        locationType: body.locationType,
+        address: body.address,
+        latitude: body.latitude,
+        longitude: body.longitude,
+        eventReason: body.eventReason,
+        expectedCategories: body.expectedCategories,
+        expectedQuantity: body.expectedQuantity,
+        scheduledDate: targetDate,
+        scheduledTimeSlot: body.scheduledTimeSlot,
+        additionalNotes: body.additionalNotes || null,
+        status: 'PENDING_REVIEW',
+      },
+      include: {
+        ward: { select: { id: true, name: true } },
+      },
+    });
+
+    // Notify citizen confirmation
+    await notify({
+      userId: req.user.id,
+      type: 'SYSTEM',
+      title: `Scheduled Pickup Requested (${code})`,
+      body: `Your request for "${body.eventReason}" on ${targetDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} has been submitted for ward officer review.`,
+      payload: { requestId: request.id, code },
+    });
+
+    // Notify Ward Officers
+    if (request.wardId) {
+      await notifyWardOfficers(request.wardId, {
+        type: 'SYSTEM',
+        title: `New Scheduled Request: ${code}`,
+        body: `New event request in ${request.ward?.name || 'your ward'}: "${body.eventReason}" scheduled for ${targetDate.toLocaleDateString('en-IN')}.`,
+        payload: { requestId: request.id, code },
+      });
+    }
+
+    res.status(201).json(request);
+  })
+);
+
+/** GET /api/citizen/scheduled-pickup — List citizen's scheduled requests */
+router.get(
+  '/scheduled-pickup',
+  asyncHandler(async (req, res) => {
+    const items = await prisma.scheduledPickupRequest.findMany({
+      where: { citizenId: req.user.id },
+      include: {
+        ward: { select: { id: true, name: true } },
+        assignedDriver: { select: { id: true, name: true, phone: true } },
+        assignedVehicle: { select: { id: true, registrationNumber: true, model: true } },
+      },
+      orderBy: { scheduledDate: 'desc' },
+    });
+    res.json({ items });
+  })
+);
+
+/** GET /api/citizen/scheduled-pickup/:id — View single request detail */
+router.get(
+  '/scheduled-pickup/:id',
+  asyncHandler(async (req, res) => {
+    const item = await prisma.scheduledPickupRequest.findFirst({
+      where: { id: req.params.id, citizenId: req.user.id },
+      include: {
+        ward: { select: { id: true, name: true } },
+        assignedDriver: { select: { id: true, name: true, phone: true } },
+        assignedVehicle: { select: { id: true, registrationNumber: true, model: true } },
+      },
+    });
+    if (!item) throw new HttpError(404, 'Scheduled pickup request not found');
+    res.json(item);
+  })
+);
+
+/** POST /api/citizen/scheduled-pickup/:id/cancel — Cancel pending/approved request */
+router.post(
+  '/scheduled-pickup/:id/cancel',
+  writeLimiter,
+  asyncHandler(async (req, res) => {
+    const item = await prisma.scheduledPickupRequest.findFirst({
+      where: { id: req.params.id, citizenId: req.user.id },
+    });
+    if (!item) throw new HttpError(404, 'Scheduled pickup request not found');
+
+    if (!['PENDING_REVIEW', 'APPROVED_SCHEDULED', 'ASSIGNED'].includes(item.status)) {
+      throw new HttpError(400, `Cannot cancel request in "${item.status}" state.`);
+    }
+
+    const updated = await prisma.scheduledPickupRequest.update({
+      where: { id: item.id },
+      data: { status: 'CANCELLED' },
+      include: {
+        assignedDriver: { select: { id: true } },
+      },
+    });
+
+    // Notify assigned driver if one was assigned
+    if (updated.assignedDriverId) {
+      await notify({
+        userId: updated.assignedDriverId,
+        type: 'SYSTEM',
+        title: `Scheduled Task Cancelled (${item.code})`,
+        body: `Citizen cancelled the scheduled pickup for "${item.eventReason}".`,
+        payload: { requestId: item.id, code: item.code },
+      });
+    }
+
+    res.json({ ok: true, status: 'CANCELLED', item: updated });
+  })
+);
+
 export default router;

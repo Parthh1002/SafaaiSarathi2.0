@@ -34,10 +34,35 @@ export default function DriverStops() {
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['driver', 'tasks', filter],
     queryFn: async () => {
-      const res = await api('driver').get(`/driver/tasks?status=${filter}`);
-      return res.data;
+      const [res1, res2] = await Promise.all([
+        api('driver').get(`/driver/tasks?status=${filter}`),
+        api('driver').get('/driver/scheduled-tasks'),
+      ]);
+
+      const normalTasks = res1.data?.tasks || [];
+      const scheduledTasks = (res2.data?.items || []).map((st: any) => ({
+        ...st,
+        isScheduled: true,
+        category: 'SCHEDULED_PICKUP',
+        description: `${st.eventReason} (Load: ${st.expectedQuantity})`,
+      }));
+
+      // Filter scheduled tasks based on status tab
+      const filteredScheduled = scheduledTasks.filter((st: any) => {
+        if (filter === 'ALL') return true;
+        if (filter === 'PENDING') return st.status === 'ASSIGNED';
+        if (filter === 'IN_PROGRESS') return st.status === 'IN_PROGRESS';
+        if (filter === 'COMPLETED') return st.status === 'COMPLETED';
+        return true;
+      });
+
+      return {
+        ...res1.data,
+        tasks: [...normalTasks, ...filteredScheduled],
+        scheduledCount: scheduledTasks.length,
+      };
     },
-    refetchInterval: 30_000,
+    refetchInterval: 20_000,
   });
 
   const vehicleId = data?.vehicleId;
@@ -93,14 +118,18 @@ export default function DriverStops() {
       const form = new FormData();
       form.append('photo', photo);
       if (note) form.append('note', note);
+
+      if (resolving.isScheduled) {
+        return (await api('driver').post(`/driver/scheduled-tasks/${resolving.id}/complete`, form)).data;
+      }
       return (await api('driver').post(`/driver/tasks/${resolving.id}/complete`, form)).data;
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['driver'] });
-      toast.success('Task marked collected with clean photo proof!');
+      toast.success('Task marked collected with clean photo proof! Citizen awarded Green Credits.');
       closeSheet();
     },
-    onError: (err) => toast.error(errorMessage(err, 'Failed to complete task. Please upload again.')),
+    onError: (err) => toast.error(errorMessage(err)),
   });
 
   function closeSheet() {
@@ -203,11 +232,16 @@ export default function DriverStops() {
                           <span className="font-mono text-fluid-xs font-bold text-ink">#{task.code}</span>
                           <Badge tone={STATUS_TONE[task.status] || 'neutral'}>{task.status}</Badge>
                           {isEmergency && <Badge tone="danger">Emergency (30m SLA)</Badge>}
+                          {task.isScheduled && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-brand/15 border border-brand/40 px-2.5 py-0.5 text-[10px] font-bold text-brand shadow-xs">
+                              🗓️ Scheduled — {new Date(task.scheduledDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} ({task.scheduledTimeSlot})
+                            </span>
+                          )}
                           <span className="text-[11px] text-muted">{timeAgo(task.createdAt)}</span>
                         </div>
 
                         <h3 className="text-fluid-base font-bold text-ink leading-snug">
-                          {t(`category.${task.category}`)}
+                          {task.isScheduled ? task.eventReason : (t(`category.${task.category}`) || task.category)}
                         </h3>
 
                         <p className="flex items-center gap-1.5 text-fluid-xs text-muted">

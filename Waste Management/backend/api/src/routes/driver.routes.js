@@ -511,4 +511,75 @@ router.get(
   })
 );
 
+// ------------------------------------------------ Scheduled Task Operations ----
+
+/** GET /api/driver/scheduled-tasks — List scheduled tasks assigned to this driver */
+router.get(
+  '/scheduled-tasks',
+  asyncHandler(async (req, res) => {
+    const tasks = await prisma.scheduledPickupRequest.findMany({
+      where: {
+        assignedDriverId: req.user.id,
+        status: { in: ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED'] },
+      },
+      include: {
+        citizen: { select: { id: true, name: true, phone: true } },
+        ward: { select: { id: true, name: true } },
+      },
+      orderBy: { scheduledDate: 'asc' },
+    });
+    res.json({ items: tasks });
+  })
+);
+
+/** POST /api/driver/scheduled-tasks/:id/complete — Complete scheduled task with photo proof */
+router.post(
+  '/scheduled-tasks/:id/complete',
+  writeLimiter,
+  upload.single('photo'),
+  asyncHandler(async (req, res) => {
+    const task = await prisma.scheduledPickupRequest.findFirst({
+      where: { id: req.params.id, assignedDriverId: req.user.id },
+      include: { citizen: true },
+    });
+    if (!task) throw new HttpError(404, 'Scheduled task not found or not assigned to you');
+
+    let completionPhotoUrl = null;
+    const file = fileFromRequest(req, 'photo');
+    if (file) {
+      const persisted = await persist(file, 'proofs');
+      completionPhotoUrl = persisted.url;
+    }
+
+    const updated = await prisma.scheduledPickupRequest.update({
+      where: { id: task.id },
+      data: {
+        status: 'COMPLETED',
+        completedAt: new Date(),
+        completionPhotoUrl,
+        completionNotes: req.body?.notes?.slice(0, 300) || 'Pickup completed successfully.',
+      },
+    });
+
+    // 1. Award Green Credits to citizen wallet (+25 credits)
+    await awardCredits({
+      userId: task.citizenId,
+      delta: 25,
+      reason: `Event Scheduled Pickup Completed (${task.code})`,
+      reasonCode: 'CLEANUP_VERIFIED',
+    });
+
+    // 2. Notify Citizen
+    await notify({
+      userId: task.citizenId,
+      type: 'CREDIT_AWARDED',
+      title: `Scheduled Pickup Completed! +25 Credits`,
+      body: `Your scheduled pickup for "${task.eventReason}" has been completed by driver ${req.user.name}. +25 Green Credits added to your wallet!`,
+      payload: { requestId: task.id, code: task.code, credits: 25 },
+    });
+
+    res.json({ ok: true, status: 'COMPLETED', item: updated });
+  })
+);
+
 export default router;

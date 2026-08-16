@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Route, Routes } from 'react-router-dom';
-import { LayoutDashboard, ListFilter, Siren, TrendingUp, Truck, ArrowUpRight, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, ListFilter, Siren, TrendingUp, Truck, ArrowUpRight, BarChart3, Calendar } from 'lucide-react';
 import { ConsoleShell, type NavItem } from '../../components/shells';
 import { api } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -12,6 +12,7 @@ import Hotspots from './Hotspots';
 import Fleet from './Fleet';
 import Escalations from './Escalations';
 import Analytics from './Analytics';
+import ScheduledRequests from './ScheduledRequests';
 
 export default function OfficerPortal() {
   const { user } = useAuth();
@@ -26,10 +27,10 @@ export default function OfficerPortal() {
   const nav: NavItem[] = [
     { to: '/officer', label: t('officer.nav.dashboard'), icon: LayoutDashboard, end: true },
     { to: '/officer/queue', label: t('officer.nav.queue'), icon: ListFilter, badge: data?.kpis?.reviewNeeded },
+    { to: '/officer/scheduled-requests', label: 'Scheduled Requests', icon: Calendar },
     { to: '/officer/emergencies', label: t('officer.nav.emergencies'), icon: Siren, badge: data?.kpis?.emergenciesOpen },
     { to: '/officer/hotspots', label: t('officer.nav.hotspots'), icon: TrendingUp },
     { to: '/officer/fleet', label: t('officer.nav.fleet'), icon: Truck },
-    { to: '/officer/escalations', label: t('officer.nav.escalations'), icon: ArrowUpRight },
     { to: '/officer/analytics', label: t('officer.nav.analytics'), icon: BarChart3 },
   ];
 
@@ -44,6 +45,7 @@ export default function OfficerPortal() {
       <Routes>
         <Route index element={<OfficerDashboard />} />
         <Route path="queue" element={<ComplaintQueue />} />
+        <Route path="scheduled-requests" element={<ScheduledRequests />} />
         <Route path="emergencies" element={<Emergencies />} />
         <Route path="hotspots" element={<Hotspots />} />
         <Route path="fleet" element={<Fleet />} />

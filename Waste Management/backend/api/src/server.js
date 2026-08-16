@@ -14,6 +14,7 @@ import { initRealtime, onDriverLocation } from './sockets/realtime.js';
 import { ingestLocation } from './services/tracking.service.js';
 import { startEscalationWatcher } from './services/escalation.service.js';
 import { startSimulator } from './services/simulator.js';
+import { startScheduledReminderWatcher } from './services/reminder.service.js';
 import { passwordDriver } from './lib/password.js';
 
 const app = express();
@@ -85,6 +86,7 @@ async function bootstrap() {
   });
 
   startEscalationWatcher();
+  startScheduledReminderWatcher();
   startSimulator().catch((err) => console.warn('[boot] simulator skipped:', err.message));
 }
 

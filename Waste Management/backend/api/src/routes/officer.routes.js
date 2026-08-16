@@ -878,4 +878,190 @@ router.post(
   })
 );
 
+// ------------------------------------------------ Scheduled Pickup Management ----
+
+/** GET /api/officer/scheduled-requests — List ward's scheduled pickup requests */
+router.get(
+  '/scheduled-requests',
+  asyncHandler(async (req, res) => {
+    const { ids } = await scope(req);
+    const wardWhere = ids === null ? {} : { wardId: { in: ids } };
+
+    const items = await prisma.scheduledPickupRequest.findMany({
+      where: { ...wardWhere },
+      include: {
+        citizen: { select: { id: true, name: true, phone: true, email: true } },
+        ward: { select: { id: true, name: true, code: true } },
+        assignedDriver: { select: { id: true, name: true, phone: true } },
+        assignedVehicle: { select: { id: true, registrationNumber: true, model: true } },
+      },
+      orderBy: [{ scheduledDate: 'asc' }, { createdAt: 'desc' }],
+    });
+
+    res.json({ items });
+  })
+);
+
+/** POST /api/officer/scheduled-requests/:id/approve — Approve advance scheduled pickup */
+router.post(
+  '/scheduled-requests/:id/approve',
+  writeLimiter,
+  audited('scheduled_pickup_approve', 'scheduled_pickup_requests'),
+  asyncHandler(async (req, res) => {
+    const { ids } = await scope(req);
+    const item = await prisma.scheduledPickupRequest.findFirst({
+      where: {
+        id: req.params.id,
+        ...(ids === null ? {} : { wardId: { in: ids } }),
+      },
+      include: { citizen: true },
+    });
+    if (!item) throw new HttpError(404, 'Scheduled pickup request not found or not in your ward');
+
+    const updated = await prisma.scheduledPickupRequest.update({
+      where: { id: item.id },
+      data: { status: 'APPROVED_SCHEDULED' },
+    });
+
+    // Notify citizen
+    await notify({
+      userId: item.citizenId,
+      type: 'SYSTEM',
+      title: `Scheduled Pickup Approved (${item.code})`,
+      body: `Your pickup for "${item.eventReason}" on ${new Date(item.scheduledDate).toLocaleDateString('en-IN')} has been approved by the Ward Officer.`,
+      payload: { requestId: item.id, code: item.code },
+    });
+
+    res.json({ ok: true, status: 'APPROVED_SCHEDULED', item: updated });
+  })
+);
+
+/** POST /api/officer/scheduled-requests/:id/reject — Reject scheduled pickup with reason */
+router.post(
+  '/scheduled-requests/:id/reject',
+  writeLimiter,
+  audited('scheduled_pickup_reject', 'scheduled_pickup_requests'),
+  asyncHandler(async (req, res) => {
+    const { ids } = await scope(req);
+    const body = z.object({ reason: z.string().min(3).max(300) }).parse(req.body);
+
+    const item = await prisma.scheduledPickupRequest.findFirst({
+      where: {
+        id: req.params.id,
+        ...(ids === null ? {} : { wardId: { in: ids } }),
+      },
+    });
+    if (!item) throw new HttpError(404, 'Scheduled pickup request not found or not in your ward');
+
+    const updated = await prisma.scheduledPickupRequest.update({
+      where: { id: item.id },
+      data: {
+        status: 'REJECTED',
+        rejectionReason: body.reason,
+      },
+    });
+
+    // Notify citizen
+    await notify({
+      userId: item.citizenId,
+      type: 'SYSTEM',
+      title: `Scheduled Pickup Rejected (${item.code})`,
+      body: `Your pickup for "${item.eventReason}" could not be accommodated: ${body.reason}`,
+      payload: { requestId: item.id, code: item.code, reason: body.reason },
+    });
+
+    res.json({ ok: true, status: 'REJECTED', item: updated });
+  })
+);
+
+/** POST /api/officer/scheduled-requests/:id/assign — Assign Driver & Vehicle */
+router.post(
+  '/scheduled-requests/:id/assign',
+  writeLimiter,
+  audited('scheduled_pickup_assign', 'scheduled_pickup_requests'),
+  asyncHandler(async (req, res) => {
+    const { ids } = await scope(req);
+    const body = z
+      .object({
+        driverId: z.string(),
+        vehicleId: z.string().optional(),
+      })
+      .parse(req.body);
+
+    const item = await prisma.scheduledPickupRequest.findFirst({
+      where: {
+        id: req.params.id,
+        ...(ids === null ? {} : { wardId: { in: ids } }),
+      },
+      include: { citizen: true },
+    });
+    if (!item) throw new HttpError(404, 'Scheduled pickup request not found or not in your ward');
+
+    // Find driver & vehicle
+    const driver = await prisma.user.findFirst({
+      where: { id: body.driverId, role: 'DRIVER', isActive: true },
+    });
+    if (!driver) throw new HttpError(404, 'Driver account not found');
+
+    const vehicle = body.vehicleId
+      ? await prisma.vehicle.findUnique({ where: { id: body.vehicleId } })
+      : await prisma.vehicle.findFirst({ where: { driverId: driver.id } });
+
+    const updated = await prisma.scheduledPickupRequest.update({
+      where: { id: item.id },
+      data: {
+        status: 'ASSIGNED',
+        assignedDriverId: driver.id,
+        assignedVehicleId: vehicle?.id ?? null,
+        assignedById: req.user.id,
+        assignedAt: new Date(),
+      },
+      include: {
+        assignedDriver: { select: { id: true, name: true, phone: true } },
+        assignedVehicle: { select: { id: true, registrationNumber: true, model: true } },
+      },
+    });
+
+    // 1. Notify Citizen
+    await notify({
+      userId: item.citizenId,
+      type: 'ASSIGNMENT',
+      title: `Driver Assigned: ${item.code}`,
+      body: `Driver ${driver.name} has been assigned for your pickup on ${new Date(item.scheduledDate).toLocaleDateString('en-IN')} (${item.scheduledTimeSlot}).`,
+      payload: { requestId: item.id, code: item.code, driverName: driver.name },
+    });
+
+    // 2. Notify Driver (with scheduled date/time context)
+    await notify({
+      userId: driver.id,
+      type: 'ASSIGNMENT',
+      title: `New Scheduled Task (${item.code})`,
+      body: `Scheduled pickup for ${item.citizen.name} on ${new Date(item.scheduledDate).toLocaleDateString('en-IN')} (${item.scheduledTimeSlot}) at ${item.address}.`,
+      payload: {
+        requestId: item.id,
+        code: item.code,
+        scheduledDate: item.scheduledDate,
+        scheduledTimeSlot: item.scheduledTimeSlot,
+        eventReason: item.eventReason,
+        expectedCategories: item.expectedCategories,
+      },
+    });
+
+    // Emit Socket.io event to driver room
+    emitTo(`driver:${driver.id}`, 'new_task_assigned', {
+      type: 'SCHEDULED_PICKUP',
+      scheduledRequestId: item.id,
+      code: item.code,
+      scheduledDate: item.scheduledDate,
+      scheduledTimeSlot: item.scheduledTimeSlot,
+      eventReason: item.eventReason,
+      address: item.address,
+      latitude: item.latitude,
+      longitude: item.longitude,
+    });
+
+    res.json({ ok: true, status: 'ASSIGNED', item: updated });
+  })
+);
+
 export default router;

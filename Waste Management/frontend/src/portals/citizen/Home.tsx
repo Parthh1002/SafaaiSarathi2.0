@@ -97,6 +97,20 @@ export default function CitizenHome() {
                 <span className="block text-[11px] opacity-80">30-Min Fast Escalation</span>
               </div>
             </Link>
+
+            <Link
+              to="/app/schedule-pickup"
+              className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 text-ink transition hover:bg-sunken hover:border-brand/30 active:scale-[0.99] shadow-xs"
+            >
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand shadow-xs">
+                <Sparkles className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <span className="block text-fluid-sm font-extrabold leading-tight">Schedule Event Pickup</span>
+                <span className="block text-[11px] text-muted">Wedding, Festival & Renovation (+25 Credits)</span>
+              </div>
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted" />
+            </Link>
           </div>
 
           {/* Live Collection Truck Tracker Card */}

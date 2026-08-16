@@ -139,6 +139,8 @@ model User {
   sosAlerts           SosAlert[]       @relation("SosDriver")
   sosAcknowledged     SosAlert[]       @relation("SosResponder")
   fuelLogs            FuelLog[]
+  scheduledPickups         ScheduledPickupRequest[] @relation("CitizenScheduledPickups")
+  assignedScheduledPickups ScheduledPickupRequest[] @relation("DriverScheduledPickups")
 
   @@index([role])
   @@index([wardId])
@@ -243,6 +245,7 @@ model Ward {
   routes      Route[]
   predictions HotspotPrediction[]
   contacts    EmergencyContact[]
+  scheduledPickups ScheduledPickupRequest[]
 
   @@index([minLat, maxLat, minLng, maxLng])
   @@map("wards")
@@ -392,6 +395,7 @@ model Vehicle {
   complaints Complaint[]
   sosAlerts  SosAlert[]
   fuelLogs   FuelLog[]
+  scheduledPickups ScheduledPickupRequest[]
 
   @@index([wardId, status])
   @@map("vehicles")
@@ -612,3 +616,76 @@ model ModelHealthSample {
   @@index([modelVersion, recordedAt])
   @@map("model_health_samples")
 }
+
+// ------------------------------------------------ Scheduled Pickup Requests ----
+
+enum ScheduledPickupStatus {
+  PENDING_REVIEW
+  APPROVED_SCHEDULED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum WasteQuantity {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum TimeSlot {
+  MORNING
+  AFTERNOON
+  EVENING
+}
+
+enum LocationType {
+  MY_HOME
+  COMMON_PLOT_SOCIETY
+}
+
+model ScheduledPickupRequest {
+  id                 String                @id @default(cuid())
+  code               String                @unique // e.g. SP-A8F2K1
+  citizenId          String
+  wardId             String?
+  locationType       LocationType          @default(MY_HOME)
+  address            String
+  latitude           Float
+  longitude          Float
+  eventReason        String
+  expectedCategories Json
+  expectedQuantity   WasteQuantity         @default(MEDIUM)
+  scheduledDate      DateTime
+  scheduledTimeSlot  TimeSlot              @default(MORNING)
+  additionalNotes    String?
+  status             ScheduledPickupStatus @default(PENDING_REVIEW)
+  rejectionReason    String?
+
+  assignedDriverId  String?
+  assignedVehicleId String?
+  assignedById      String?
+  assignedAt        DateTime?
+
+  completedAt        DateTime?
+  completionPhotoUrl String?
+  completionNotes    String?
+
+  reminderSent Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  citizen         User     @relation("CitizenScheduledPickups", fields: [citizenId], references: [id], onDelete: Cascade)
+  ward            Ward?    @relation(fields: [wardId], references: [id], onDelete: SetNull)
+  assignedDriver  User?    @relation("DriverScheduledPickups", fields: [assignedDriverId], references: [id], onDelete: SetNull)
+  assignedVehicle Vehicle? @relation(fields: [assignedVehicleId], references: [id], onDelete: SetNull)
+
+  @@index([citizenId, status])
+  @@index([wardId, scheduledDate])
+  @@index([assignedDriverId, scheduledDate])
+  @@map("scheduled_pickup_requests")
+}
+
