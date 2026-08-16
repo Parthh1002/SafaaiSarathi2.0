@@ -42,6 +42,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "Safaai Sarathi Vision API is running."}
+
 @app.post("/api/classify-waste")
 async def classify_waste(file: UploadFile = File(...)):
     if model is None:
