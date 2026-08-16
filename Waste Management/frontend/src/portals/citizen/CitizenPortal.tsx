@@ -2,7 +2,6 @@ import { Route, Routes } from 'react-router-dom';
 import { Home, PlusCircle, ListChecks, Trophy, Phone } from 'lucide-react';
 import { MobileShell, type NavItem } from '../../components/shells';
 import { useT } from '../../lib/i18n';
-import { Chatbot } from '../../components/Chatbot';
 import CitizenHome from './Home';
 import NewReport from './NewReport';
 import MyComplaints from './MyComplaints';
@@ -36,7 +35,6 @@ export default function CitizenPortal() {
         <Route path="directory" element={<Directory />} />
         <Route path="profile" element={<Profile />} />
       </Routes>
-      <Chatbot />
     </MobileShell>
   );
 }

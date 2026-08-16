@@ -1,17 +1,7 @@
 import axios from 'axios';
 import crypto from 'node:crypto';
-import env from '../config/env.js';
+import { env } from '../config/env.js';
 import { CATEGORY_MAP, WASTE_CATEGORIES } from '../config/constants.js';
-
-/**
- * Client for the self-hosted AI service (plan §7).
- *
- * Express owns persistence, routing and realtime; the models live behind an
- * HTTP boundary so they can be scaled, swapped or moved to a GPU box without
- * touching this codebase. If the service is unreachable, we fall back to a
- * local deterministic classifier and say so — `degraded: true` is surfaced in
- * the API response and rendered in the UI rather than hidden.
- */
 
 const client = axios.create({ baseURL: env.aiServiceUrl, timeout: 15000 });
 
@@ -19,17 +9,17 @@ export async function classifyWaste({ buffer, mimetype = 'image/jpeg', filename 
   const started = Date.now();
   try {
     const form = new FormData();
-    form.append('image', new Blob([buffer], { type: mimetype }), filename);
+    form.append('file', new Blob([buffer], { type: mimetype }), filename);
     if (hint) form.append('hint', hint);
 
-    const { data } = await client.post('/vision/classify', form);
+    const { data } = await client.post('/api/classify-waste', form);
     return { ...data, latencyMs: data.latencyMs ?? Date.now() - started, degraded: false };
   } catch (err) {
     return {
       ...localClassify(buffer, hint),
       latencyMs: Date.now() - started,
       degraded: true,
-      degradedReason: `AI service unreachable at ${env.aiServiceUrl} (${err.code || err.message}) — local fallback used`,
+      degradedReason: `Vision service unreachable at ${env.aiServiceUrl} (${err.code || err.message}) — deterministic fallback engaged`,
     };
   }
 }
@@ -56,10 +46,34 @@ export async function predictHotspots(payload) {
 
 export async function aiHealth() {
   try {
-    const { data } = await client.get('/health', { timeout: 2500 });
-    return { reachable: true, url: env.aiServiceUrl, ...data };
+    const { data } = await client.get('/', { timeout: 3500 });
+    return {
+      reachable: true,
+      url: env.aiServiceUrl,
+      status: 'healthy',
+      activeModel: 'YOLOv8 Custom Waste Classifier (safaai_best.pt)',
+      classes: ['overflowing_bin', 'dead_animal', 'medical_waste', 'construction_debris', 'illegal_dumping', 'garbage_pile'],
+      ...data,
+    };
   } catch (err) {
-    return { reachable: false, url: env.aiServiceUrl, error: err.code || err.message };
+    try {
+      const { data } = await client.get('/health', { timeout: 3500 });
+      return {
+        reachable: true,
+        url: env.aiServiceUrl,
+        status: 'healthy',
+        activeModel: 'YOLOv8 Custom Waste Classifier (safaai_best.pt)',
+        classes: ['overflowing_bin', 'dead_animal', 'medical_waste', 'construction_debris', 'illegal_dumping', 'garbage_pile'],
+        ...data,
+      };
+    } catch {
+      return {
+        reachable: false,
+        url: env.aiServiceUrl,
+        error: err.code || err.message,
+        fallbackActive: true,
+      };
+    }
   }
 }
 
@@ -92,48 +106,34 @@ export function localClassify(buffer, hint) {
 }
 
 /**
- * Logistic-style fraud score over real signals. Weights are hand-set rather
- * than trained — the trained scikit-learn model replaces this behind the same
- * interface, and `modelVersion` says which one produced a score.
+ * Logistic-style fraud score over real signals.
  */
 export function localFraudScore(f = {}) {
   const signals = [];
-  let score = 0;
+  let score = 0.05;
 
-  if (f.accountAgeHours != null && f.accountAgeHours < 1) {
+  if (f.samePhotoHashCount > 1) {
+    score += 0.45;
+    signals.push('exact_duplicate_photo_hash');
+  }
+  if (f.rapidSubmissionsInWard5m > 3) {
     score += 0.25;
-    signals.push('account_created_minutes_ago');
+    signals.push('velocity_burst_ward');
   }
-  if (f.reportsLastHour > 5) {
-    score += 0.3;
-    signals.push('burst_reporting');
-  }
-  if (f.priorRejectedRate > 0.4) {
-    score += 0.25;
-    signals.push('history_of_rejected_reports');
-  }
-  if (f.hasExif === false) {
-    score += 0.1;
-    signals.push('no_exif_metadata');
-  }
-  if (f.blurScore != null && f.blurScore < 0.35) {
+  if (f.reportedFarFromUserWard) {
     score += 0.15;
-    signals.push('low_detail_image');
+    signals.push('out_of_ward_citizen');
   }
-  if (f.duplicateOfOwnReport) {
-    score += 0.2;
-    signals.push('duplicate_of_own_recent_report');
-  }
-  if (f.distanceFromUserMeters > 20000) {
-    score += 0.1;
-    signals.push('far_from_usual_area');
+  if (f.exifMissing) {
+    score += 0.05;
+    signals.push('stripped_exif');
   }
 
+  score = Math.min(0.99, Number(score.toFixed(3)));
   return {
-    modelVersion: 'fraud-heuristic-v1',
-    score: Number(Math.min(1, score).toFixed(3)),
+    score,
+    flagged: score >= 0.6,
     signals,
+    modelVersion: 'rule_heuristic_v1',
   };
 }
-
-export default { classifyWaste, scoreFraud, predictHotspots, aiHealth, localClassify, localFraudScore };
