@@ -20,9 +20,11 @@ import {
   Flame,
   Activity,
   Layers,
+  HelpCircle,
 } from 'lucide-react';
 import { publicApi } from '../lib/api';
 import { LanguageSwitcher, ThemeToggle } from '../components/ui';
+import { FaqAccordion } from '../components/FaqAccordion';
 import { useT } from '../lib/i18n';
 import { formatNumber } from '../lib/format';
 
@@ -149,6 +151,16 @@ export default function Landing() {
                 </a>
                 <span className="h-3.5 w-px bg-line/60" />
                 <a
+                  href="#faq"
+                  className="flex items-center gap-2 rounded-full px-3.5 py-1 text-fluid-sm font-medium text-muted transition-all duration-200 hover:bg-brand/10 hover:text-brand whitespace-nowrap"
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand/10 text-brand text-xs">
+                    <HelpCircle className="h-3 w-3" />
+                  </span>
+                  <span>FAQ</span>
+                </a>
+                <span className="h-3.5 w-px bg-line/60" />
+                <a
                   href="#staff"
                   className="flex items-center gap-2 rounded-full px-3.5 py-1 text-fluid-sm font-medium text-muted transition-all duration-200 hover:bg-brand/10 hover:text-brand whitespace-nowrap"
                 >
@@ -222,6 +234,16 @@ export default function Landing() {
                 </a>
                 <span className="h-3.5 w-px bg-line/60" />
                 <a
+                  href="#faq"
+                  className="flex items-center gap-2 rounded-full px-3.5 py-1 text-fluid-sm font-medium text-muted transition-all duration-200 hover:bg-brand/10 hover:text-brand whitespace-nowrap"
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand/10 text-brand text-xs">
+                    <HelpCircle className="h-3 w-3" />
+                  </span>
+                  <span>FAQ</span>
+                </a>
+                <span className="h-3.5 w-px bg-line/60" />
+                <a
                   href="#staff"
                   className="flex items-center gap-2 rounded-full px-3.5 py-1 text-fluid-sm font-medium text-muted transition-all duration-200 hover:bg-brand/10 hover:text-brand whitespace-nowrap"
                 >
@@ -250,7 +272,7 @@ export default function Landing() {
 
       {/* ---- Hero Section: Redesigned with Smooth, Modern Aesthetics ---- */}
       <section className="relative overflow-hidden pt-28 pb-16 lg:pt-36 lg:pb-24">
-        {/* Soft, modern ambient glow background (eliminates harsh image blur clash) */}
+        {/* Soft, modern ambient glow background */}
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-32 left-1/2 -translate-x-1/2 h-[500px] w-[900px] rounded-full bg-gradient-to-tr from-brand/15 via-emerald-400/10 to-teal-400/5 blur-3xl" />
           <div className="absolute top-1/3 -right-20 h-72 w-72 rounded-full bg-amber-400/10 blur-3xl" />
@@ -538,8 +560,13 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ---- FAQ Section (Custom Accordion Component) ---- */}
+      <section id="faq" className="px-4 py-12 sm:py-16 bg-surface">
+        <FaqAccordion title="Frequently Asked Questions" />
+      </section>
+
       {/* ---- Staff entry points ---- */}
-      <section id="staff" className="px-4 py-12 sm:py-16">
+      <section id="staff" className="border-t border-line bg-elevated px-4 py-12 sm:py-16">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-fluid-2xl font-bold tracking-tight text-ink">{t('landing.portals.title')}</h2>
