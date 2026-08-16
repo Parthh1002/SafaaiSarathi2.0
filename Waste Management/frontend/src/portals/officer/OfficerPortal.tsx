@@ -17,7 +17,6 @@ export default function OfficerPortal() {
   const { user } = useAuth();
   const t = useT();
 
-  // Badge counts come from the same overview the dashboard renders.
   const { data } = useQuery({
     queryKey: ['officer', 'overview'],
     queryFn: async () => (await api('officer').get('/officer/overview')).data,
@@ -40,6 +39,7 @@ export default function OfficerPortal() {
       title={t('officer.title')}
       subtitle={user?.ward?.name ? `${user.ward.name} · ${user.ward.code}` : t('officer.subtitle')}
       alertCount={data?.kpis?.emergenciesOpen ?? 0}
+      accent="brand"
     >
       <Routes>
         <Route index element={<OfficerDashboard />} />

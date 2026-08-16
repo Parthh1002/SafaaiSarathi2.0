@@ -11,8 +11,6 @@ import AuditLog from './AuditLog';
 import ModelHealth from './ModelHealth';
 import WardSettings from './WardSettings';
 
-
-
 export default function AdminPortal() {
   const t = useT();
   const nav: NavItem[] = [
@@ -27,7 +25,12 @@ export default function AdminPortal() {
   ];
 
   return (
-    <ConsoleShell nav={nav} title={t('admin.title')} subtitle={t('admin.subtitle')}>
+    <ConsoleShell
+      nav={nav}
+      title={t('admin.title')}
+      subtitle={t('admin.subtitle')}
+      accent="orange"
+    >
       <Routes>
         <Route index element={<AdminDashboard />} />
         <Route path="fleet" element={<MasterFleet />} />

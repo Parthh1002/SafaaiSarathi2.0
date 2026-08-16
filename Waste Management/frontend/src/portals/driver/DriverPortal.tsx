@@ -12,16 +12,6 @@ import DriverFuel from './DriverFuel';
 import DriverSummary from './DriverSummary';
 import DriverSos from './DriverSos';
 
-
-
-/**
- * Background GPS.
- *
- * In the React Native build this is `expo-location`'s background task, which
- * survives the screen turning off. A browser tab cannot guarantee that, so the
- * web build uses `watchPosition` and queues fixes while offline, replaying them
- * on reconnect — the same server contract either way.
- */
 function useLocationBroadcast(enabled: boolean) {
   const queue = useRef<any[]>([]);
   const [online, setOnline] = useState(navigator.onLine);
@@ -35,7 +25,6 @@ function useLocationBroadcast(enabled: boolean) {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const now = Date.now();
-        // Throttle to one fix every 3s so we are not spamming the socket.
         if (now - lastSent < 3000) return;
         lastSent = now;
 
@@ -55,7 +44,7 @@ function useLocationBroadcast(enabled: boolean) {
         }
       },
       () => {
-        /* permission denied — the shift screen shows the warning */
+        /* permission denied */
       },
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 10_000 }
     );
@@ -67,7 +56,7 @@ function useLocationBroadcast(enabled: boolean) {
       try {
         await api('driver').post('/driver/location/batch', { points });
       } catch {
-        queue.current.unshift(...points); // keep them for the next attempt
+        queue.current.unshift(...points);
       }
     };
 
@@ -101,7 +90,7 @@ export default function DriverPortal() {
     <MobileShell
       nav={nav}
       title={t('driver.title')}
-      accent="info"
+      accent="brand"
       headerRight={
         <button
           type="button"
@@ -109,7 +98,11 @@ export default function DriverPortal() {
           title={broadcasting ? 'GPS sharing on' : 'GPS sharing paused'}
         >
           <Badge tone={!online ? 'warn' : broadcasting ? 'ok' : 'neutral'}>
-            <span className={`h-1.5 w-1.5 rounded-full ${!online ? 'bg-warn' : broadcasting ? 'animate-pulse bg-ok' : 'bg-faint'}`} />
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                !online ? 'bg-warn' : broadcasting ? 'animate-pulse bg-ok' : 'bg-faint'
+              }`}
+            />
             {!online ? t('driver.offline') : broadcasting ? t('driver.gpsLive') : t('driver.gpsOff')}
           </Badge>
         </button>
