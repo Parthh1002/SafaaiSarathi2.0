@@ -200,7 +200,10 @@ export default function NewReport() {
         <Card className="p-5">
           <button
             type="button"
-            onClick={() => fileInput.current?.click()}
+            onClick={() => {
+              if (fileInput.current) fileInput.current.value = '';
+              fileInput.current?.click();
+            }}
             className="flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-brand/40 bg-brand/5 py-12 transition hover:border-brand hover:bg-brand/10 group shadow-inner"
           >
             <span className="grid h-20 w-20 place-items-center rounded-3xl bg-brand text-brand-ink shadow-lg shadow-brand/20 transition group-hover:scale-105">
@@ -255,7 +258,10 @@ export default function NewReport() {
               )}
               <button
                 type="button"
-                onClick={() => fileInput.current?.click()}
+                onClick={() => {
+                  if (fileInput.current) fileInput.current.value = '';
+                  fileInput.current?.click();
+                }}
                 className="absolute bottom-3 right-3 btn-ghost btn-sm bg-elevated/90"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Retake
