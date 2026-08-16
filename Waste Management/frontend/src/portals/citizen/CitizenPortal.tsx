@@ -23,7 +23,7 @@ export default function CitizenPortal() {
   ];
 
   return (
-    <MobileShell nav={nav} title={t('common.appName')}>
+    <MobileShell nav={nav} title="Citizen Hub">
       <Routes>
         <Route index element={<CitizenHome />} />
         <Route path="report" element={<NewReport />} />

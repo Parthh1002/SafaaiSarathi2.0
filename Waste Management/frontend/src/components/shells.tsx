@@ -16,7 +16,7 @@ export interface NavItem {
 
 /**
  * MobileShell — Citizen and Driver.
- * Fully responsive: Rich desktop command web interface on laptop/desktop screens
+ * Fully responsive: Rich edge-to-edge desktop command web interface on laptop/desktop screens
  * with multi-column responsiveness, and thumb-friendly mobile app layout on phones.
  */
 export function MobileShell({
@@ -41,20 +41,25 @@ export function MobileShell({
   useEffect(() => setMenuOpen(false), [location.pathname]);
 
   return (
-    <div className="min-h-dvh bg-surface pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-8">
+    <div className="min-h-dvh bg-surface pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-10">
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 border-b border-line bg-surface/95 pt-[env(safe-area-inset-top)] shadow-xs backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4 px-4 py-2.5 sm:px-6 lg:px-8 xl:px-10">
           {/* Logo & Portal Title */}
           <div className="flex items-center gap-3">
-            <Link to={user?.role === 'DRIVER' ? '/driver' : '/app'} className="flex items-center gap-2.5 group">
-              <img src="/icon.svg" alt="Safaai Sarathi" className="h-8 w-8 transition group-hover:scale-105" />
-              <div>
-                <span className="hidden sm:block text-fluid-sm font-extrabold tracking-tight text-ink">
+            <Link
+              to={user?.role === 'DRIVER' ? '/driver' : '/app'}
+              className="flex items-center gap-3 group transition"
+            >
+              <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10 p-1.5 transition group-hover:scale-105 shadow-xs">
+                <img src="/icon.svg" alt="Safaai Sarathi" className="h-full w-full object-contain" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-fluid-sm font-extrabold tracking-tight text-ink leading-tight">
                   Safaai Sarathi
                 </span>
                 <span
-                  className={`block text-fluid-xs font-semibold ${
+                  className={`inline-block text-[11px] font-bold uppercase tracking-wider ${
                     accent === 'orange' ? 'text-orange-600 dark:text-orange-400' : 'text-brand'
                   }`}
                 >
@@ -65,14 +70,14 @@ export function MobileShell({
           </div>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1.5 rounded-2xl border border-line bg-elevated/70 p-1 shadow-xs backdrop-blur">
+          <nav className="hidden md:flex items-center gap-1.5 rounded-2xl border border-line bg-elevated/80 p-1.5 shadow-xs backdrop-blur">
             {nav.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `relative flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-fluid-xs font-semibold transition ${
+                  `relative flex items-center gap-2 rounded-xl px-4 py-1.5 text-fluid-xs font-semibold transition ${
                     isActive
                       ? accent === 'orange'
                         ? 'bg-orange-600 text-white shadow-sm font-bold'
@@ -93,14 +98,14 @@ export function MobileShell({
           </nav>
 
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {headerRight}
             <LanguageSwitcher compact />
             <ThemeToggle />
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
-              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-2.5 transition hover:bg-sunken shadow-xs"
+              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-3 transition hover:bg-sunken shadow-xs"
               aria-label="Account menu"
             >
               <span
@@ -109,7 +114,7 @@ export function MobileShell({
               >
                 {initials(user?.name)}
               </span>
-              <span className="hidden lg:block text-fluid-xs font-semibold text-ink max-w-[100px] truncate">
+              <span className="hidden lg:block text-fluid-xs font-semibold text-ink max-w-[110px] truncate">
                 {user?.name?.split(' ')[0]}
               </span>
             </button>
@@ -118,7 +123,7 @@ export function MobileShell({
       </header>
 
       {/* Main Content Area */}
-      <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">{children}</main>
+      <main className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">{children}</main>
 
       {/* Bottom tabs — Mobile & Tablet only */}
       <nav className="tabbar md:hidden" aria-label="Primary">
@@ -155,7 +160,7 @@ export function MobileShell({
 
 /**
  * ConsoleShell — Officer and Admin.
- * Uses the exact same unified top navbar format on desktop, with responsive container.
+ * Edge-to-edge navbar on desktop with responsive container.
  * Accent:
  *   - 'brand' (Green) for Officer
  *   - 'orange' (Orange #ea580c) for Super Admin
@@ -190,10 +195,10 @@ export function ConsoleShell({
   }, [location.pathname]);
 
   return (
-    <div className="min-h-dvh bg-surface pb-10">
+    <div className="min-h-dvh bg-surface pb-12">
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 border-b border-line bg-surface/95 pt-[env(safe-area-inset-top)] shadow-xs backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4 px-4 py-2.5 sm:px-6 lg:px-8 xl:px-10">
           {/* Logo & Console Title */}
           <div className="flex items-center gap-3">
             <button
@@ -207,15 +212,17 @@ export function ConsoleShell({
 
             <Link
               to={accent === 'orange' ? '/admin' : '/officer'}
-              className="flex items-center gap-2.5 group"
+              className="flex items-center gap-3 group transition"
             >
-              <img src="/icon.svg" alt="Safaai Sarathi" className="h-8 w-8 transition group-hover:scale-105" />
-              <div>
-                <span className="hidden sm:block text-fluid-sm font-extrabold tracking-tight text-ink">
+              <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10 p-1.5 transition group-hover:scale-105 shadow-xs">
+                <img src="/icon.svg" alt="Safaai Sarathi" className="h-full w-full object-contain" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-fluid-sm font-extrabold tracking-tight text-ink leading-tight">
                   Safaai Sarathi
                 </span>
                 <span
-                  className={`block text-fluid-xs font-semibold ${
+                  className={`inline-block text-[11px] font-bold uppercase tracking-wider ${
                     accent === 'orange' ? 'text-orange-600 dark:text-orange-400' : 'text-brand'
                   }`}
                 >
@@ -226,7 +233,7 @@ export function ConsoleShell({
           </div>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden xl:flex items-center gap-1 rounded-2xl border border-line bg-elevated/70 p-1 shadow-xs backdrop-blur">
+          <nav className="hidden xl:flex items-center gap-1 rounded-2xl border border-line bg-elevated/80 p-1 shadow-xs backdrop-blur">
             {nav.map((item) => (
               <NavLink
                 key={item.to}
@@ -254,7 +261,7 @@ export function ConsoleShell({
           </nav>
 
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {headerRight}
             {alertCount > 0 && (
               <span className="chip border-danger/30 bg-danger/10 text-danger text-fluid-xs font-bold">
@@ -267,7 +274,7 @@ export function ConsoleShell({
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
-              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-2.5 transition hover:bg-sunken shadow-xs"
+              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-3 transition hover:bg-sunken shadow-xs"
               aria-label="Account menu"
             >
               <span
@@ -334,7 +341,7 @@ export function ConsoleShell({
       )}
 
       {/* Main Content Area */}
-      <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">{children}</main>
+      <main className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">{children}</main>
 
       <AccountModal
         isOpen={menuOpen}
