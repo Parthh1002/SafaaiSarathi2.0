@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, type ComponentType } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, type ComponentType } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
 export interface SpotlightNavItem {
@@ -23,11 +23,35 @@ export function SpotlightNav({
   const navRef = useRef<HTMLElement>(null);
   const location = useLocation();
   const [hoverX, setHoverX] = useState<number | null>(null);
+  const [pillStyle, setPillStyle] = useState<{ left: number; width: number; opacity: number }>({
+    left: 0,
+    width: 0,
+    opacity: 0,
+  });
 
-  // Active index determined by current route
+  // Find active index based on route
   const activeIndex = items.findIndex((item) =>
     item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)
   );
+
+  // Update sliding active pill position smoothly
+  useLayoutEffect(() => {
+    if (!navRef.current) return;
+    const nav = navRef.current;
+    const activeEl = nav.querySelector<HTMLElement>(`[data-nav-index="${activeIndex}"]`);
+
+    if (activeEl) {
+      const navRect = nav.getBoundingClientRect();
+      const itemRect = activeEl.getBoundingClientRect();
+      setPillStyle({
+        left: itemRect.left - navRect.left,
+        width: itemRect.width,
+        opacity: 1,
+      });
+    } else {
+      setPillStyle((prev) => ({ ...prev, opacity: 0 }));
+    }
+  }, [activeIndex, location.pathname, items]);
 
   // Spring animation helper
   const animateValue = (
@@ -145,7 +169,6 @@ export function SpotlightNav({
     };
   }, [activeIndex]);
 
-  // Colors for Brand Green vs Super Admin Orange
   const isOrange = accent === 'orange';
   const spotlightColor = isOrange
     ? 'rgba(234, 88, 12, 0.16)'
@@ -153,14 +176,11 @@ export function SpotlightNav({
   const ambienceGlowColor = isOrange
     ? 'rgba(234, 88, 12, 0.95)'
     : 'rgba(22, 163, 74, 0.95)';
-  const activePillBg = isOrange
-    ? 'bg-orange-600/15 text-orange-700 dark:text-orange-300 font-bold shadow-xs'
-    : 'bg-brand/15 text-brand dark:text-emerald-300 font-bold shadow-xs';
 
   return (
     <nav
       ref={navRef}
-      className={`spotlight-nav relative flex items-center h-10 sm:h-11 rounded-full border border-line bg-surface/85 px-1.5 shadow-sm backdrop-blur-xl transition-all duration-300 overflow-hidden ${className}`}
+      className={`spotlight-nav relative flex items-center h-10 sm:h-11 rounded-full border border-line bg-surface/90 px-1.5 shadow-xs backdrop-blur-xl transition-all duration-300 overflow-hidden ${className}`}
       style={
         {
           '--spotlight-color': spotlightColor,
@@ -168,6 +188,20 @@ export function SpotlightNav({
         } as React.CSSProperties
       }
     >
+      {/* Sliding Active Pill Background Animation */}
+      <div
+        className={`pointer-events-none absolute h-[calc(100%-8px)] top-1 rounded-full transition-all duration-300 ease-out z-[2] ${
+          isOrange
+            ? 'bg-orange-600/15 border border-orange-500/30 shadow-xs shadow-orange-500/10'
+            : 'bg-brand/15 border border-brand/30 shadow-xs shadow-brand/10'
+        }`}
+        style={{
+          transform: `translateX(${pillStyle.left}px)`,
+          width: `${pillStyle.width}px`,
+          opacity: pillStyle.opacity,
+        }}
+      />
+
       {/* Moving Mouse Spotlight */}
       <div
         className="pointer-events-none absolute bottom-0 left-0 w-full h-full z-[1] transition-opacity duration-300"
@@ -179,9 +213,9 @@ export function SpotlightNav({
 
       {/* Active State Ambient Glow & Bottom Light Beam */}
       <div
-        className="pointer-events-none absolute bottom-0 left-0 w-full h-[2.5px] z-[2]"
+        className="pointer-events-none absolute bottom-0 left-0 w-full h-[2.5px] z-[3]"
         style={{
-          background: `radial-gradient(75px circle at var(--ambience-x, 50%) 0%, var(--ambience-color), transparent 100%)`,
+          background: `radial-gradient(80px circle at var(--ambience-x, 50%) 0%, var(--ambience-color), transparent 100%)`,
         }}
       />
 
@@ -197,10 +231,12 @@ export function SpotlightNav({
                 end={item.end}
                 data-nav-index={idx}
                 className={({ isActive: matchActive }) =>
-                  `relative flex items-center gap-2 rounded-full px-3.5 sm:px-4 py-1.5 text-fluid-xs font-semibold transition-all duration-200 ${
+                  `relative flex items-center gap-2 rounded-full px-3.5 sm:px-4 py-1.5 text-fluid-xs font-semibold transition-colors duration-200 ${
                     matchActive || isActive
-                      ? `${activePillBg}`
-                      : 'text-muted hover:text-ink hover:bg-sunken/60'
+                      ? isOrange
+                        ? 'text-orange-700 dark:text-orange-300 font-bold'
+                        : 'text-brand dark:text-emerald-300 font-bold'
+                      : 'text-muted hover:text-ink'
                   }`
                 }
               >
