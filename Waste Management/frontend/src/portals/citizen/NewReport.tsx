@@ -87,7 +87,8 @@ export default function NewReport() {
       const form = new FormData();
       form.append('file', selected);
       
-      const res = await fetch('http://localhost:8100/api/classify-waste', {
+      const visionUrl = import.meta.env.VITE_VISION_API_URL || 'http://localhost:8100';
+      const res = await fetch(`${visionUrl}/api/classify-waste`, {
         method: 'POST',
         body: form
       });
