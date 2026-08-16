@@ -243,7 +243,7 @@ export default function Login({ portal }: { portal: Portal }) {
             <p className="mt-3 rounded-xl border border-line bg-sunken px-3 py-2 text-fluid-xs text-muted">{t(`auth.${portal}.note`)}</p>
           )}
 
-          <div className="mt-3 rounded-xl border border-brand/30 bg-brand/5 px-3 py-2 text-fluid-xs text-ink dark:text-brand-soft">
+          <div className="mt-3 rounded-xl border border-brand/30 bg-brand/5 px-3 py-2 text-fluid-xs text-ink">
             <strong>Demo Credentials:</strong> Click any account tag at the bottom to auto-fill, or manually use password: <code className="font-mono select-all font-bold">safaai@2026</code>
           </div>
 
