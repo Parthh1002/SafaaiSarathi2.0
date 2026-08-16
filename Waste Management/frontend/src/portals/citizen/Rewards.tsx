@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Trophy,
   TrendingUp,
-  TrendingDown,
   Medal,
   Gift,
   CheckCircle2,
@@ -17,8 +16,9 @@ import {
   ArrowRight,
   Copy,
   Check,
+  Loader2,
 } from 'lucide-react';
-import { api } from '../../lib/api';
+import { api, errorMessage } from '../../lib/api';
 import { Badge, Card, ErrorState, Loading, SectionTitle, toast } from '../../components/ui';
 import { timeAgo } from '../../lib/format';
 
@@ -82,8 +82,8 @@ const REWARDS_CATALOG: RewardItem[] = [
 ];
 
 export default function Rewards() {
+  const queryClient = useQueryClient();
   const [redeemed, setRedeemed] = useState<{ [id: string]: string }>({});
-  const [claiming, setClaiming] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const credits = useQuery({
@@ -95,24 +95,37 @@ export default function Rewards() {
     queryFn: async () => (await api('citizen').get('/citizen/leaderboard')).data,
   });
 
+  const redeemMutation = useMutation({
+    mutationFn: async (reward: RewardItem) => {
+      const res = await api('citizen').post('/citizen/rewards/redeem', {
+        rewardId: reward.id,
+        pointsRequired: reward.pointsRequired,
+        category: reward.category,
+        title: reward.title,
+      });
+      return { ...res.data, rewardId: reward.id };
+    },
+    onSuccess: async (data) => {
+      setRedeemed((prev) => ({ ...prev, [data.rewardId]: data.voucherCode }));
+      await queryClient.invalidateQueries({ queryKey: ['citizen', 'credits'] });
+      await queryClient.invalidateQueries({ queryKey: ['citizen', 'home'] });
+      toast.success(`🎉 Voucher Claimed! Your code is: ${data.voucherCode}`);
+    },
+    onError: (err) => toast.error(errorMessage(err, 'Could not claim voucher')),
+  });
+
   if (credits.isLoading) return <Loading />;
   if (credits.error) return <ErrorState message="Could not load your credits" onRetry={() => credits.refetch()} />;
 
   const data = credits.data;
-  const currentBalance = data.balance;
+  const currentBalance = data?.balance ?? 0;
 
   const handleClaim = (reward: RewardItem) => {
     if (currentBalance < reward.pointsRequired) {
       toast.warn(`You need ${reward.pointsRequired - currentBalance} more Green Credits to claim this voucher!`);
       return;
     }
-    setClaiming(reward.id);
-    setTimeout(() => {
-      const code = `SS-${reward.category}-${Math.random().toString(36).substring(2, 7).toUpperCase()}-2026`;
-      setRedeemed((prev) => ({ ...prev, [reward.id]: code }));
-      setClaiming(null);
-      toast.success(`🎉 Voucher Claimed! Your code is: ${code}`);
-    }, 800);
+    redeemMutation.mutate(reward);
   };
 
   const copyVoucher = (id: string, code: string) => {
@@ -140,110 +153,110 @@ export default function Rewards() {
               <Trophy className="h-8 w-8" />
             </span>
             <div>
+              <p className="text-fluid-xs font-semibold uppercase tracking-wider text-muted">Available Balance</p>
               <div className="flex items-baseline gap-2">
-                <p className="text-fluid-3xl font-black leading-none tabular-nums text-brand">{data.balance}</p>
-                <span className="text-fluid-sm font-semibold text-muted">Credits</span>
+                <span className="text-fluid-2xl font-extrabold tracking-tight text-ink tabular-nums">{currentBalance}</span>
+                <span className="text-fluid-sm font-semibold text-brand">Green Credits</span>
               </div>
-              <p className="mt-1 text-fluid-xs text-muted flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-brand" />
-                Verified Swachhata Karma Balance
-              </p>
             </div>
           </div>
-
-          {board.data && (
-            <div className="flex items-center gap-3 rounded-2xl border border-line/60 bg-elevated px-4 py-3 shadow-sm">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-warn/15 text-warn">
-                <Medal className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-fluid-xs text-muted font-medium">Ward Standing</p>
-                <p className="text-fluid-sm font-bold text-ink">
-                  Rank <span className="text-warn">#{board.data.rank}</span> of {board.data.total}
-                </p>
-              </div>
+          <div className="flex flex-wrap gap-2 sm:self-center">
+            <div className="rounded-xl border border-line bg-surface/80 px-3 py-1.5 backdrop-blur">
+              <span className="text-[11px] text-muted">Your Rank: </span>
+              <span className="text-fluid-xs font-bold text-ink">#{board.data?.rank ?? '—'}</span>
             </div>
-          )}
+            <div className="rounded-xl border border-line bg-surface/80 px-3 py-1.5 backdrop-blur">
+              <span className="text-[11px] text-muted">Total Citizens: </span>
+              <span className="text-fluid-xs font-bold text-ink">{board.data?.total ?? '—'}</span>
+            </div>
+          </div>
         </div>
       </Card>
 
-      {/* ================= CLAIM REWARDS CATALOG ================= */}
-      <section>
-        <SectionTitle
-          title="Redeem & Claim Vouchers"
-          subtitle="Use your accumulated credits for official tax rebates, transit passes & utility subsidies"
-        />
+      {/* Rewards Catalog */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-brand" />
+            <h2 className="text-fluid-base font-bold">Municipal Benefits & Vouchers</h2>
+          </div>
+          <span className="text-fluid-xs text-muted">Official GMC Partners</span>
+        </div>
 
-        <div className="grid gap-3.5 sm:grid-cols-2">
-          {REWARDS_CATALOG.map((item) => {
-            const isRedeemed = Boolean(redeemed[item.id]);
-            const voucherCode = redeemed[item.id];
-            const canAfford = currentBalance >= item.pointsRequired;
-            const Icon = item.icon;
+        <div className="grid gap-4 sm:grid-cols-2">
+          {REWARDS_CATALOG.map((reward) => {
+            const Icon = reward.icon;
+            const canAfford = currentBalance >= reward.pointsRequired;
+            const code = redeemed[reward.id];
+            const isClaiming = redeemMutation.isPending && redeemMutation.variables?.id === reward.id;
 
             return (
               <Card
-                key={item.id}
-                className={`relative flex flex-col justify-between p-4 transition-all duration-300 ${
-                  isRedeemed ? 'border-brand/50 bg-brand/5 ring-1 ring-brand/30' : 'hover:shadow-md'
+                key={reward.id}
+                className={`relative flex flex-col justify-between overflow-hidden border p-4 transition-all duration-200 ${
+                  code ? 'border-ok/50 bg-ok/5' : 'hover:border-brand/40 hover:shadow-md'
                 }`}
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white shadow-sm"
-                        style={{ backgroundColor: item.color }}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </span>
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted">{item.partner}</span>
-                        <h3 className="text-fluid-sm font-bold text-ink leading-tight">{item.title}</h3>
-                      </div>
-                    </div>
-                    <span className="shrink-0 rounded-full border border-brand/30 bg-brand/10 px-2.5 py-0.5 text-fluid-xs font-black text-brand">
-                      {item.discount}
+                    <span
+                      className="grid h-12 w-12 shrink-0 place-items-center rounded-xl text-white shadow-sm"
+                      style={{ backgroundColor: reward.color }}
+                    >
+                      <Icon className="h-6 w-6" />
                     </span>
+                    <Badge tone="brand" className="font-bold">
+                      {reward.discount}
+                    </Badge>
                   </div>
 
-                  <p className="mt-2.5 text-fluid-xs text-muted leading-relaxed">{item.description}</p>
+                  <h3 className="mt-3 text-fluid-base font-bold text-ink">{reward.title}</h3>
+                  <p className="mt-1 text-fluid-xs text-muted leading-relaxed">{reward.description}</p>
+                  <p className="mt-2 text-[11px] font-medium text-faint">Issued by: {reward.partner}</p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-line/60 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1 text-fluid-xs font-semibold">
-                    <Zap className="h-3.5 w-3.5 text-brand" />
-                    <span className="text-ink font-bold tabular-nums">{item.pointsRequired}</span>
-                    <span className="text-muted">credits</span>
-                  </div>
-
-                  {isRedeemed ? (
-                    <div className="flex items-center gap-1.5">
-                      <code className="rounded-lg bg-surface border border-brand/40 px-2 py-1 font-mono text-fluid-xs font-bold text-brand select-all">
-                        {voucherCode}
-                      </code>
+                <div className="mt-4 border-t border-line/60 pt-3">
+                  {code ? (
+                    <div className="flex items-center justify-between rounded-xl border border-ok/30 bg-ok/10 px-3 py-2">
+                      <div>
+                        <span className="block text-[10px] font-semibold text-ok uppercase tracking-wider">Voucher Code</span>
+                        <span className="font-mono text-fluid-xs font-bold text-ink">{code}</span>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => copyVoucher(item.id, voucherCode)}
-                        className="btn-ghost btn-sm p-1.5 text-brand"
-                        title="Copy voucher code"
+                        onClick={() => copyVoucher(reward.id, code)}
+                        className="btn-ghost btn-sm flex items-center gap-1 text-ok hover:bg-ok/20"
                       >
-                        {copiedId === item.id ? <Check className="h-4 w-4 text-ok" /> : <Copy className="h-4 w-4" />}
+                        {copiedId === reward.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        <span>{copiedId === reward.id ? 'Copied' : 'Copy'}</span>
                       </button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleClaim(item)}
-                      disabled={claiming === item.id}
-                      className={`btn-sm rounded-xl font-semibold transition ${
-                        canAfford
-                          ? 'btn-primary shadow-sm hover:shadow'
-                          : 'border border-line bg-sunken text-muted opacity-80'
-                      }`}
-                    >
-                      {claiming === item.id ? 'Generating...' : canAfford ? 'Redeem Voucher' : 'Need More Credits'}
-                    </button>
+                    <div className="flex items-center justify-between">
+                      <span className="text-fluid-xs font-bold text-ink tabular-nums">
+                        {reward.pointsRequired} <span className="text-faint font-normal">pts</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleClaim(reward)}
+                        disabled={!canAfford || isClaiming}
+                        className={`btn-sm flex items-center gap-1.5 rounded-xl font-semibold transition ${
+                          canAfford ? 'btn-primary' : 'border border-line bg-sunken text-faint cursor-not-allowed'
+                        }`}
+                      >
+                        {isClaiming ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Claiming…
+                          </>
+                        ) : canAfford ? (
+                          <>
+                            <Gift className="h-3.5 w-3.5" /> Claim Voucher
+                          </>
+                        ) : (
+                          `Need ${reward.pointsRequired - currentBalance} more`
+                        )}
+                      </button>
+                    </div>
                   )}
                 </div>
               </Card>
@@ -252,91 +265,35 @@ export default function Rewards() {
         </div>
       </section>
 
-      {/* ================= HOW CREDITS WORK ================= */}
-      <section>
-        <SectionTitle title="How credits work" subtitle="Transparent rules for earning and deductions" />
-        <Card className="divide-y divide-line p-0 shadow-sm">
-          {[
-            { label: 'Submit a verified waste report', value: `+${data.rules.reportSubmitted}` },
-            { label: 'AI & Officer verification approved', value: `+${data.rules.reportVerified}` },
-            { label: 'Issue cleaned up with photo proof', value: `+${data.rules.reportResolved}` },
-            { label: 'Emergency report verified (Medical / Bio)', value: `+${data.rules.emergencyVerified}` },
-            { label: "Confirm someone else's nearby report", value: `+${data.rules.duplicateReport}` },
-            { label: 'Spam / Fake image detected (AI Fraud penalty)', value: `${data.rules.fakeReport}` },
-          ].map((rule) => (
-            <div key={rule.label} className="flex items-center justify-between gap-3 px-4 py-2.5">
-              <span className="text-fluid-sm text-muted">{rule.label}</span>
-              <Badge tone={rule.value.startsWith('-') ? 'danger' : 'ok'}>{rule.value}</Badge>
+      {/* Credit Ledger History */}
+      <section className="space-y-3">
+        <SectionTitle title="Points Ledger" subtitle="Detailed audit history of all earned & redeemed credits" />
+        <Card className="divide-y divide-line p-0">
+          {(data?.history ?? []).map((entry: any) => (
+            <div key={entry.id} className="flex items-center justify-between p-3.5 text-fluid-sm">
+              <div className="flex items-center gap-3">
+                <span
+                  className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
+                    entry.delta > 0 ? 'bg-ok/10 text-ok' : 'bg-warn/10 text-warn'
+                  }`}
+                >
+                  {entry.delta > 0 ? <Zap className="h-4 w-4" /> : <Tag className="h-4 w-4" />}
+                </span>
+                <div>
+                  <p className="font-medium text-ink leading-snug">{entry.reason}</p>
+                  <p className="text-[11px] text-faint">{timeAgo(entry.createdAt)}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className={`font-mono font-bold ${entry.delta > 0 ? 'text-ok' : 'text-danger'}`}>
+                  {entry.delta > 0 ? `+${entry.delta}` : entry.delta}
+                </span>
+                <span className="block text-[10px] text-faint">Bal: {entry.balanceAfter}</span>
+              </div>
             </div>
           ))}
         </Card>
       </section>
-
-      {/* ================= CREDIT LEDGER ================= */}
-      <section>
-        <SectionTitle title="Your credit ledger" subtitle="Every credit traces back to an authentic civic action" />
-        {data.entries.length === 0 ? (
-          <p className="text-fluid-sm text-muted">No activity yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {data.entries.map((entry: any) => (
-              <li key={entry.id}>
-                <Card className="flex items-center gap-3 p-3">
-                  <span
-                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${
-                      entry.delta >= 0 ? 'bg-ok/10 text-ok' : 'bg-danger/10 text-danger'
-                    }`}
-                  >
-                    {entry.delta >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-fluid-sm font-medium">{entry.reason}</p>
-                    <p className="text-fluid-xs text-muted">
-                      {entry.complaintCode ? `${entry.complaintCode} · ` : ''}
-                      {timeAgo(entry.createdAt)}
-                    </p>
-                  </div>
-                  <span
-                    className={`shrink-0 text-fluid-sm font-bold tabular-nums ${
-                      entry.delta >= 0 ? 'text-ok' : 'text-danger'
-                    }`}
-                  >
-                    {entry.delta > 0 ? '+' : ''}
-                    {entry.delta}
-                  </span>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* ================= WARD LEADERBOARD ================= */}
-      {board.data?.top?.length > 0 && (
-        <section>
-          <SectionTitle title="Ward leaderboard" subtitle="Top clean city contributors in your jurisdiction" />
-          <Card className="divide-y divide-line p-0 shadow-sm">
-            {board.data.top.map((row: any) => (
-              <div
-                key={row.position}
-                className={`flex items-center gap-3 px-4 py-2.5 ${row.isMe ? 'bg-brand/5' : ''}`}
-              >
-                <span
-                  className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-fluid-xs font-bold ${
-                    row.position <= 3 ? 'bg-warn/15 text-warn' : 'bg-sunken text-muted'
-                  }`}
-                >
-                  {row.position}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-fluid-sm font-medium">
-                  {row.name} {row.isMe && <Badge tone="brand" className="ml-1">You</Badge>}
-                </span>
-                <span className="shrink-0 text-fluid-sm font-bold tabular-nums text-brand">{row.greenCredits} pts</span>
-              </div>
-            ))}
-          </Card>
-        </section>
-      )}
     </div>
   );
 }

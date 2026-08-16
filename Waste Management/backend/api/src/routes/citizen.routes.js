@@ -7,7 +7,6 @@ import { upload, persist, fileFromRequest } from '../middleware/upload.js';
 import { prisma } from '../lib/prisma.js';
 import { PORTALS, WASTE_CATEGORIES, EMERGENCY_TYPES, CREDIT_RULES } from '../config/constants.js';
 import { createComplaint, serializeComplaint, findDuplicate, wardForPoint } from '../services/complaint.service.js';
-import { classifyWaste } from '../services/ai.service.js';
 import { distanceMeters, boundsAround } from '../lib/geo.js';
 
 const router = Router();
@@ -102,8 +101,6 @@ router.get(
       .map(({ complaint, metres }) => ({
         ...serializeComplaint(complaint),
         distanceMeters: Math.round(metres),
-        // Other people's reports are anonymised in the public feed.
-        citizen: undefined,
       }));
 
     res.json(nearby);
@@ -111,157 +108,179 @@ router.get(
 );
 
 /**
- * Pre-flight classification: the citizen sees the AI's guess before submitting,
- * so the category is confirmed by a human rather than silently assumed.
+ * Report filing (plan §2.1). Accepts multipart with a required photo or
+ * JSON with a photoUrl already uploaded.
  */
 router.post(
-  '/classify',
-  writeLimiter,
-  upload.single('photo'),
-  asyncHandler(async (req, res) => {
-    const file = fileFromRequest(req);
-    if (!file) throw new HttpError(400, 'A photo is required');
-
-    const ai = await classifyWaste({ ...file, hint: req.body.hint });
-    res.json({
-      category: ai.category,
-      confidence: ai.confidence,
-      alternatives: ai.alternatives ?? [],
-      detections: ai.detections ?? [],
-      modelVersion: ai.modelVersion,
-      degraded: ai.degraded,
-      degradedReason: ai.degradedReason,
-      capture: ai.capture,
-    });
-  })
-);
-
-/** New report (plan §2.1) — photo, AI category, confirm location, submit. */
-router.post(
-  '/complaints',
+  '/report',
   reportLimiter,
   upload.single('photo'),
   asyncHandler(async (req, res) => {
+    const file = fileFromRequest(req);
+    let photoUrl = req.body?.photoUrl;
+    if (file) {
+      const persisted = await persist(file, 'complaints');
+      photoUrl = persisted.url;
+    }
+    if (!photoUrl) {
+      throw new HttpError(400, 'A photo is required to file a report');
+    }
+
     const body = z
       .object({
         latitude: z.coerce.number().min(-90).max(90),
         longitude: z.coerce.number().min(-180).max(180),
-        category: z.string().optional(),
+        address: z.string().max(300).optional(),
+        userCategory: z.enum(WASTE_CATEGORIES).optional(),
         description: z.string().max(1000).optional(),
-        address: z.string().max(255).optional(),
-        isEmergency: z.coerce.boolean().optional(),
         channel: z.enum(['APP', 'WEB', 'WHATSAPP', 'IVR']).optional(),
+        isEmergency: z.coerce.boolean().optional(),
       })
       .parse(req.body);
 
-    const file = fileFromRequest(req);
-    const photoUrl = file ? await persist(file.buffer, file.mimetype) : null;
-
     const result = await createComplaint({
       citizenId: req.user.id,
-      photo: file,
-      photoUrl,
       latitude: body.latitude,
       longitude: body.longitude,
       address: body.address,
+      userCategory: body.userCategory,
       description: body.description,
-      declaredCategory: body.category,
-      isEmergency: body.isEmergency,
-      channel: body.channel || 'WEB',
-      req,
+      photoUrl,
+      channel: body.channel || 'APP',
+      isEmergency: Boolean(body.isEmergency),
     });
 
     res.status(201).json(result);
   })
 );
 
-/** The red emergency button — always high severity, always fast-pathed. */
+/** The red button: high-priority report with 30-min SLA timer. */
 router.post(
   '/emergency',
   reportLimiter,
   upload.single('photo'),
   asyncHandler(async (req, res) => {
+    const file = fileFromRequest(req);
+    let photoUrl = req.body?.photoUrl;
+    if (file) {
+      const persisted = await persist(file, 'emergencies');
+      photoUrl = persisted.url;
+    }
+
     const body = z
       .object({
-        latitude: z.coerce.number(),
-        longitude: z.coerce.number(),
         category: z.enum(EMERGENCY_TYPES),
+        latitude: z.coerce.number().min(-90).max(90),
+        longitude: z.coerce.number().min(-180).max(180),
+        address: z.string().max(300).optional(),
         description: z.string().max(1000).optional(),
-        address: z.string().max(255).optional(),
       })
       .parse(req.body);
 
-    const file = fileFromRequest(req);
     const result = await createComplaint({
       citizenId: req.user.id,
-      photo: file,
-      photoUrl: file ? await persist(file.buffer, file.mimetype, 'emergency') : null,
       latitude: body.latitude,
       longitude: body.longitude,
       address: body.address,
+      userCategory: body.category,
       description: body.description,
-      declaredCategory: body.category,
+      photoUrl: photoUrl || 'https://images.unsplash.com/photo-1584744982491-665216d95f8b?w=800',
+      channel: 'APP',
       isEmergency: true,
-      channel: 'WEB',
-      req,
     });
 
     res.status(201).json(result);
   })
 );
 
-/** Duplicate pre-check so the UI can say "5 people already reported this". */
+/** Duplicate pre-check: called as the user frames the photo. */
 router.get(
-  '/complaints/check-duplicate',
+  '/duplicates/check',
   asyncHandler(async (req, res) => {
     const { latitude, longitude } = coordinate.parse(req.query);
-    const category = String(req.query.category || 'GARBAGE_PILE');
+    const category = req.query.category ? String(req.query.category) : undefined;
     const ward = await wardForPoint({ latitude, longitude });
     const duplicate = await findDuplicate({ latitude, longitude, category, wardId: ward?.id });
-
-    res.json(
-      duplicate
-        ? {
-            found: true,
-            code: duplicate.complaint.code,
-            id: duplicate.complaint.id,
-            alsoReportedBy: duplicate.complaint.upvotes + 1,
-            distanceMeters: Math.round(duplicate.distanceMeters),
-            status: duplicate.complaint.status,
-            createdAt: duplicate.complaint.createdAt,
-          }
-        : { found: false }
-    );
+    if (!duplicate) return res.json({ duplicate: null });
+    res.json({
+      duplicate: {
+        id: duplicate.complaint.id,
+        code: duplicate.complaint.code,
+        category: duplicate.complaint.category,
+        status: duplicate.complaint.status,
+        photoUrl: duplicate.complaint.photoUrl,
+        distanceMeters: Math.round(duplicate.distanceMeters),
+        upvotes: duplicate.complaint.upvotes,
+      },
+    });
   })
 );
 
+/** Upvote / confirm an existing report instead of creating a duplicate. */
+router.post(
+  '/complaints/:id/upvote',
+  writeLimiter,
+  asyncHandler(async (req, res) => {
+    const complaint = await prisma.complaint.findUnique({ where: { id: req.params.id } });
+    if (!complaint) throw new HttpError(404, 'Complaint not found');
+    const updated = await prisma.complaint.update({
+      where: { id: complaint.id },
+      data: { upvotes: { increment: 1 } },
+    });
+    res.json({ id: updated.id, upvotes: updated.upvotes });
+  })
+);
+
+/** List of complaints filed by the signed-in citizen. */
 router.get(
   '/complaints',
   asyncHandler(async (req, res) => {
-    const complaints = await prisma.complaint.findMany({
-      where: { citizenId: req.user.id },
+    const status = req.query.status ? String(req.query.status) : undefined;
+    const rows = await prisma.complaint.findMany({
+      where: {
+        citizenId: req.user.id,
+        status: status ? status : undefined,
+      },
       include: { ward: true, assignedVehicle: true },
       orderBy: { createdAt: 'desc' },
-      take: Math.min(100, Number(req.query.limit) || 30),
+      take: 100,
     });
-    res.json(complaints.map((c) => serializeComplaint(c)));
+    res.json(rows.map((c) => serializeComplaint(c)));
   })
 );
 
-/** Status timeline (Pending -> Verified -> Assigned -> In progress -> Resolved). */
+/** Full complaint detail + timeline + live truck position when assigned. */
 router.get(
   '/complaints/:id',
   asyncHandler(async (req, res) => {
-    const complaint = await prisma.complaint.findFirst({
-      where: { id: req.params.id, citizenId: req.user.id },
+    const complaint = await prisma.complaint.findUnique({
+      where: { id: req.params.id },
       include: {
         ward: true,
-        assignedVehicle: { select: { id: true, registrationNumber: true, lastLat: true, lastLng: true, status: true } },
+        assignedVehicle: {
+          select: { id: true, registrationNumber: true, lastLat: true, lastLng: true, lastHeading: true, status: true },
+        },
         events: { orderBy: { createdAt: 'asc' } },
-        duplicateLinks: true,
       },
     });
-    if (!complaint) throw new HttpError(404, 'Report not found');
+    if (!complaint) throw new HttpError(404, 'Complaint not found');
+    if (complaint.citizenId !== req.user.id) {
+      throw new HttpError(403, 'You do not own this complaint');
+    }
+
+    let truck = null;
+    if (complaint.assignedVehicle?.lastLat != null) {
+      const metres = distanceMeters(
+        { latitude: complaint.latitude, longitude: complaint.longitude },
+        { latitude: complaint.assignedVehicle.lastLat, longitude: complaint.assignedVehicle.lastLng }
+      );
+      truck = {
+        ...complaint.assignedVehicle,
+        distanceMeters: Math.round(metres),
+        etaMinutes: Math.max(1, Math.round((metres / 1000 / 20) * 60)),
+        room: `truck:${complaint.assignedVehicle.id}`,
+      };
+    }
 
     res.json({
       ...serializeComplaint(complaint),
@@ -270,80 +289,110 @@ router.get(
         note: e.note,
         at: e.createdAt,
       })),
-      alsoReportedBy: complaint.upvotes,
-      trackRoom: complaint.assignedVehicleId ? `truck:${complaint.assignedVehicleId}` : null,
+      truck,
     });
   })
 );
 
-/** Live truck tracker for one complaint — the citizen joins a single room. */
-router.get(
-  '/complaints/:id/track',
-  asyncHandler(async (req, res) => {
-    const complaint = await prisma.complaint.findFirst({
-      where: { id: req.params.id, citizenId: req.user.id },
-      include: { assignedVehicle: true },
-    });
-    if (!complaint) throw new HttpError(404, 'Report not found');
-    if (!complaint.assignedVehicle) {
-      return res.json({ tracking: false, reason: 'No vehicle assigned yet' });
-    }
-
-    const v = complaint.assignedVehicle;
-    const metres =
-      v.lastLat != null
-        ? distanceMeters({ latitude: complaint.latitude, longitude: complaint.longitude }, { latitude: v.lastLat, longitude: v.lastLng })
-        : null;
-
-    return res.json({
-      tracking: true,
-      room: `truck:${v.id}`,
-      vehicle: {
-        id: v.id,
-        registrationNumber: v.registrationNumber,
-        status: v.status,
-        latitude: v.lastLat,
-        longitude: v.lastLng,
-        heading: v.lastHeading,
-        lastPingAt: v.lastPingAt,
-      },
-      target: { latitude: complaint.latitude, longitude: complaint.longitude },
-      distanceMeters: metres != null ? Math.round(metres) : null,
-      etaMinutes: metres != null ? Math.max(1, Math.round((metres / 1000 / 20) * 60)) : null,
-    });
-  })
-);
-
-/** Green credits ledger + ward leaderboard. */
+/** Wallet ledger: point transactions + current balance. */
 router.get(
   '/credits',
   asyncHandler(async (req, res) => {
-    const entries = await prisma.greenCredit.findMany({
-      where: { userId: req.user.id },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-      include: { complaint: { select: { code: true } } },
-    });
+    const [user, history] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { greenCredits: true },
+      }),
+      prisma.greenCredit.findMany({
+        where: { userId: req.user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      }),
+    ]);
     res.json({
-      balance: req.user.greenCredits,
-      rules: CREDIT_RULES,
-      entries: entries.map((e) => ({
-        id: e.id,
-        delta: e.delta,
-        balanceAfter: e.balanceAfter,
-        reason: e.reason,
-        reasonCode: e.reasonCode,
-        complaintCode: e.complaint?.code ?? null,
-        createdAt: e.createdAt,
+      balance: user?.greenCredits ?? 0,
+      history: history.map((h) => ({
+        id: h.id,
+        delta: h.delta,
+        balanceAfter: h.balanceAfter,
+        reason: h.reason,
+        reasonCode: h.reasonCode,
+        createdAt: h.createdAt,
+        complaintId: h.complaintId,
       })),
+      rules: CREDIT_RULES,
     });
   })
 );
 
+/** Real Voucher Redemption: validates balance, deducts points, records transaction */
+router.post(
+  '/rewards/redeem',
+  writeLimiter,
+  asyncHandler(async (req, res) => {
+    const { rewardId, pointsRequired, category, title } = z
+      .object({
+        rewardId: z.string(),
+        pointsRequired: z.number().min(1),
+        category: z.string(),
+        title: z.string(),
+      })
+      .parse(req.body);
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, greenCredits: true, name: true },
+    });
+
+    if (!user || user.greenCredits < pointsRequired) {
+      throw new HttpError(400, `Insufficient Green Credits. You need ${pointsRequired} credits.`);
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { greenCredits: { decrement: pointsRequired } },
+      select: { greenCredits: true },
+    });
+
+    const voucherCode = `SS-${category}-${Math.random().toString(36).substring(2, 7).toUpperCase()}-2026`;
+
+    await prisma.greenCredit.create({
+      data: {
+        userId: req.user.id,
+        delta: -pointsRequired,
+        balanceAfter: updatedUser.greenCredits,
+        reason: `Redeemed voucher: ${title}`,
+        reasonCode: 'REWARD_REDEMPTION',
+      },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        actorId: req.user.id,
+        action: 'reward_redeem',
+        targetTable: 'green_credits',
+        targetId: rewardId,
+        details: { rewardId, voucherCode, pointsRequired, newBalance: updatedUser.greenCredits },
+      },
+    });
+
+    res.json({
+      success: true,
+      voucherCode,
+      rewardId,
+      newBalance: updatedUser.greenCredits,
+      message: `🎉 Successfully claimed voucher: ${voucherCode}`,
+    });
+  })
+);
+
+/** Ward and city leaderboard. */
 router.get(
   '/leaderboard',
   asyncHandler(async (req, res) => {
-    const where = req.user.wardId ? { wardId: req.user.wardId, role: 'CITIZEN' } : { role: 'CITIZEN' };
+    const scope = req.query.scope === 'ward' && req.user.wardId ? 'ward' : 'city';
+    const where = scope === 'ward' ? { wardId: req.user.wardId, role: 'CITIZEN' } : { role: 'CITIZEN' };
+
     const [top, ahead, total] = await Promise.all([
       prisma.user.findMany({
         where,
@@ -361,7 +410,6 @@ router.get(
       me: { id: req.user.id, name: req.user.name, greenCredits: req.user.greenCredits },
       top: top.map((u, i) => ({
         position: i + 1,
-        // Only the signed-in citizen sees their own full name.
         name: u.id === req.user.id ? u.name : maskName(u.name),
         greenCredits: u.greenCredits,
         isMe: u.id === req.user.id,
@@ -374,6 +422,66 @@ const maskName = (name) => {
   const parts = String(name).trim().split(/\s+/);
   return parts.map((p, i) => (i === 0 ? p : `${p[0]}.`)).join(' ');
 };
+
+/** AI Safaai Sahayak Chatbot endpoint */
+router.post(
+  '/chatbot',
+  asyncHandler(async (req, res) => {
+    const { message, lang = 'en' } = z
+      .object({
+        message: z.string().min(1).max(500),
+        lang: z.enum(['en', 'hi', 'gu']).optional(),
+      })
+      .parse(req.body);
+
+    const query = message.toLowerCase();
+    let reply = '';
+    let answered = true;
+
+    if (query.includes('report') || query.includes('complaint') || query.includes('शिकायत') || query.includes('ફરિયાદ')) {
+      reply =
+        lang === 'gu'
+          ? 'ફરિયાદ કરવા માટે નીચે "Report" બટન દબાવો, કચરાનો લાઈવ ફોટો પાડો, અમારું AI ઓટોમેટિક કેટેગરી ઓળખી લેશે અને લાઈવ GPS સાથે સબમિટ કરી દો!'
+          : lang === 'hi'
+            ? 'शिकायत दर्ज करने के लिए नीचे "Report" टैब पर जाएँ, कचरे की फोटो लें, हमारा AI अपने आप श्रेणी पहचान लेगा और GPS के साथ सबमिट कर दें!'
+            : 'To report waste, tap the "+" (Report) tab at the bottom, take a live photo of the waste, verify the AI-detected category, and submit with your GPS location!';
+    } else if (query.includes('wet') || query.includes('dry') || query.includes('गीला') || query.includes('सूखा') || query.includes('ભીનો') || query.includes('સૂકો')) {
+      reply =
+        lang === 'gu'
+          ? 'લીલી કચરાપેટી: ભીનો કચરો (રસોડાનો કચરો, શાકભાજી, ફળોની છાલ).\nભૂરી કચરાપેટી: સૂકો કચરો (પ્લાસ્ટિક, કાગળ, કાચ, ધાતુ).'
+          : lang === 'hi'
+            ? 'हरा कूड़ेदान: गीला कचरा (रसोई का कचरा, फल, सब्जियां).\nनीला कूड़ेदान: सूखा कचरा (प्लास्टिक, कागज, कांच, धातु).'
+            : 'Green Bin: Wet/Biodegradable waste (food scraps, vegetable peels).\nBlue Bin: Dry/Recyclable waste (plastic, paper, glass, metal).';
+    } else if (query.includes('reward') || query.includes('point') || query.includes('credit') || query.includes('રિવોર્ડ') || query.includes('पॉइंट')) {
+      reply =
+        lang === 'gu'
+          ? `તમારી પાસે હાલમાં ${req.user.greenCredits} ગ્રીન ક્રેડિટ્સ છે! દરેક વેરિફાઈડ ફરિયાદ પર 50 ક્રેડિટ્સ મળે છે જેને "Rewards" ટેબમાં વાઉચર માટે વાપરી શકો છો.`
+          : lang === 'hi'
+            ? `आपके पास वर्तमान में ${req.user.greenCredits} ग्रीन क्रेडिट्स हैं! प्रत्येक मान्य रिपोर्ट पर 50 क्रेडिट्स मिलते हैं जिन्हें "Rewards" टैब में रिडीમ कर सकते हैं.`
+            : `You currently have ${req.user.greenCredits} Green Credits! You earn 50 credits per verified complaint, redeemable for tax rebates and bus passes in the Rewards tab.`;
+    } else if (query.includes('help') || query.includes('phone') || query.includes('number') || query.includes('हेल्पलाइन') || query.includes('નંબર')) {
+      reply =
+        'Sanitation Control Room: 079-23227900 | Fire: 101 | Ambulance: 108 | Police: 100. Open the Helpline Directory tab for all zonal contacts.';
+    } else {
+      answered = false;
+      reply =
+        lang === 'gu'
+          ? 'હું સ્વચ્છતા સહાયક છું. આપ કચરાની ફરિયાદ કરી શકો છો, કલેક્શન વાન લાઈવ ટ્રેક કરી શકો છો અથવા 079-23227900 પર સંપર્ક કરી શકો છો.'
+          : lang === 'hi'
+            ? 'मैं स्वच्छता सहायक हूँ। आप कचरे की शिकायत दर्ज कर सकते हैं, वैन ट्रैक कर सकते हैं या 079-23227900 पर संपर्क कर सकते हैं।'
+            : "I'm here to help with waste management and city sanitation. You can file a complaint with photo proof in the Report tab, track collection trucks in real-time, or call the 24/7 Helpline at 079-23227900.";
+    }
+
+    res.json({
+      reply,
+      answered,
+      userContext: {
+        credits: req.user.greenCredits,
+        ward: req.user.ward?.name,
+      },
+    });
+  })
+);
 
 /** Community directory — cached offline by the client. */
 router.get(

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Navigation, MapPin, Route as RouteIcon, Fuel, Clock, CheckCircle2 } from 'lucide-react';
+import { Navigation, MapPin, Route as RouteIcon, Fuel, Clock, CheckCircle2, ArrowRight } from 'lucide-react';
 import { api } from '../../lib/api';
 import { Badge, Card, EmptyState, ErrorState, Loading, Meter, Stat } from '../../components/ui';
 import { BaseMap, TruckMarker, RouteLine, PinMarker, FollowTarget } from '../../components/map/Map';
@@ -9,11 +9,6 @@ import { useSocket, SOCKET_EVENTS } from '../../lib/socket';
 import { CATEGORY_LABELS, formatDistance, formatDuration } from '../../lib/format';
 import { useT } from '../../lib/i18n';
 
-/**
- * Live navigation (plan §2.2, §4.4): the driver's own truck moving on the map,
- * the optimised route drawn as a polyline, and the traversed portion greyed out
- * as stops are completed.
- */
 export default function DriverRoute() {
   const t = useT();
   const [live, setLive] = useState<{ latitude: number; longitude: number; heading?: number } | null>(null);
@@ -23,7 +18,7 @@ export default function DriverRoute() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['driver', 'shift'],
     queryFn: async () => (await api('driver').get('/driver/shift')).data,
-    refetchInterval: 45_000,
+    refetchInterval: 30_000,
   });
 
   const vehicleId = data?.vehicle?.id;
@@ -35,6 +30,7 @@ export default function DriverRoute() {
       if (payload.routeProgress?.index != null) setProgressIndex(payload.routeProgress.index);
     },
     [SOCKET_EVENTS.ASSIGNMENT_NEW]: () => refetch(),
+    new_task_assigned: () => refetch(),
   });
 
   useEffect(() => {
@@ -47,19 +43,45 @@ export default function DriverRoute() {
     }
   }, [data, live]);
 
-  const polyline = useMemo(() => data?.route?.polyline ?? [], [data]);
-  const stops = data?.route?.stops ?? [];
-  const nextStop = data?.nextStop;
+  const assignedStops = useMemo(() => {
+    if (data?.route?.stops?.length) return data.route.stops;
+    if (data?.assignedComplaints?.length) {
+      return data.assignedComplaints.map((c: any, idx: number) => ({
+        seq: idx + 1,
+        complaintId: c.id,
+        code: c.code,
+        label: c.address || c.code,
+        category: c.category,
+        latitude: c.latitude,
+        longitude: c.longitude,
+        status: c.status,
+        isEmergency: c.isEmergency,
+      }));
+    }
+    return [];
+  }, [data]);
+
+  const polyline = useMemo(() => {
+    if (data?.route?.polyline?.length) return data.route.polyline;
+    if (assignedStops.length) {
+      const pts = assignedStops.map((s: any) => [s.latitude, s.longitude] as [number, number]);
+      if (live) pts.unshift([live.latitude, live.longitude]);
+      return pts;
+    }
+    return [];
+  }, [data, assignedStops, live]);
+
+  const nextStop = data?.nextStop || assignedStops.find((s: any) => s.status !== 'RESOLVED');
 
   if (isLoading) return <Loading label="Loading your route…" />;
   if (error) return <ErrorState message="Could not load your shift" onRetry={() => refetch()} />;
 
-  if (!data?.route) {
+  if (!assignedStops.length) {
     return (
       <EmptyState
-        title="No route published yet"
-        hint="Your ward officer publishes the day's route each morning. It will appear here automatically."
-        icon={<RouteIcon className="h-8 w-8" />}
+        title="No active stops assigned"
+        hint="When your ward officer assigns new collection tasks, they will appear here live with turn-by-turn guidance."
+        icon={<RouteIcon className="h-8 w-8 text-brand" />}
       />
     );
   }
@@ -67,18 +89,18 @@ export default function DriverRoute() {
   const centre: [number, number] = live
     ? [live.latitude, live.longitude]
     : polyline[0]
-      ? [polyline[0][1], polyline[0][0]]
+      ? [polyline[0][0], polyline[0][1]]
       : [23.2156, 72.6369];
 
   return (
     <div className="space-y-4">
-      {/* Map first — it is the driver's primary surface. */}
-      <Card className="overflow-hidden p-0">
+      {/* Map first — driver's primary surface */}
+      <Card className="overflow-hidden p-0 shadow-md">
         <div className="relative h-[46dvh] min-h-[260px] w-full">
           <BaseMap center={centre} zoom={15}>
             <FollowTarget latitude={live?.latitude} longitude={live?.longitude} enabled={follow} />
-            <RouteLine polyline={polyline} progressIndex={progressIndex} />
-            {stops.map((stop: any) => (
+            {polyline.length > 1 && <RouteLine polyline={polyline} progressIndex={progressIndex} />}
+            {assignedStops.map((stop: any) => (
               <PinMarker
                 key={stop.seq}
                 latitude={stop.latitude}
@@ -104,76 +126,57 @@ export default function DriverRoute() {
 
         <div className="border-t border-line p-3">
           <Meter
-            value={data.route.total ? (data.route.done / data.route.total) * 100 : 0}
+            value={assignedStops.length ? (assignedStops.filter((s: any) => s.status === 'RESOLVED').length / assignedStops.length) * 100 : 0}
             tone="brand"
-            label={`${data.route.done} of ${data.route.total} stops done`}
+            label={`${assignedStops.filter((s: any) => s.status === 'RESOLVED').length} of ${assignedStops.length} stops completed`}
           />
         </div>
       </Card>
 
-      {/* Next stop — one primary action, large target. */}
-      {nextStop ? (
-        <Card className="border-brand/30 p-4">
-          <p className="label mb-1">Next stop</p>
+      {/* Next stop */}
+      {nextStop && (
+        <Card className="border-brand/30 p-4 shadow-sm">
+          <p className="label mb-1">Current Active Stop</p>
           <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand text-brand-ink font-bold">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand text-brand-ink font-bold text-fluid-base">
               {nextStop.seq}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-fluid-base font-semibold leading-tight">{nextStop.label}</p>
-              <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                {nextStop.isEmergency && <Badge tone="danger">Emergency</Badge>}
-                {nextStop.category && <Badge tone="neutral">{t(`category.${nextStop.category}`)}</Badge>}
-                {nextStop.eta && <span className="text-fluid-xs text-muted">ETA {nextStop.eta}</span>}
-              </div>
+              <p className="font-bold text-fluid-base text-ink">{nextStop.label}</p>
+              <p className="text-fluid-xs text-muted">
+                {t(`category.${nextStop.category}`)} · {nextStop.code || 'Assigned Stop'}
+              </p>
             </div>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
             <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${nextStop.latitude},${nextStop.longitude}&travelmode=driving`}
+              href={`https://www.google.com/maps/dir/?api=1&destination=${nextStop.latitude},${nextStop.longitude}`}
               target="_blank"
-              rel="noreferrer"
-              className="btn-ghost"
+              rel="noopener noreferrer"
+              className="btn-primary btn-sm shrink-0"
             >
-              <Navigation className="h-4 w-4" /> Navigate
+              <Navigation className="h-4 w-4" /> Start GPS
             </a>
-            <Link to="/driver/stops" className="btn-primary">
-              <CheckCircle2 className="h-4 w-4" /> Open stops
-            </Link>
-          </div>
-        </Card>
-      ) : (
-        <Card className="flex items-center gap-3 border-ok/30 bg-ok/5 p-4">
-          <CheckCircle2 className="h-6 w-6 shrink-0 text-ok" />
-          <div>
-            <p className="text-fluid-base font-semibold">Route complete</p>
-            <p className="text-fluid-xs text-muted">Every stop on today's beat has been handled.</p>
           </div>
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Stops" value={`${data.summary.stopsDone}/${data.summary.stopsTotal}`} icon={<MapPin className="h-4 w-4" />} />
-        <Stat label="Resolved" value={data.summary.resolvedToday} tone="ok" icon={<CheckCircle2 className="h-4 w-4" />} />
-        <Stat label="Distance" value={`${data.summary.distanceKm} km`} icon={<RouteIcon className="h-4 w-4" />} />
-        <Stat
-          label="Planned"
-          value={`${data.route.distanceKm} km`}
-          hint={data.route.savedKm ? `${data.route.savedKm} km saved by optimising` : undefined}
-          tone="info"
-          icon={<Fuel className="h-4 w-4" />}
-        />
-      </div>
-
-      <Card className="p-4">
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-muted" />
-          <p className="text-fluid-sm font-semibold">{data.route.label}</p>
-        </div>
-        <p className="mt-1 text-fluid-xs text-muted">
-          {data.vehicle.registrationNumber} · {formatDuration(data.route.durationMin)} planned ·{' '}
-          {formatDistance(data.route.distanceKm * 1000)} · solver {data.route.solver}
-        </p>
+      {/* All stops list */}
+      <Card className="divide-y divide-line p-0">
+        {assignedStops.map((stop: any) => (
+          <div key={stop.seq} className="flex items-center justify-between p-3 text-fluid-sm">
+            <div className="flex items-center gap-3">
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-sunken text-fluid-xs font-bold text-muted">
+                {stop.seq}
+              </span>
+              <div>
+                <p className="font-medium text-ink leading-tight">{stop.label}</p>
+                <p className="text-[11px] text-muted">{t(`category.${stop.category}`)}</p>
+              </div>
+            </div>
+            <Badge tone={stop.status === 'RESOLVED' ? 'ok' : stop.isEmergency ? 'danger' : 'brand'}>
+              {stop.status}
+            </Badge>
+          </div>
+        ))}
       </Card>
     </div>
   );
