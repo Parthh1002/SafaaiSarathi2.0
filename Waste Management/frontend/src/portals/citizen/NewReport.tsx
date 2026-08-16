@@ -31,6 +31,7 @@ export default function NewReport() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const [step, setStep] = useState<Step>('capture');
   const [file, setFile] = useState<File | null>(null);
@@ -50,6 +51,7 @@ export default function NewReport() {
     locate();
     return () => {
       if (preview) URL.revokeObjectURL(preview);
+      if (abortControllerRef.current) abortControllerRef.current.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -72,7 +74,50 @@ export default function NewReport() {
         setLocating(false);
       },
       { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
+  // Safely compress image to speed up upload/inference without crashing backend
+  async function compressImage(file: File): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+          } else {
+            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Compression failed'));
+          }, 'image/jpeg', 0.7);
+        };
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  }
+
   async function onPhoto(selected: File) {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    const currentSignal = abortControllerRef.current.signal;
+
     setFile(selected);
     setPreview(URL.createObjectURL(selected));
     setStep('review');
@@ -81,8 +126,11 @@ export default function NewReport() {
     setCategoryConfirmed(false);
 
     try {
+      const compressedBlob = await compressImage(selected);
+      if (currentSignal.aborted) return;
+      
       const form = new FormData();
-      form.append('file', selected);
+      form.append('file', compressedBlob, 'photo.jpg');
       
       let visionUrl = import.meta.env.VITE_VISION_API_URL || 'http://localhost:8100';
       if (visionUrl.endsWith('/')) {
@@ -91,11 +139,13 @@ export default function NewReport() {
       
       const res = await fetch(`${visionUrl}/api/classify-waste`, {
         method: 'POST',
-        body: form
+        body: form,
+        signal: currentSignal
       });
       
       if (!res.ok) throw new Error('API failed');
       const data: VisionClassification = await res.json();
+      if (currentSignal.aborted) return;
       
       setVisionAi(data);
       
@@ -108,7 +158,8 @@ export default function NewReport() {
       } else {
          setCategory('');
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
       setVisionAi({
          status: 'no_detection',
          predicted_category: null,
@@ -118,7 +169,9 @@ export default function NewReport() {
       });
       setCategory('');
     } finally {
-      setClassifying(false);
+      if (!currentSignal.aborted) {
+        setClassifying(false);
+      }
     }
   }
 
@@ -262,7 +315,7 @@ export default function NewReport() {
                   if (fileInput.current) fileInput.current.value = '';
                   fileInput.current?.click();
                 }}
-                className="absolute bottom-3 right-3 btn-ghost btn-sm bg-elevated/90"
+                className="absolute bottom-3 right-3 btn-ghost btn-sm bg-elevated/90 z-10"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Retake
               </button>
