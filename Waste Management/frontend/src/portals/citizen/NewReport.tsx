@@ -248,7 +248,7 @@ export default function NewReport() {
                 <div className="absolute inset-0 grid place-items-center bg-black/55 backdrop-blur-sm">
                   <div className="flex flex-col items-center gap-2 text-white">
                     <Loader2 className="h-8 w-8 animate-spin" />
-                    <p className="text-fluid-sm font-medium">AI photo check kar raha hai...</p>
+                    <p className="text-fluid-sm font-medium">{t('citizen.analyzing_photo') || 'Analysing photo...'}</p>
                   </div>
                 </div>
               )}

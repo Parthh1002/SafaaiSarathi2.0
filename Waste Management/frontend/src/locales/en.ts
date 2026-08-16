@@ -235,6 +235,7 @@ export const en: Record<string, string> = {
   // ---- citizen ----
   'citizen.nav.home': 'Home',
   'citizen.nav.report': 'Report',
+  'citizen.analyzing_photo': 'Analysing photo with AI...',
   'citizen.nav.complaints': 'My reports',
   'citizen.nav.rewards': 'Rewards',
   'citizen.nav.directory': 'Helpline',

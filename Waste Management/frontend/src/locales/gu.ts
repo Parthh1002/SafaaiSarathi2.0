@@ -225,8 +225,9 @@ export const gu: Record<string, string> = {
 
   // ---- citizen ----
   'citizen.nav.home': 'હોમ',
-  'citizen.nav.report': 'ફરિયાદ',
-  'citizen.nav.complaints': 'મારી ફરિયાદો',
+  'citizen.nav.report': 'રિપોર્ટ',
+  'citizen.analyzing_photo': 'AI ફોટો ચેક કરી રહ્યું છે...',
+  'citizen.nav.complaints': 'મારી રિપોર્ટ',
   'citizen.nav.rewards': 'ઇનામ',
   'citizen.nav.directory': 'હેલ્પલાઇન',
   'citizen.home.greeting': 'નમસ્તે,',

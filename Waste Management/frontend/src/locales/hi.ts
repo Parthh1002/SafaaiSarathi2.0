@@ -226,8 +226,9 @@ export const hi: Record<string, string> = {
 
   // ---- citizen ----
   'citizen.nav.home': 'होम',
-  'citizen.nav.report': 'शिकायत',
-  'citizen.nav.complaints': 'मेरी शिकायतें',
+  'citizen.nav.report': 'रिपोर्ट',
+  'citizen.analyzing_photo': 'AI फोटो चेक कर रहा है...',
+  'citizen.nav.complaints': 'मेरी रिपोर्ट',
   'citizen.nav.rewards': 'पुरस्कार',
   'citizen.nav.directory': 'हेल्पलाइन',
   'citizen.home.greeting': 'नमस्ते,',
