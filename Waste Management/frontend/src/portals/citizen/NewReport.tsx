@@ -43,6 +43,7 @@ export default function NewReport() {
   const [description, setDescription] = useState('');
   const [position, setPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
+  const [geoDenied, setGeoDenied] = useState(false);
   const [duplicate, setDuplicate] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -56,24 +57,51 @@ export default function NewReport() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function locate() {
+  async function fetchIpLocation() {
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.latitude && data.longitude) {
+          return { lat: Number(data.latitude), lng: Number(data.longitude) };
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
+  async function locate() {
     if (!navigator.geolocation) {
-      toast.warn('Your browser cannot share location. Pick the spot on the map instead.');
-      setPosition({ lat: 23.2156, lng: 72.6369 });
+      toast.warn('Browser GPS not supported. Fetching approximate city location.');
+      const ipPos = await fetchIpLocation();
+      setPosition(ipPos || { lat: 23.2156, lng: 72.6369 });
       return;
     }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGeoDenied(false);
         setLocating(false);
       },
-      () => {
-        toast.warn('Location denied — drop the pin manually on the map.');
-        setPosition({ lat: 23.2156, lng: 72.6369 });
+      async (err) => {
         setLocating(false);
+        if (err.code === 1) {
+          setGeoDenied(true);
+          toast.warn('Browser Location Blocked! Please allow location permission in URL bar.');
+        } else {
+          toast.warn('Location fix delayed — using city approximate location.');
+        }
+        const ipPos = await fetchIpLocation();
+        if (ipPos) {
+          setPosition(ipPos);
+        } else if (!position) {
+          setPosition({ lat: 23.2156, lng: 72.6369 });
+        }
       },
-      { enableHighAccuracy: true, timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   }
 
@@ -450,6 +478,23 @@ export default function NewReport() {
                 </div>
               </div>
             </Card>
+          )}
+
+          {geoDenied && (
+            <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3.5 text-fluid-xs text-destructive flex items-start gap-3 shadow-sm">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+              <div className="min-w-0">
+                <p className="font-bold text-fluid-sm text-destructive">Location Permission Blocked in Browser</p>
+                <p className="mt-1 text-muted">
+                  Aapke browser ne location permission block kar rakhi hai. Live exact GPS pane ke liye:
+                </p>
+                <ol className="mt-1.5 list-decimal pl-4 space-y-0.5 text-fluid-xs text-ink font-medium">
+                  <li>Browser me upar URL bar ke left me <strong>Tune / Lock icon</strong> par click karein.</li>
+                  <li><strong>Location</strong> permission ko <strong>Allow (On)</strong> karein.</li>
+                  <li>Page refresh karein ya neeche <strong>"Use my location"</strong> dabayein.</li>
+                </ol>
+              </div>
+            </div>
           )}
 
           <div className="rounded-xl border border-warn/30 bg-warn/10 p-3 text-fluid-xs text-warn flex items-start gap-2.5 shadow-sm">
