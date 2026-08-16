@@ -16,23 +16,36 @@ import { aiHealth } from '../services/ai.service.js';
 const router = Router();
 router.use(requirePortal(PORTALS.ADMIN), loadUser);
 
-/** City-wide command dashboard — all wards, all trucks, all officers. */
+/**
+ * FEATURE 1: City-Wide Dashboard
+ * GET /api/admin/dashboard & GET /api/admin/overview
+ */
 router.get(
-  '/overview',
+  ['/dashboard', '/overview'],
   asyncHandler(async (_req, res) => {
-    const [kpis, wards, status, categories, officers, citizens] = await Promise.all([
+    const [kpis, wards, status, categories, officers, drivers, citizens] = await Promise.all([
       analytics.overview(null),
       analytics.wardPerformance(null),
       analytics.statusBreakdown(null),
       analytics.categoryBreakdown(null, 7),
       prisma.user.count({ where: { role: ROLES.OFFICER, isActive: true } }),
+      prisma.user.count({ where: { role: ROLES.DRIVER, isActive: true } }),
       prisma.user.count({ where: { role: ROLES.CITIZEN } }),
     ]);
-    res.json({ ...kpis, wards, statusBreakdown: status, categoryBreakdown: categories, staff: { officers, citizens } });
+    res.json({
+      ...kpis,
+      wards,
+      statusBreakdown: status,
+      categoryBreakdown: categories,
+      staff: { officers, drivers, citizens },
+    });
   })
 );
 
-/** Master fleet registry (plan §2.4) — every vehicle in the city. */
+/**
+ * FEATURE 2: Master Fleet Registry & Live Tracking
+ * GET /api/admin/fleet
+ */
 router.get(
   '/fleet',
   asyncHandler(async (req, res) => {
@@ -41,12 +54,19 @@ router.get(
       include: { ward: true, driver: { select: { id: true, name: true, phone: true, isActive: true } } },
       orderBy: { registrationNumber: 'asc' },
     });
+
+    const now = Date.now();
     res.json(
-      vehicles.map((v) => ({
-        ...serializeVehicle(v, v.ward),
-        driver: v.driver,
-        maintenanceFlag: v.maintenanceFlag,
-      }))
+      vehicles.map((v) => {
+        const isStale = v.lastPingAt ? (now - new Date(v.lastPingAt).getTime() > 120_000) : true;
+        return {
+          ...serializeVehicle(v, v.ward),
+          driver: v.driver,
+          maintenanceFlag: v.maintenanceFlag,
+          isOffline: v.status === 'OFFLINE' || isStale,
+          lastPingAgeSec: v.lastPingAt ? Math.round((now - new Date(v.lastPingAt).getTime()) / 1000) : null,
+        };
+      })
     );
   })
 );
@@ -108,14 +128,17 @@ router.patch(
   })
 );
 
-// ---- User & role management (officers/drivers are provisioned here) ------
-
+/**
+ * FEATURE 3: User & Staff Management
+ * GET /api/admin/users, POST /api/admin/users, PATCH /api/admin/users/:id, PATCH /api/admin/users/:id/block
+ */
 router.get(
   '/users',
   asyncHandler(async (req, res) => {
     const q = z
       .object({
         role: z.enum(['CITIZEN', 'DRIVER', 'OFFICER', 'ADMIN']).optional(),
+        wardId: z.string().optional(),
         search: z.string().optional(),
         page: z.coerce.number().min(1).optional(),
         pageSize: z.coerce.number().min(5).max(100).optional(),
@@ -126,6 +149,7 @@ router.get(
     const pageSize = q.pageSize || 25;
     const where = {
       ...(q.role ? { role: q.role } : {}),
+      ...(q.wardId ? { wardId: q.wardId } : {}),
       ...(q.search
         ? {
             OR: [
@@ -166,7 +190,6 @@ router.get(
   })
 );
 
-/** Create an officer or driver. Citizens never arrive through this route. */
 router.post(
   '/users',
   writeLimiter,
@@ -192,7 +215,7 @@ router.post(
         role: body.role,
         passwordHash: await hashPassword(body.password),
         wardId: body.wardId,
-        emailVerifiedAt: body.role === 'DRIVER' ? null : new Date(), // provisioned drivers must verify email on first login
+        emailVerifiedAt: body.role === 'DRIVER' ? null : new Date(),
       },
     });
 
@@ -204,6 +227,41 @@ router.post(
     }
 
     res.status(201).json({ id: user.id, name: user.name, email: user.email, role: user.role });
+  })
+);
+
+/** Block / Unblock user with instant session invalidation and audit logging */
+router.patch(
+  ['/users/:id/block', '/users/:id/toggle-block'],
+  writeLimiter,
+  asyncHandler(async (req, res) => {
+    const before = await prisma.user.findUnique({ where: { id: req.params.id } });
+    if (!before) throw new HttpError(404, 'User not found');
+    if (before.id === req.user.id) {
+      throw new HttpError(400, 'You cannot block your own admin account');
+    }
+
+    const nextState = !before.isActive;
+    const user = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { isActive: nextState },
+    });
+
+    if (!nextState) {
+      await revokeAllSessions(user.id);
+    }
+
+    await recordAudit({
+      actorId: req.user.id,
+      action: nextState ? 'user_unblock' : 'user_block',
+      targetTable: 'users',
+      targetId: user.id,
+      before: { isActive: before.isActive },
+      after: { isActive: user.isActive },
+      req,
+    });
+
+    res.json({ id: user.id, name: user.name, isActive: user.isActive });
   })
 );
 
@@ -244,7 +302,6 @@ router.patch(
       }
     }
 
-    // Deactivation, role change or password reset must kill live sessions.
     if (body.isActive === false || body.role || password) await revokeAllSessions(user.id);
 
     await recordAudit({
@@ -261,14 +318,15 @@ router.patch(
   })
 );
 
-// ---- Wards & system settings ---------------------------------------------
-
+/**
+ * FEATURE 4: Ward Boundaries & Settings
+ * GET /api/admin/wards, POST /api/admin/wards, PATCH /api/admin/wards/:id
+ */
 router.get(
   '/wards',
   asyncHandler(async (_req, res) => res.json(await analytics.wardPerformance(null)))
 );
 
-/** Ward boundary editor — GeoJSON upload (plan §2.4). */
 router.post(
   '/wards',
   writeLimiter,
@@ -311,37 +369,123 @@ router.post(
   })
 );
 
-// ---- Analytics, audit, model health ---------------------------------------
+router.patch(
+  '/wards/:id',
+  writeLimiter,
+  audited('ward_update', 'wards'),
+  asyncHandler(async (req, res) => {
+    const body = z
+      .object({
+        name: z.string().min(2).optional(),
+        code: z.string().min(1).optional(),
+        zone: z.string().optional(),
+        population: z.coerce.number().optional(),
+        slaMinutes: z.coerce.number().optional(),
+        boundary: z
+          .object({
+            type: z.literal('Polygon'),
+            coordinates: z.array(z.array(z.tuple([z.number(), z.number()]))),
+          })
+          .optional(),
+      })
+      .parse(req.body);
 
+    let geoUpdates = {};
+    if (body.boundary) {
+      const bbox = polygonBBox(body.boundary);
+      const centre = polygonCentroid(body.boundary);
+      geoUpdates = {
+        boundary: body.boundary,
+        centerLat: centre.latitude,
+        centerLng: centre.longitude,
+        ...bbox,
+      };
+    }
+
+    const ward = await prisma.ward.update({
+      where: { id: req.params.id },
+      data: {
+        ...(body.name ? { name: body.name } : {}),
+        ...(body.code ? { code: body.code } : {}),
+        ...(body.zone ? { zone: body.zone } : {}),
+        ...(body.population != null ? { population: body.population } : {}),
+        ...(body.slaMinutes != null ? { slaMinutes: body.slaMinutes } : {}),
+        ...geoUpdates,
+      },
+    });
+
+    res.json(ward);
+  })
+);
+
+/**
+ * FEATURE 5: Compliance & Audit Exports
+ * GET /api/admin/exports & GET /api/admin/export/compliance
+ */
 router.get(
-  '/analytics',
+  ['/exports', '/export/compliance'],
   asyncHandler(async (req, res) => {
     const days = Number(req.query.days) || 30;
-    const [trends, categories, wards, status] = await Promise.all([
-      analytics.trends(null, days),
-      analytics.categoryBreakdown(null, days),
-      analytics.wardPerformance(null),
-      analytics.statusBreakdown(null),
-    ]);
-    res.json({ days, trends, categories, wards, status });
+    const wards = await analytics.wardPerformance(null);
+    const trends = await analytics.trends(null, days);
+    const categories = await analytics.categoryBreakdown(null, days);
+
+    const rows = wards.map((w) => ({
+      wardCode: w.code,
+      wardName: w.name,
+      zone: w.zone,
+      population: w.population,
+      complaintsReported: w.reported7d,
+      complaintsResolved: w.resolved7d,
+      openComplaints: w.openComplaints,
+      emergencies: w.emergencies7d,
+      slaCompliancePct: w.slaCompliancePct,
+      avgResolutionMinutes: w.avgResolutionMinutes,
+      vehiclesDeployed: w.vehicles,
+    }));
+
+    const totals = rows.reduce(
+      (acc, r) => ({
+        complaintsReported: acc.complaintsReported + r.complaintsReported,
+        complaintsResolved: acc.complaintsResolved + r.complaintsResolved,
+        openComplaints: acc.openComplaints + r.openComplaints,
+        emergencies: acc.emergencies + r.emergencies,
+      }),
+      { complaintsReported: 0, complaintsResolved: 0, openComplaints: 0, emergencies: 0 }
+    );
+
+    if (req.query.format === 'csv' || req.query.type === 'csv') {
+      const header = Object.keys(rows[0] || { wardCode: '' }).join(',');
+      const csv = [header, ...rows.map((r) => Object.values(r).join(','))].join('\n');
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="safaai-compliance-${new Date().toISOString().slice(0, 10)}.csv"`);
+      return res.send(csv);
+    }
+
+    return res.json({
+      title: 'SWM Rules ward-wise compliance summary',
+      generatedAt: new Date(),
+      periodDays: days,
+      city: 'Gandhinagar',
+      rows,
+      totals: {
+        ...totals,
+        resolutionRatePct: totals.complaintsReported
+          ? Math.round((totals.complaintsResolved / totals.complaintsReported) * 100)
+          : 0,
+      },
+      trends,
+      categories,
+    });
   })
 );
 
+/**
+ * FEATURE 6: Audit Logs
+ * GET /api/admin/audit-logs & GET /api/admin/audit
+ */
 router.get(
-  '/hotspots',
-  asyncHandler(async (req, res) => res.json(await analytics.hotspotForecast(null, req.query.date)))
-);
-
-router.get(
-  '/model-health',
-  asyncHandler(async (req, res) => {
-    const [health, ai] = await Promise.all([analytics.modelHealth(Number(req.query.days) || 14), aiHealth()]);
-    res.json({ ...health, service: ai });
-  })
-);
-
-router.get(
-  '/audit',
+  ['/audit-logs', '/audit'],
   asyncHandler(async (req, res) => {
     const q = z
       .object({
@@ -377,66 +521,60 @@ router.get(
 );
 
 /**
- * Compliance export (plan §2.4). Returns a structured payload the dashboard
- * renders as a table and can download as CSV — SWM Rules / Swachh Survekshan
- * style ward-wise performance.
+ * FEATURE 7: AI Model Health Monitoring
+ * GET /api/admin/model-health
  */
 router.get(
-  '/export/compliance',
+  '/model-health',
   asyncHandler(async (req, res) => {
-    const days = Number(req.query.days) || 30;
-    const wards = await analytics.wardPerformance(null);
-    const trends = await analytics.trends(null, days);
-    const categories = await analytics.categoryBreakdown(null, days);
+    const days = Number(req.query.days) || 14;
+    const [health, ai] = await Promise.all([analytics.modelHealth(days), aiHealth()]);
 
-    const rows = wards.map((w) => ({
-      wardCode: w.code,
-      wardName: w.name,
-      zone: w.zone,
-      population: w.population,
-      complaintsReported: w.reported7d,
-      complaintsResolved: w.resolved7d,
-      openComplaints: w.openComplaints,
-      emergencies: w.emergencies7d,
-      slaCompliancePct: w.slaCompliancePct,
-      avgResolutionMinutes: w.avgResolutionMinutes,
-      vehiclesDeployed: w.vehicles,
-    }));
-
-    const totals = rows.reduce(
-      (acc, r) => ({
-        complaintsReported: acc.complaintsReported + r.complaintsReported,
-        complaintsResolved: acc.complaintsResolved + r.complaintsResolved,
-        openComplaints: acc.openComplaints + r.openComplaints,
-        emergencies: acc.emergencies + r.emergencies,
+    // Check low-confidence proportion flagged/rejected by officers
+    const [totalPredictions, rejectedPredictions] = await Promise.all([
+      prisma.complaint.count({
+        where: { createdAt: { gte: new Date(Date.now() - days * 86400_000) } },
       }),
-      { complaintsReported: 0, complaintsResolved: 0, openComplaints: 0, emergencies: 0 }
-    );
+      prisma.complaint.count({
+        where: {
+          createdAt: { gte: new Date(Date.now() - days * 86400_000) },
+          status: 'REJECTED',
+        },
+      }),
+    ]);
 
-    if (req.query.format === 'csv') {
-      const header = Object.keys(rows[0] || { wardCode: '' }).join(',');
-      const csv = [header, ...rows.map((r) => Object.values(r).join(','))].join('\n');
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="safaai-compliance-${new Date().toISOString().slice(0, 10)}.csv"`);
-      return res.send(csv);
-    }
+    const falsePositiveRate =
+      totalPredictions > 0
+        ? Number(((rejectedPredictions / totalPredictions) * 100).toFixed(1))
+        : 0;
 
-    return res.json({
-      title: 'SWM Rules ward-wise compliance summary',
-      generatedAt: new Date(),
-      periodDays: days,
-      city: 'Gandhinagar',
-      rows,
-      totals: {
-        ...totals,
-        resolutionRatePct: totals.complaintsReported
-          ? Math.round((totals.complaintsResolved / totals.complaintsReported) * 100)
-          : 0,
-      },
-      trends,
-      categories,
+    res.json({
+      ...health,
+      totalPredictions,
+      rejectedPredictions,
+      falsePositiveRate,
+      service: ai,
     });
   })
+);
+
+router.get(
+  '/analytics',
+  asyncHandler(async (req, res) => {
+    const days = Number(req.query.days) || 30;
+    const [trends, categories, wards, status] = await Promise.all([
+      analytics.trends(null, days),
+      analytics.categoryBreakdown(null, days),
+      analytics.wardPerformance(null),
+      analytics.statusBreakdown(null),
+    ]);
+    res.json({ days, trends, categories, wards, status });
+  })
+);
+
+router.get(
+  '/hotspots',
+  asyncHandler(async (req, res) => res.json(await analytics.hotspotForecast(null, req.query.date)))
 );
 
 router.get('/categories', (_req, res) => res.json(WASTE_CATEGORIES));
