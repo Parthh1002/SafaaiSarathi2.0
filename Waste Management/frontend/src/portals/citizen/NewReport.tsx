@@ -232,6 +232,13 @@ export default function NewReport() {
     }
   }
 
+  function triggerPhotoCapture() {
+    if (fileInput.current) {
+      fileInput.current.value = '';
+      fileInput.current.click();
+    }
+  }
+
   async function checkForDuplicates(pos: { lat: number; lng: number }) {
     try {
       const { data } = await api('citizen').get('/citizen/complaints/nearby', {
@@ -278,6 +285,19 @@ export default function NewReport() {
 
   return (
     <div className="space-y-6">
+      {/* Hidden File Input — Always mounted in DOM across all steps so Retake Photo works reliably */}
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="sr-only"
+        onChange={(e) => {
+          const selected = e.target.files?.[0];
+          if (selected) void onPhoto(selected);
+        }}
+      />
+
       {/* Top Header & Step Tracker */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
         <div>
@@ -341,10 +361,7 @@ export default function NewReport() {
             <Card className="p-6 sm:p-10 border-2 border-dashed border-brand/30 hover:border-brand bg-brand/[0.02] transition">
               <button
                 type="button"
-                onClick={() => {
-                  if (fileInput.current) fileInput.current.value = '';
-                  fileInput.current?.click();
-                }}
+                onClick={triggerPhotoCapture}
                 className="flex w-full flex-col items-center gap-4 py-8 text-center group cursor-pointer"
               >
                 <div className="grid h-24 w-24 place-items-center rounded-3xl bg-brand text-brand-ink shadow-xl shadow-brand/20 transition group-hover:scale-105">
@@ -360,18 +377,6 @@ export default function NewReport() {
                   <Sparkles className="h-4 w-4" /> AI Auto-Classification Active
                 </div>
               </button>
-
-              <input
-                ref={fileInput}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="sr-only"
-                onChange={(e) => {
-                  const selected = e.target.files?.[0];
-                  if (selected) void onPhoto(selected);
-                }}
-              />
             </Card>
           </div>
 
@@ -438,13 +443,11 @@ export default function NewReport() {
                   </div>
                 )}
 
+                {/* Retake Photo Button — Triggers File Picker directly */}
                 <button
                   type="button"
-                  onClick={() => {
-                    if (fileInput.current) fileInput.current.value = '';
-                    fileInput.current?.click();
-                  }}
-                  className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-black/70 px-3 py-1.5 text-fluid-xs font-semibold text-white backdrop-blur shadow-md hover:bg-black/90 transition"
+                  onClick={triggerPhotoCapture}
+                  className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-black/75 px-3 py-1.5 text-fluid-xs font-semibold text-white backdrop-blur shadow-md hover:bg-black/95 transition cursor-pointer"
                 >
                   <RefreshCw className="h-3.5 w-3.5" /> Retake Photo
                 </button>
@@ -500,7 +503,7 @@ export default function NewReport() {
                         setCategory(id);
                         setCategoryConfirmed(true);
                       }}
-                      className={`flex items-start gap-3 rounded-2xl border p-3.5 text-left transition ${
+                      className={`flex items-start gap-3 rounded-2xl border p-3.5 text-left transition cursor-pointer ${
                         isSelected
                           ? 'border-brand bg-brand/10 text-brand ring-2 ring-brand/20 shadow-xs'
                           : 'border-line bg-surface text-ink hover:bg-sunken hover:border-line/80'
@@ -553,7 +556,7 @@ export default function NewReport() {
                   if (position) void checkForDuplicates(position);
                   setStep('location');
                 }}
-                className="btn-primary w-full py-3 text-fluid-sm font-bold shadow-md shadow-brand/20 flex items-center justify-center gap-2"
+                className="btn-primary w-full py-3 text-fluid-sm font-bold shadow-md shadow-brand/20 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Next: Confirm Location</span>
                 <ArrowRight className="h-4 w-4" />
@@ -579,7 +582,7 @@ export default function NewReport() {
                 <button
                   type="button"
                   onClick={locate}
-                  className="inline-flex items-center gap-1 rounded-xl border border-line bg-elevated px-3 py-1.5 text-fluid-xs font-semibold text-ink hover:bg-sunken shadow-xs"
+                  className="inline-flex items-center gap-1 rounded-xl border border-line bg-elevated px-3 py-1.5 text-fluid-xs font-semibold text-ink hover:bg-sunken shadow-xs cursor-pointer"
                 >
                   <Crosshair className="h-3.5 w-3.5 text-brand" /> Recenter GPS
                 </button>
@@ -651,7 +654,7 @@ export default function NewReport() {
                 type="button"
                 disabled={submitting}
                 onClick={onSubmit}
-                className="btn-primary w-full py-3 text-fluid-sm font-bold shadow-lg shadow-brand/20 flex items-center justify-center gap-2"
+                className="btn-primary w-full py-3 text-fluid-sm font-bold shadow-lg shadow-brand/20 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {submitting ? (
                   <>
