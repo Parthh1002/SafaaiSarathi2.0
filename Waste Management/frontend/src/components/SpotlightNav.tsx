@@ -34,138 +34,90 @@ export function SpotlightNav({
     item.end ? location.pathname === item.to : location.pathname.startsWith(item.to)
   );
 
-  // Update sliding active pill position smoothly
+  // Update sliding active pill position safely with boundary check
   useLayoutEffect(() => {
     if (!navRef.current) return;
     const nav = navRef.current;
-    const activeEl = nav.querySelector<HTMLElement>(`[data-nav-index="${activeIndex}"]`);
+    if (activeIndex === -1) {
+      setPillStyle((prev) => ({ ...prev, opacity: 0 }));
+      return;
+    }
 
+    const activeEl = nav.querySelector<HTMLElement>(`[data-nav-index="${activeIndex}"]`);
     if (activeEl) {
       const navRect = nav.getBoundingClientRect();
       const itemRect = activeEl.getBoundingClientRect();
-      setPillStyle({
-        left: itemRect.left - navRect.left,
-        width: itemRect.width,
-        opacity: 1,
-      });
+      if (itemRect.width > 0) {
+        setPillStyle({
+          left: Math.max(0, itemRect.left - navRect.left),
+          width: itemRect.width,
+          opacity: 1,
+        });
+      }
     } else {
       setPillStyle((prev) => ({ ...prev, opacity: 0 }));
     }
   }, [activeIndex, location.pathname, items]);
 
-  // Spring animation helper
-  const animateValue = (
-    from: number,
-    to: number,
-    onUpdate: (val: number) => void,
-    onComplete?: () => void
-  ) => {
-    let current = from;
-    let velocity = 0;
-    const stiffness = 220;
-    const damping = 22;
-    let animFrame: number;
-    let lastTime = performance.now();
-
-    const frame = (time: number) => {
-      const dt = Math.min((time - lastTime) / 1000, 0.032);
-      lastTime = time;
-
-      const force = -stiffness * (current - to);
-      const dampingForce = -damping * velocity;
-      const acceleration = force + dampingForce;
-
-      velocity += acceleration * dt;
-      current += velocity * dt;
-
-      onUpdate(current);
-
-      if (Math.abs(current - to) < 0.2 && Math.abs(velocity) < 0.2) {
-        onUpdate(to);
-        onComplete?.();
-        return;
-      }
-      animFrame = requestAnimationFrame(frame);
-    };
-
-    animFrame = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(animFrame);
-  };
-
   const spotlightX = useRef(0);
   const ambienceX = useRef(0);
-  const cancelAmbienceAnim = useRef<(() => void) | null>(null);
-  const cancelSpotlightAnim = useRef<(() => void) | null>(null);
+  const animFrameRef = useRef<number | null>(null);
 
   // Update Ambience position whenever active route changes
   useEffect(() => {
     if (!navRef.current) return;
     const nav = navRef.current;
-    const activeEl = nav.querySelector<HTMLElement>(`[data-nav-index="${activeIndex}"]`);
+    if (activeIndex === -1) return;
 
+    const activeEl = nav.querySelector<HTMLElement>(`[data-nav-index="${activeIndex}"]`);
     if (activeEl) {
       const navRect = nav.getBoundingClientRect();
       const itemRect = activeEl.getBoundingClientRect();
       const targetX = itemRect.left - navRect.left + itemRect.width / 2;
 
-      if (ambienceX.current === 0) {
-        ambienceX.current = targetX;
-        nav.style.setProperty('--ambience-x', `${targetX}px`);
-      } else {
-        if (cancelAmbienceAnim.current) cancelAmbienceAnim.current();
-        cancelAmbienceAnim.current = animateValue(
-          ambienceX.current,
-          targetX,
-          (v) => {
-            ambienceX.current = v;
-            nav.style.setProperty('--ambience-x', `${v}px`);
-          }
-        );
-      }
+      ambienceX.current = targetX;
+      nav.style.setProperty('--ambience-x', `${targetX}px`);
     }
   }, [activeIndex, items]);
 
-  // Mouse Move / Leave Spotlight Handling
+  // Mouse Move / Leave Spotlight Handling with requestAnimationFrame throttling
   useEffect(() => {
     if (!navRef.current) return;
     const nav = navRef.current;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const rect = nav.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      setHoverX(x);
-      spotlightX.current = x;
-      nav.style.setProperty('--spotlight-x', `${x}px`);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = requestAnimationFrame(() => {
+        if (!nav) return;
+        const rect = nav.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        setHoverX(x);
+        spotlightX.current = x;
+        nav.style.setProperty('--spotlight-x', `${x}px`);
+      });
     };
 
     const handleMouseLeave = () => {
       setHoverX(null);
-      const activeEl = nav.querySelector<HTMLElement>(`[data-nav-index="${activeIndex}"]`);
-      if (activeEl) {
-        const navRect = nav.getBoundingClientRect();
-        const itemRect = activeEl.getBoundingClientRect();
-        const targetX = itemRect.left - navRect.left + itemRect.width / 2;
-
-        if (cancelSpotlightAnim.current) cancelSpotlightAnim.current();
-        cancelSpotlightAnim.current = animateValue(
-          spotlightX.current,
-          targetX,
-          (v) => {
-            spotlightX.current = v;
-            nav.style.setProperty('--spotlight-x', `${v}px`);
-          }
-        );
+      if (activeIndex !== -1 && nav) {
+        const activeEl = nav.querySelector<HTMLElement>(`[data-nav-index="${activeIndex}"]`);
+        if (activeEl) {
+          const navRect = nav.getBoundingClientRect();
+          const itemRect = activeEl.getBoundingClientRect();
+          const targetX = itemRect.left - navRect.left + itemRect.width / 2;
+          spotlightX.current = targetX;
+          nav.style.setProperty('--spotlight-x', `${targetX}px`);
+        }
       }
     };
 
-    nav.addEventListener('mousemove', handleMouseMove);
-    nav.addEventListener('mouseleave', handleMouseLeave);
+    nav.addEventListener('mousemove', handleMouseMove, { passive: true });
+    nav.addEventListener('mouseleave', handleMouseLeave, { passive: true });
 
     return () => {
       nav.removeEventListener('mousemove', handleMouseMove);
       nav.removeEventListener('mouseleave', handleMouseLeave);
-      if (cancelAmbienceAnim.current) cancelAmbienceAnim.current();
-      if (cancelSpotlightAnim.current) cancelSpotlightAnim.current();
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, [activeIndex]);
 
