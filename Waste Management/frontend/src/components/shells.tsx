@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, LogOut, Menu, X, ChevronLeft, User, Settings, Shield, Sparkles, Navigation } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { LanguageSwitcher, ThemeToggle } from './ui';
+import { SpotlightNav, type SpotlightNavItem } from './SpotlightNav';
 import { useT } from '../lib/i18n';
 import { initials } from '../lib/format';
 
@@ -16,8 +17,8 @@ export interface NavItem {
 
 /**
  * MobileShell — Citizen and Driver.
- * Fully responsive: Rich edge-to-edge desktop command web interface on laptop/desktop screens
- * with multi-column responsiveness, and thumb-friendly mobile app layout on phones.
+ * Equipped with SpotlightNavbar (interactive mouse spotlight + active ambience beam)
+ * across desktop & tablet, with clean thumb-bar on mobile phones.
  */
 export function MobileShell({
   nav,
@@ -69,33 +70,10 @@ export function MobileShell({
             </Link>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1.5 rounded-2xl border border-line bg-elevated/80 p-1.5 shadow-xs backdrop-blur">
-            {nav.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  `relative flex items-center gap-2 rounded-xl px-4 py-1.5 text-fluid-xs font-semibold transition ${
-                    isActive
-                      ? accent === 'orange'
-                        ? 'bg-orange-600 text-white shadow-sm font-bold'
-                        : 'bg-brand text-brand-ink shadow-sm font-bold'
-                      : 'text-muted hover:bg-sunken hover:text-ink'
-                  }`
-                }
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                <span>{item.label}</span>
-                {item.badge ? (
-                  <span className="ml-1 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[0.6rem] font-bold text-white">
-                    {item.badge > 9 ? '9+' : item.badge}
-                  </span>
-                ) : null}
-              </NavLink>
-            ))}
-          </nav>
+          {/* Desktop Interactive Spotlight Navigation Bar */}
+          <div className="hidden md:flex items-center justify-center">
+            <SpotlightNav items={nav} accent={accent} />
+          </div>
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-2.5">
@@ -105,7 +83,7 @@ export function MobileShell({
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
-              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-3 transition hover:bg-sunken shadow-xs"
+              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-3 transition hover:bg-sunken shadow-xs cursor-pointer"
               aria-label="Account menu"
             >
               <span
@@ -160,10 +138,7 @@ export function MobileShell({
 
 /**
  * ConsoleShell — Officer and Admin.
- * Edge-to-edge navbar on desktop with responsive container.
- * Accent:
- *   - 'brand' (Green) for Officer
- *   - 'orange' (Orange #ea580c) for Super Admin
+ * Equipped with SpotlightNavbar with Green accent for Officer and Orange accent for Super Admin.
  */
 export function ConsoleShell({
   nav,
@@ -204,7 +179,7 @@ export function ConsoleShell({
             <button
               type="button"
               onClick={() => setMobileNavOpen(true)}
-              className="grid h-9 w-9 place-items-center rounded-xl border border-line xl:hidden text-ink"
+              className="grid h-9 w-9 place-items-center rounded-xl border border-line xl:hidden text-ink cursor-pointer"
               aria-label="Open Navigation"
             >
               <Menu className="h-5 w-5" />
@@ -232,33 +207,10 @@ export function ConsoleShell({
             </Link>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden xl:flex items-center gap-1 rounded-2xl border border-line bg-elevated/80 p-1 shadow-xs backdrop-blur">
-            {nav.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  `relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-fluid-xs font-semibold transition ${
-                    isActive
-                      ? accent === 'orange'
-                        ? 'bg-orange-600 text-white shadow-sm font-bold'
-                        : 'bg-brand text-brand-ink shadow-sm font-bold'
-                      : 'text-muted hover:bg-sunken hover:text-ink'
-                  }`
-                }
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                <span>{item.label}</span>
-                {item.badge ? (
-                  <span className="ml-1 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[0.6rem] font-bold text-white">
-                    {item.badge > 99 ? '99+' : item.badge}
-                  </span>
-                ) : null}
-              </NavLink>
-            ))}
-          </nav>
+          {/* Desktop Interactive Spotlight Navigation Bar */}
+          <div className="hidden xl:flex items-center justify-center">
+            <SpotlightNav items={nav} accent={accent} />
+          </div>
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-2.5">
@@ -274,7 +226,7 @@ export function ConsoleShell({
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
-              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-3 transition hover:bg-sunken shadow-xs"
+              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-3 transition hover:bg-sunken shadow-xs cursor-pointer"
               aria-label="Account menu"
             >
               <span
@@ -304,7 +256,7 @@ export function ConsoleShell({
                 <img src="/icon.svg" alt="" className="h-7 w-7" />
                 <span className="font-bold text-fluid-sm text-ink">{title}</span>
               </div>
-              <button onClick={() => setMobileNavOpen(false)} className="p-1 text-muted hover:bg-sunken rounded-lg">
+              <button onClick={() => setMobileNavOpen(false)} className="p-1 text-muted hover:bg-sunken rounded-lg cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -320,8 +272,8 @@ export function ConsoleShell({
                     `flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-fluid-sm font-semibold transition ${
                       isActive
                         ? accent === 'orange'
-                          ? 'bg-orange-600 text-white shadow-sm'
-                          : 'bg-brand text-brand-ink shadow-sm'
+                          ? 'bg-orange-600 text-white shadow-sm font-bold'
+                          : 'bg-brand text-brand-ink shadow-sm font-bold'
                         : 'text-muted hover:bg-sunken hover:text-ink'
                     }`
                   }
@@ -394,7 +346,7 @@ function AccountModal({
       <div className="relative w-full max-w-sm rounded-2xl border border-line bg-elevated p-5 shadow-2xl">
         <div className="flex items-center justify-between pb-3 border-b border-line">
           <h2 className="text-fluid-base font-bold text-ink">{t('common.account') || 'Account'}</h2>
-          <button onClick={onClose} className="rounded-lg p-1 text-muted hover:bg-sunken">
+          <button onClick={onClose} className="rounded-lg p-1 text-muted hover:bg-sunken cursor-pointer">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -422,7 +374,7 @@ function AccountModal({
                 onClose();
                 navigate('/app/profile');
               }}
-              className="flex w-full items-center gap-2.5 rounded-xl border border-line bg-surface p-2.5 text-fluid-xs font-semibold text-ink transition hover:bg-sunken"
+              className="flex w-full items-center gap-2.5 rounded-xl border border-line bg-surface p-2.5 text-fluid-xs font-semibold text-ink transition hover:bg-sunken cursor-pointer"
             >
               <User className="h-4 w-4 text-muted" />
               <span>Edit Profile & Language</span>
@@ -435,7 +387,7 @@ function AccountModal({
               await signOut();
               navigate('/login');
             }}
-            className="flex w-full items-center gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-2.5 text-fluid-xs font-semibold text-danger transition hover:bg-danger/20"
+            className="flex w-full items-center gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-2.5 text-fluid-xs font-semibold text-danger transition hover:bg-danger/20 cursor-pointer"
           >
             <LogOut className="h-4 w-4" />
             <span>Sign Out</span>
