@@ -256,6 +256,8 @@ export default function Fleet() {
             </p>
           </div>
         )}
+      </Modal>
+
       {/* Driver Registration */}
       <Modal
         open={creatingDriver}
