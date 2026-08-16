@@ -1,0 +1,18 @@
+name: Keep Render Servers Awake
+
+on:
+  schedule:
+    # Run every 10 minutes to prevent Render's 15-minute idle sleep
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Python Vision API
+        run: curl -sSf https://safaai-vision-api.onrender.com/ > /dev/null || echo "Vision API ping failed but it's okay"
+        
+      - name: Ping Node.js Backend API
+        # Replace with your actual Node.js Render URL if different. Assuming safaai-api.onrender.com as placeholder
+        run: curl -sSf https://safaai-api.onrender.com/api/public/health > /dev/null || echo "Node API ping failed but it's okay"
