@@ -45,19 +45,26 @@ export async function createComplaint({
   const citizen = await prisma.user.findUnique({ where: { id: citizenId } });
   if (!citizen) throw new HttpError(404, 'Citizen account not found');
 
+  // Helper to normalize any case (e.g. 'construction_debris' -> 'CONSTRUCTION_DEBRIS')
+  const normalizeCat = (c) => {
+    if (!c) return 'OTHER';
+    const up = String(c).trim().toUpperCase();
+    return CATEGORY_MAP[up] ? up : 'OTHER';
+  };
+
   // ---- 1. Classify -------------------------------------------------------
-  let ai = { category: declaredCategory || 'OTHER', confidence: 0, modelVersion: 'none', degraded: false };
+  let ai = { category: normalizeCat(declaredCategory), confidence: 0, modelVersion: 'none', degraded: false };
   if (photo?.buffer) {
     ai = await classifyWaste({ ...photo, hint: declaredCategory });
   }
 
-  const aiCategory = CATEGORY_MAP[ai.category] ? ai.category : 'OTHER';
+  const aiCategory = normalizeCat(ai.category);
   const confidence = Number(ai.confidence || 0);
   const autoApproved = confidence >= env.ai.autoApproveConfidence;
 
   // The citizen's own choice wins when the model is unsure — the model is an
   // assistant here, not an authority.
-  const category = autoApproved ? aiCategory : declaredCategory || aiCategory;
+  const category = autoApproved ? aiCategory : normalizeCat(declaredCategory) || aiCategory;
   const meta = CATEGORY_MAP[category] || CATEGORY_MAP.OTHER;
 
   const emergency = isEmergency || meta.emergency;

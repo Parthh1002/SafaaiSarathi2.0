@@ -205,7 +205,8 @@ export default function NewReport() {
       setVisionAi(data);
       
       if (data.status === 'success' && data.predicted_category) {
-         setCategory(data.predicted_category);
+         const upCat = String(data.predicted_category).trim().toUpperCase();
+         setCategory(upCat);
       } else {
          setCategory('');
       }
@@ -235,7 +236,7 @@ export default function NewReport() {
     if (step !== 'location' || !position || !category) return;
     api('citizen')
       .get('/citizen/complaints/check-duplicate', {
-        params: { latitude: position.lat, longitude: position.lng, category },
+        params: { latitude: position.lat, longitude: position.lng, category: category.toUpperCase() },
       })
       .then((r) => setDuplicate(r.data.found ? r.data : null))
       .catch(() => setDuplicate(null));
@@ -249,7 +250,7 @@ export default function NewReport() {
       if (file) form.append('photo', file);
       form.append('latitude', String(position.lat));
       form.append('longitude', String(position.lng));
-      form.append('category', category);
+      form.append('category', category.trim().toUpperCase());
       if (description) form.append('description', description);
       form.append('channel', 'WEB');
 
