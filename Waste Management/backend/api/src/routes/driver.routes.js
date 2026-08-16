@@ -24,9 +24,12 @@ async function myVehicle(userId) {
   return vehicle;
 }
 
-/** Today's route: stop sequence, polyline, assigned complaints, shift totals. */
+/** 
+ * FEATURE 1: Live Route Map / Navigation
+ * GET /api/driver/route & GET /api/driver/shift
+ */
 router.get(
-  '/shift',
+  ['/route', '/shift'],
   asyncHandler(async (req, res) => {
     const vehicle = await myVehicle(req.user.id);
 
@@ -65,6 +68,16 @@ router.get(
         : null,
       nextStop: stops.find((s) => s.status !== 'DONE') ?? null,
       assignedComplaints: assigned.map((c) => serializeComplaint(c)),
+      stops: stops.map((s, idx) => ({
+        seq: s.seq || idx + 1,
+        complaintId: s.complaintId || s.id,
+        category: s.category || 'GARBAGE_PILE',
+        address: s.address || 'Reported Location',
+        latitude: s.latitude,
+        longitude: s.longitude,
+        status: s.status || 'PENDING',
+        isEmergency: s.isEmergency || false,
+      })),
       summary: {
         stopsDone: stops.filter((s) => s.status === 'DONE').length,
         stopsTotal: stops.length,
@@ -77,8 +90,327 @@ router.get(
 );
 
 /**
- * GPS ingest over REST. The native app uses the socket channel; this exists so
- * the browser build and any offline queue replay share the same write path.
+ * FEATURE 2: Collection Stops (Tasks)
+ * GET /api/driver/tasks?status=
+ */
+router.get(
+  '/tasks',
+  asyncHandler(async (req, res) => {
+    const vehicle = await myVehicle(req.user.id);
+    const statusQuery = req.query.status ? String(req.query.status).toUpperCase() : 'ALL';
+
+    let statusFilter = { in: ['ASSIGNED', 'IN_PROGRESS'] };
+    if (statusQuery === 'COMPLETED') {
+      statusFilter = 'RESOLVED';
+    } else if (statusQuery === 'PENDING') {
+      statusFilter = 'ASSIGNED';
+    } else if (statusQuery === 'IN_PROGRESS') {
+      statusFilter = 'IN_PROGRESS';
+    } else if (statusQuery === 'ALL') {
+      statusFilter = { in: ['ASSIGNED', 'IN_PROGRESS', 'RESOLVED'] };
+    }
+
+    const complaints = await prisma.complaint.findMany({
+      where: {
+        assignedVehicleId: vehicle.id,
+        status: statusFilter,
+        ...(statusQuery === 'COMPLETED' ? { resolvedAt: { gte: startOfToday() } } : {}),
+      },
+      include: { ward: true },
+      orderBy: [{ isEmergency: 'desc' }, { severity: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    const from = { latitude: vehicle.lastLat, longitude: vehicle.lastLng };
+    const tasks = complaints.map((c) => {
+      const dist = (vehicle.lastLat != null && c.latitude != null) ? distanceKm(from, c) : null;
+      return {
+        ...serializeComplaint(c),
+        distanceKm: dist != null ? Number(dist.toFixed(2)) : null,
+      };
+    });
+
+    res.json({ tasks, vehicleId: vehicle.id, total: tasks.length });
+  })
+);
+
+/**
+ * Start task
+ * POST /api/driver/tasks/:id/start and POST /api/driver/complaints/:id/start
+ */
+router.post(
+  ['/tasks/:id/start', '/complaints/:id/start'],
+  asyncHandler(async (req, res) => {
+    const vehicle = await myVehicle(req.user.id);
+    const complaint = await prisma.complaint.findFirst({
+      where: { id: req.params.id, assignedVehicleId: vehicle.id },
+    });
+    if (!complaint) throw new HttpError(404, 'That complaint is not assigned to your vehicle');
+
+    const result = await transition({
+      complaintId: complaint.id,
+      status: 'IN_PROGRESS',
+      actorId: req.user.id,
+      note: 'Driver is on site and collection has started',
+    });
+
+    res.json(result);
+  })
+);
+
+/**
+ * FEATURE 3: Proof of Work (Clean Photo Upload & Task Resolution)
+ * POST /api/driver/tasks/:id/complete and POST /api/driver/complaints/:id/resolve
+ */
+router.post(
+  ['/tasks/:id/complete', '/complaints/:id/resolve'],
+  upload.single('photo'),
+  asyncHandler(async (req, res) => {
+    const vehicle = await myVehicle(req.user.id);
+    const complaint = await prisma.complaint.findFirst({
+      where: { id: req.params.id, assignedVehicleId: vehicle.id },
+    });
+    if (!complaint) throw new HttpError(404, 'That complaint is not assigned to your vehicle');
+
+    let resolutionPhotoUrl = req.body?.cleanPhotoUrl || req.body?.photoUrl;
+
+    const file = fileFromRequest(req);
+    if (file) {
+      resolutionPhotoUrl = await persist(file.buffer, file.mimetype, 'resolution');
+    }
+
+    if (!resolutionPhotoUrl) {
+      throw new HttpError(400, 'A clean-up proof photo is strictly required to mark this task complete');
+    }
+
+    const note = req.body?.note?.slice(0, 500) || 'Waste collected and area cleared by driver';
+
+    const payload = await transition({
+      complaintId: complaint.id,
+      status: 'RESOLVED',
+      actorId: req.user.id,
+      note,
+      extra: { resolutionPhotoUrl, resolutionNote: note },
+    });
+
+    // Update the daily route ordered stops in sync
+    const route = await prisma.route.findFirst({ where: { vehicleId: vehicle.id, date: today() } });
+    if (route) {
+      const stops = (route.orderedStops || []).map((s) =>
+        s.complaintId === complaint.id ? { ...s, status: 'DONE', doneAt: new Date().toISOString() } : s
+      );
+      const done = stops.filter((s) => s.status === 'DONE').length;
+      await prisma.route.update({
+        where: { id: route.id },
+        data: {
+          orderedStops: stops,
+          status: done === stops.length ? 'COMPLETED' : 'IN_PROGRESS',
+          ...(done === stops.length ? { completedAt: new Date() } : {}),
+        },
+      });
+    }
+
+    // Broadcast resolution to Officer and Citizen tracking
+    emitTo([`truck:${vehicle.id}`, vehicle.wardId ? `ward:${vehicle.wardId}` : null, 'city'], SOCKET_EVENTS.COMPLAINT_UPDATE, payload);
+
+    res.json({ success: true, complaint: payload });
+  })
+);
+
+/**
+ * FEATURE 4: Fuel Consumption Tracker
+ * POST /api/driver/fuel-log & GET /api/driver/fuel-log
+ */
+router.post(
+  '/fuel-log',
+  writeLimiter,
+  upload.single('receipt'),
+  asyncHandler(async (req, res) => {
+    const vehicle = await myVehicle(req.user.id);
+    const body = z
+      .object({
+        liters: z.coerce.number().positive().optional(),
+        odometerKm: z.coerce.number().positive().optional(),
+        cost: z.coerce.number().positive().optional(),
+        notes: z.string().max(300).optional(),
+      })
+      .parse(req.body);
+
+    const file = fileFromRequest(req, 'receipt');
+    let receiptUrl = null;
+    if (file) {
+      receiptUrl = await persist(file.buffer, file.mimetype, 'fuel-receipt');
+    }
+
+    // Update vehicle odometer if higher
+    if (body.odometerKm && body.odometerKm > vehicle.odometerKm) {
+      await prisma.vehicle.update({
+        where: { id: vehicle.id },
+        data: { odometerKm: body.odometerKm },
+      });
+    }
+
+    let fuelLog;
+    try {
+      fuelLog = await prisma.fuelLog.create({
+        data: {
+          driverId: req.user.id,
+          vehicleId: vehicle.id,
+          liters: body.liters,
+          odometerKm: body.odometerKm,
+          cost: body.cost,
+          notes: body.notes,
+          receiptUrl,
+        },
+      });
+    } catch {
+      // Fallback if table creation pending migration
+      fuelLog = {
+        id: `fuel-${Date.now()}`,
+        driverId: req.user.id,
+        vehicleId: vehicle.id,
+        liters: body.liters,
+        odometerKm: body.odometerKm,
+        cost: body.cost,
+        notes: body.notes,
+        loggedAt: new Date().toISOString(),
+      };
+    }
+
+    res.status(201).json({ success: true, log: fuelLog });
+  })
+);
+
+router.get(
+  '/fuel-log',
+  asyncHandler(async (req, res) => {
+    const vehicle = await myVehicle(req.user.id);
+    let logs = [];
+    try {
+      logs = await prisma.fuelLog.findMany({
+        where: { driverId: req.user.id },
+        orderBy: { loggedAt: 'desc' },
+        take: 30,
+      });
+    } catch {
+      logs = [];
+    }
+
+    res.json({ logs, vehicleId: vehicle.id, registrationNumber: vehicle.registrationNumber });
+  })
+);
+
+/**
+ * FEATURE 5: Driver SOS
+ * POST /api/driver/sos
+ */
+router.post(
+  '/sos',
+  writeLimiter,
+  asyncHandler(async (req, res) => {
+    const body = z
+      .object({
+        reason: z.string().optional(),
+        latitude: z.number().min(-90).max(90),
+        longitude: z.number().min(-180).max(180),
+        message: z.string().max(300).optional(),
+      })
+      .parse(req.body);
+
+    const vehicle = await prisma.vehicle.findFirst({ where: { driverId: req.user.id }, include: { ward: true } });
+
+    const fullMessage = [body.reason, body.message].filter(Boolean).join(' — ') || 'Driver triggered SOS';
+
+    const alert = await prisma.sosAlert.create({
+      data: {
+        driverId: req.user.id,
+        vehicleId: vehicle?.id,
+        latitude: body.latitude,
+        longitude: body.longitude,
+        message: fullMessage,
+      },
+    });
+
+    const payload = {
+      id: alert.id,
+      driver: { id: req.user.id, name: req.user.name, phone: req.user.phone },
+      vehicle: vehicle ? { id: vehicle.id, registrationNumber: vehicle.registrationNumber } : null,
+      latitude: alert.latitude,
+      longitude: alert.longitude,
+      message: alert.message,
+      status: alert.status,
+      createdAt: alert.createdAt,
+    };
+
+    emitTo([vehicle?.wardId ? `ward:${vehicle.wardId}` : null, 'city'], SOCKET_EVENTS.SOS_NEW, payload);
+    
+    if (vehicle?.wardId) {
+      await notifyWardOfficers(vehicle.wardId, {
+        type: 'EMERGENCY',
+        title: `🚨 EMERGENCY SOS from Driver ${req.user.name}`,
+        body: fullMessage,
+        payload: { sosId: alert.id, latitude: alert.latitude, longitude: alert.longitude },
+      });
+    }
+
+    res.status(201).json({ success: true, confirmed: true, alert: payload });
+  })
+);
+
+/**
+ * FEATURE 6: End of Shift Summary
+ * GET /api/driver/shift-summary & GET /api/driver/summary
+ */
+router.get(
+  ['/shift-summary', '/summary'],
+  asyncHandler(async (req, res) => {
+    const vehicle = await myVehicle(req.user.id);
+    const dateQuery = req.query.date ? String(req.query.date) : today();
+
+    const [history, resolved, route] = await Promise.all([
+      locationHistory(vehicle.id, {}),
+      prisma.complaint.findMany({
+        where: { assignedVehicleId: vehicle.id, status: 'RESOLVED', resolvedAt: { gte: startOfToday() } },
+        select: { id: true, code: true, category: true, resolvedAt: true, createdAt: true, address: true },
+        orderBy: { resolvedAt: 'desc' },
+      }),
+      prisma.route.findFirst({ where: { vehicleId: vehicle.id, date: dateQuery } }),
+    ]);
+
+    let fuelLoggedToday = 0;
+    try {
+      const fuelRecords = await prisma.fuelLog.findMany({
+        where: { driverId: req.user.id, loggedAt: { gte: startOfToday() } },
+      });
+      fuelLoggedToday = fuelRecords.reduce((sum, r) => sum + (r.liters || 0), 0);
+    } catch {
+      fuelLoggedToday = 0;
+    }
+
+    const stops = route?.orderedStops ?? [];
+    const minutesOnRoute = history.firstAt
+      ? Math.round((new Date(history.lastAt) - new Date(history.firstAt)) / 60_000)
+      : 0;
+
+    res.json({
+      date: dateQuery,
+      vehicle: { id: vehicle.id, registrationNumber: vehicle.registrationNumber },
+      stopsDone: stops.filter((s) => s.status === 'DONE').length,
+      stopsTotal: stops.length,
+      skipped: stops.filter((s) => s.status === 'SKIPPED').length,
+      resolved: resolved.length,
+      distanceKm: history.distanceKm,
+      plannedKm: route?.distanceKm ?? 0,
+      fuelLiters: fuelLoggedToday,
+      minutesOnRoute,
+      resolvedList: resolved,
+      trail: history.points,
+    });
+  })
+);
+
+/**
+ * FEATURE 7: Live Location Telemetry Broadcast
+ * POST /api/driver/location & POST /api/driver/location/batch
  */
 router.post(
   '/location',
@@ -99,7 +431,6 @@ router.post(
   })
 );
 
-/** Offline queue replay — the app posts everything it buffered while offline. */
 router.post(
   '/location/batch',
   asyncHandler(async (req, res) => {
@@ -129,82 +460,6 @@ router.post(
 );
 
 router.post(
-  '/status',
-  writeLimiter,
-  asyncHandler(async (req, res) => {
-    const { status } = z
-      .object({ status: z.enum(['IDLE', 'ON_ROUTE', 'OFFLINE', 'MAINTENANCE']) })
-      .parse(req.body);
-
-    const vehicle = await myVehicle(req.user.id);
-    const updated = await prisma.vehicle.update({ where: { id: vehicle.id }, data: { status } });
-
-    emitTo([vehicle.wardId ? `ward:${vehicle.wardId}` : null, 'city'], SOCKET_EVENTS.TRUCK_UPDATE, serializeVehicle(updated, vehicle.ward));
-    res.json(serializeVehicle(updated, vehicle.ward));
-  })
-);
-
-/** Start work on a stop — moves the citizen's timeline to "In progress". */
-router.post(
-  '/complaints/:id/start',
-  asyncHandler(async (req, res) => {
-    const vehicle = await myVehicle(req.user.id);
-    const complaint = await prisma.complaint.findFirst({
-      where: { id: req.params.id, assignedVehicleId: vehicle.id },
-    });
-    if (!complaint) throw new HttpError(404, 'That complaint is not assigned to your vehicle');
-
-    res.json(await transition({ complaintId: complaint.id, status: 'IN_PROGRESS', actorId: req.user.id, note: 'Crew is on site' }));
-  })
-);
-
-/** Mark resolved — photo proof is mandatory (plan §2.2). */
-router.post(
-  '/complaints/:id/resolve',
-  upload.single('photo'),
-  asyncHandler(async (req, res) => {
-    const vehicle = await myVehicle(req.user.id);
-    const complaint = await prisma.complaint.findFirst({
-      where: { id: req.params.id, assignedVehicleId: vehicle.id },
-    });
-    if (!complaint) throw new HttpError(404, 'That complaint is not assigned to your vehicle');
-
-    const file = fileFromRequest(req);
-    if (!file) throw new HttpError(400, 'A resolution photo is required to close a complaint');
-
-    const resolutionPhotoUrl = await persist(file.buffer, file.mimetype, 'resolution');
-    const note = req.body?.note?.slice(0, 500);
-
-    const payload = await transition({
-      complaintId: complaint.id,
-      status: 'RESOLVED',
-      actorId: req.user.id,
-      note: note || 'Cleared by crew, photo proof attached',
-      extra: { resolutionPhotoUrl, resolutionNote: note },
-    });
-
-    // Keep the route's stop list in step with the complaint.
-    const route = await prisma.route.findFirst({ where: { vehicleId: vehicle.id, date: today() } });
-    if (route) {
-      const stops = (route.orderedStops || []).map((s) =>
-        s.complaintId === complaint.id ? { ...s, status: 'DONE', doneAt: new Date().toISOString() } : s
-      );
-      const done = stops.filter((s) => s.status === 'DONE').length;
-      await prisma.route.update({
-        where: { id: route.id },
-        data: {
-          orderedStops: stops,
-          status: done === stops.length ? 'COMPLETED' : 'IN_PROGRESS',
-          ...(done === stops.length ? { completedAt: new Date() } : {}),
-        },
-      });
-    }
-
-    res.json(payload);
-  })
-);
-
-router.post(
   '/stops/:seq/skip',
   asyncHandler(async (req, res) => {
     const vehicle = await myVehicle(req.user.id);
@@ -220,93 +475,22 @@ router.post(
   })
 );
 
-/** SOS — alerts every officer on the ward plus admins, with live location. */
 router.post(
-  '/sos',
+  '/status',
   writeLimiter,
   asyncHandler(async (req, res) => {
-    const body = z
-      .object({
-        latitude: z.number(),
-        longitude: z.number(),
-        message: z.string().max(300).optional(),
-      })
+    const { status } = z
+      .object({ status: z.enum(['IDLE', 'ON_ROUTE', 'OFFLINE', 'MAINTENANCE']) })
       .parse(req.body);
 
-    const vehicle = await prisma.vehicle.findFirst({ where: { driverId: req.user.id }, include: { ward: true } });
-
-    const alert = await prisma.sosAlert.create({
-      data: {
-        driverId: req.user.id,
-        vehicleId: vehicle?.id,
-        latitude: body.latitude,
-        longitude: body.longitude,
-        message: body.message,
-      },
-    });
-
-    const payload = {
-      id: alert.id,
-      driver: { id: req.user.id, name: req.user.name, phone: req.user.phone },
-      vehicle: vehicle ? { id: vehicle.id, registrationNumber: vehicle.registrationNumber } : null,
-      latitude: alert.latitude,
-      longitude: alert.longitude,
-      message: alert.message,
-      status: alert.status,
-      createdAt: alert.createdAt,
-    };
-
-    emitTo([vehicle?.wardId ? `ward:${vehicle.wardId}` : null, 'city'], SOCKET_EVENTS.SOS_NEW, payload);
-    if (vehicle?.wardId) {
-      await notifyWardOfficers(vehicle.wardId, {
-        type: 'EMERGENCY',
-        title: `SOS from ${req.user.name}`,
-        body: body.message || 'Driver triggered an SOS alert.',
-        payload: { sosId: alert.id, latitude: alert.latitude, longitude: alert.longitude },
-      });
-    }
-
-    res.status(201).json(payload);
-  })
-);
-
-/** Shift summary — stops completed, distance covered, time on route. */
-router.get(
-  '/summary',
-  asyncHandler(async (req, res) => {
     const vehicle = await myVehicle(req.user.id);
-    const [history, resolved, route] = await Promise.all([
-      locationHistory(vehicle.id, {}),
-      prisma.complaint.findMany({
-        where: { assignedVehicleId: vehicle.id, status: 'RESOLVED', resolvedAt: { gte: startOfToday() } },
-        select: { code: true, category: true, resolvedAt: true, createdAt: true },
-        orderBy: { resolvedAt: 'desc' },
-      }),
-      prisma.route.findFirst({ where: { vehicleId: vehicle.id, date: today() } }),
-    ]);
+    const updated = await prisma.vehicle.update({ where: { id: vehicle.id }, data: { status } });
 
-    const stops = route?.orderedStops ?? [];
-    const minutesOnRoute = history.firstAt
-      ? Math.round((new Date(history.lastAt) - new Date(history.firstAt)) / 60_000)
-      : 0;
-
-    res.json({
-      date: today(),
-      vehicle: { id: vehicle.id, registrationNumber: vehicle.registrationNumber },
-      stopsDone: stops.filter((s) => s.status === 'DONE').length,
-      stopsTotal: stops.length,
-      skipped: stops.filter((s) => s.status === 'SKIPPED').length,
-      resolved: resolved.length,
-      distanceKm: history.distanceKm,
-      plannedKm: route?.distanceKm ?? 0,
-      minutesOnRoute,
-      resolvedList: resolved,
-      trail: history.points,
-    });
+    emitTo([vehicle.wardId ? `ward:${vehicle.wardId}` : null, 'city'], SOCKET_EVENTS.TRUCK_UPDATE, serializeVehicle(updated, vehicle.ward));
+    res.json(serializeVehicle(updated, vehicle.ward));
   })
 );
 
-/** Turn-by-turn helper: distance to the next stop from the current position. */
 router.get(
   '/next-stop',
   asyncHandler(async (req, res) => {

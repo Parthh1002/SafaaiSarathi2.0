@@ -224,7 +224,8 @@ router.post(
         body: `${vehicle.registrationNumber} — open your route to see them.`,
         payload: { complaintIds },
       });
-      emitTo([`truck:${vehicle.id}`], SOCKET_EVENTS.ASSIGNMENT_NEW, { vehicleId, complaints: assigned });
+      emitTo([`truck:${vehicle.id}`, `user:${vehicle.driverId}`, `driver_${vehicle.driverId}`], SOCKET_EVENTS.ASSIGNMENT_NEW, { vehicleId, complaints: assigned });
+      emitTo([`truck:${vehicle.id}`, `user:${vehicle.driverId}`, `driver_${vehicle.driverId}`], 'new_task_assigned', { vehicleId, complaints: assigned });
     }
 
     res.json({ assigned: assigned.length, vehicle: { id: vehicle.id, registrationNumber: vehicle.registrationNumber }, complaints: assigned });

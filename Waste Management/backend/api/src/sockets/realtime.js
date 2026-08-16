@@ -45,6 +45,7 @@ export function initRealtime(httpServer) {
     const user = socket.data.user;
     if (user) {
       socket.join(`user:${user.sub}`);
+      socket.join(`driver_${user.sub}`);
       if (user.wardId) socket.join(`ward:${user.wardId}`);
       if (user.role === ROLES.ADMIN) socket.join('city');
     }
@@ -57,7 +58,7 @@ export function initRealtime(httpServer) {
      */
     socket.on('subscribe', (room) => {
       if (typeof room !== 'string') return;
-      if (!/^(ward|truck|complaint):[A-Za-z0-9_-]{1,40}$/.test(room)) return;
+      if (!/^(ward|truck|complaint|driver):[A-Za-z0-9_-]{1,40}$/.test(room) && !/^driver_[A-Za-z0-9_-]{1,40}$/.test(room)) return;
       if (room.startsWith('ward:') && !user) return; // ward feeds require a session
       socket.join(room);
     });

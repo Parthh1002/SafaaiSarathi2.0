@@ -28,10 +28,11 @@ export default function DriverSummary() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <Stat label="Stops done" value={`${data.stopsDone}/${data.stopsTotal}`} icon={<MapPin className="h-4 w-4" />} />
         <Stat label="Resolved" value={data.resolved} tone="ok" icon={<CheckCircle2 className="h-4 w-4" />} />
         <Stat label="Distance" value={`${data.distanceKm} km`} hint={`${data.plannedKm} km planned`} icon={<RouteIcon className="h-4 w-4" />} />
+        <Stat label="Fuel Used" value={`${data.fuelLiters || 0} L`} icon={<RouteIcon className="h-4 w-4 text-brand" />} />
         <Stat label="On route" value={formatDuration(data.minutesOnRoute)} icon={<Clock className="h-4 w-4" />} />
       </div>
 

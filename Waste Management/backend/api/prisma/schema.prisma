@@ -138,6 +138,7 @@ model User {
   creditEntries       GreenCredit[]
   sosAlerts           SosAlert[]       @relation("SosDriver")
   sosAcknowledged     SosAlert[]       @relation("SosResponder")
+  fuelLogs            FuelLog[]
 
   @@index([role])
   @@index([wardId])
@@ -390,6 +391,7 @@ model Vehicle {
   routes     Route[]
   complaints Complaint[]
   sosAlerts  SosAlert[]
+  fuelLogs   FuelLog[]
 
   @@index([wardId, status])
   @@map("vehicles")
@@ -540,6 +542,26 @@ model SosAlert {
 
   @@index([status, createdAt])
   @@map("sos_alerts")
+}
+
+/// Driver Fuel & Odometer logs for fleet operational analytics.
+model FuelLog {
+  id         String   @id @default(cuid())
+  driverId   String
+  vehicleId  String
+  liters     Float?
+  odometerKm Float?
+  cost       Float?
+  notes      String?
+  receiptUrl String?
+  loggedAt   DateTime @default(now())
+
+  driver  User    @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([driverId, loggedAt])
+  @@index([vehicleId, loggedAt])
+  @@map("fuel_logs")
 }
 
 /// "Tomorrow this zone likely overflows" (plan §2.3, §7).

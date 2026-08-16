@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
-import { Map, ListChecks, BarChart3, Siren } from 'lucide-react';
+import { Map, ListChecks, BarChart3, Siren, Fuel } from 'lucide-react';
 import { MobileShell, type NavItem } from '../../components/shells';
 import { api } from '../../lib/api';
 import { getSocket } from '../../lib/socket';
@@ -8,6 +8,7 @@ import { Badge } from '../../components/ui';
 import { useT } from '../../lib/i18n';
 import DriverRoute from './DriverRoute';
 import DriverStops from './DriverStops';
+import DriverFuel from './DriverFuel';
 import DriverSummary from './DriverSummary';
 import DriverSos from './DriverSos';
 
@@ -89,6 +90,7 @@ export default function DriverPortal() {
   const nav: NavItem[] = [
     { to: '/driver', label: t('driver.nav.route'), icon: Map, end: true },
     { to: '/driver/stops', label: t('driver.nav.stops'), icon: ListChecks },
+    { to: '/driver/fuel', label: 'Fuel Log', icon: Fuel },
     { to: '/driver/summary', label: t('driver.nav.shift'), icon: BarChart3 },
     { to: '/driver/sos', label: t('driver.nav.sos'), icon: Siren },
   ];
@@ -116,6 +118,7 @@ export default function DriverPortal() {
       <Routes>
         <Route index element={<DriverRoute />} />
         <Route path="stops" element={<DriverStops />} />
+        <Route path="fuel" element={<DriverFuel />} />
         <Route path="summary" element={<DriverSummary />} />
         <Route path="sos" element={<DriverSos />} />
       </Routes>
