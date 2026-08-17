@@ -177,36 +177,7 @@ export default function RoadSnappedMap({
   return (
     <div className={`relative overflow-hidden bg-slate-950 text-slate-100 ${className}`}>
       
-      {/* ----------------- SUPER ADMIN: Multi-Driver Alert Bar ----------------- */}
-      {mode === 'multi-driver' && delayedDrivers.length > 0 && (
-        <div className="absolute top-3 left-3 right-3 sm:right-auto sm:max-w-md z-[1000] animate-bounce-short">
-          <div className="flex items-center justify-between gap-2.5 rounded-2xl border border-red-500/50 bg-red-950/90 p-3 text-red-200 shadow-xl backdrop-blur-md">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 shrink-0 text-red-400" />
-              <div>
-                <p className="text-xs font-bold text-white">
-                  {delayedDrivers.length} Vehicle{delayedDrivers.length > 1 ? 's' : ''} Delayed / Off-Route
-                </p>
-                <p className="text-[11px] text-red-300 truncate">
-                  {delayedDrivers[0].name} ({delayedDrivers[0].vehicleNumber}) stopped
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedId(delayedDrivers[0].id);
-                if (onSelectDriver) onSelectDriver(delayedDrivers[0]);
-              }}
-              className="rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-red-700 transition cursor-pointer"
-            >
-              Focus
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ----------------- Leaflet Road-Snapped Map ----------------- */}
+      {/* ----------------- Clean Leaflet Road-Snapped Map Canvas ----------------- */}
       <MapContainer
         center={centerPos}
         zoom={mode === 'single-driver' ? 15 : 13}
@@ -327,76 +298,22 @@ export default function RoadSnappedMap({
         <MapFollowCenter target={centerPos} follow={follow} />
       </MapContainer>
 
-      {/* ----------------- Floating Map Control Buttons ----------------- */}
-      <div className="absolute bottom-24 right-4 z-[1000] flex flex-col gap-2">
+      {/* ----------------- Clean Floating Auto-Follow Toggle ----------------- */}
+      <div className="absolute bottom-4 right-4 z-[1000] flex flex-col gap-2">
         <button
           type="button"
           onClick={() => setFollow(!follow)}
-          className={`grid h-12 w-12 place-items-center rounded-2xl shadow-xl border transition cursor-pointer ${
+          className={`grid h-10 w-10 place-items-center rounded-xl shadow-xl border transition cursor-pointer ${
             follow
               ? 'bg-emerald-600 text-white border-emerald-400/60 ring-2 ring-emerald-400/40'
               : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:text-white'
           }`}
           title={follow ? 'Auto-Following Vehicle' : 'Click to Auto-Follow'}
         >
-          <Crosshair className="h-5 w-5" />
+          <Crosshair className="h-4 w-4" />
         </button>
       </div>
-
-
-      {/* ----------------- SUPER ADMIN MODE: Floating Fleet Inspector Drawer ----------------- */}
-      {mode === 'multi-driver' && activeDriver && (
-        <div className="absolute bottom-4 left-4 right-4 sm:right-auto sm:w-96 z-[1000] animate-sheet-up">
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/95 p-5 shadow-2xl backdrop-blur-xl text-slate-100 space-y-3">
-            <div className="flex items-start justify-between gap-2 border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold">
-                  <Truck className="h-5 w-5" />
-                </div>
-                <div>
-                  <h4 className="text-fluid-sm font-bold text-white">{activeDriver.name}</h4>
-                  <p className="text-[11px] text-slate-400 font-mono">{activeDriver.vehicleNumber} · {activeDriver.model}</p>
-                </div>
-              </div>
-
-              <Badge
-                tone={activeDriver.status === 'en_route' ? 'ok' : activeDriver.status === 'delayed' ? 'danger' : 'warn'}
-                className="font-bold"
-              >
-                {activeDriver.status.toUpperCase()}
-              </Badge>
-            </div>
-
-            <div className="space-y-1.5 text-xs text-slate-300">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Destination:</span>
-                <strong className="text-white truncate max-w-[200px]">{activeDriver.destination.name}</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Road Distance Left:</span>
-                <span className="font-mono text-emerald-400 font-bold">{activeDriver.remainingDistanceKm} km</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Estimated Transit ETA:</span>
-                <span className="font-mono text-white font-bold">{activeDriver.etaMinutes} mins</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Current Speed:</span>
-                <span className="font-mono text-slate-200">{activeDriver.speedKmh} km/h</span>
-              </div>
-            </div>
-
-            {/* Quick action button */}
-            <a
-              href={`tel:${activeDriver.phone}`}
-              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition border border-slate-700 cursor-pointer"
-            >
-              <Phone className="h-3.5 w-3.5 text-emerald-400" /> Contact Driver ({activeDriver.phone})
-            </a>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
+

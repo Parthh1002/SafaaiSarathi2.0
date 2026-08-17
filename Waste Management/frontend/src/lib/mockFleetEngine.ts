@@ -11,12 +11,14 @@
  */
 
 import { getRoadSnappedRoute, RoadRoute } from './routing';
+import { realGpsTracker } from './realGpsTracker';
 
 export type DriverStatus = 'en_route' | 'idle' | 'at_destination' | 'delayed';
 
 export interface SimulatedDriver {
   id: string;
   name: string;
+  email?: string;
   phone: string;
   vehicleNumber: string;
   model: string;
@@ -28,11 +30,14 @@ export interface SimulatedDriver {
   heading: number;
   speedKmh: number;
   fuelPct: number;
+  isRealGps?: boolean;
   destination: {
     name: string;
     address: string;
-    latitude: number;
-    longitude: number;
+    lat: number;
+    lng: number;
+    latitude?: number;
+    longitude?: number;
     category: string;
     urgency: 'NORMAL' | 'HIGH' | 'EMERGENCY';
   };
@@ -44,73 +49,55 @@ export interface SimulatedDriver {
   lastUpdated: string;
 }
 
-// Initial realistic locations across Gandhinagar Sectors
+// Exactly 3 active drivers: 1 Real GPS Live Driver (Parth) + 2 Mock Demo Drivers
 const INITIAL_DRIVERS_SEED = [
   {
-    id: 'drv-01',
-    name: 'Ramesh Patel',
+    id: 'drv-parth-real',
+    name: 'Parth Patel (Live GPS)',
+    email: 'parthh1002@gmail.com',
     phone: '+91 98251 44321',
     vehicleNumber: 'GJ-18-GB-4012',
-    model: 'Tata Ace Gold 2T',
+    model: 'Tata Ace Gold 2T (Real GPS Transmitter)',
     wardName: 'Sector 6 Municipal Ward',
     wardCode: 'W-06',
     status: 'en_route' as DriverStatus,
-    start: [23.2156, 72.6369] as [number, number], // Sector 6 Depot
+    isRealGps: true,
+    start: [23.2156, 72.6369] as [number, number],
     destination: {
       name: 'Sector 6 Vegetable Market',
       address: 'Near GH-6 Circle, Sector 6',
-      latitude: 23.2275,
-      longitude: 72.6455,
+      lat: 23.2275,
+      lng: 72.6455,
       category: 'Garbage Pile',
       urgency: 'HIGH' as const,
     },
-    speedKmh: 28,
-    fuelPct: 78,
+    speedKmh: 0,
+    fuelPct: 82,
   },
   {
-    id: 'drv-02',
-    name: 'Suresh Vaghela',
+    id: 'drv-01',
+    name: 'Ramesh Patel',
     phone: '+91 94280 11984',
     vehicleNumber: 'GJ-18-GB-5108',
     model: 'Ashok Leyland Dost 2.5T',
     wardName: 'Sector 1-7 Ward',
     wardCode: 'W-01',
     status: 'en_route' as DriverStatus,
-    start: [23.2080, 72.6280] as [number, number], // Sector 3
+    isRealGps: false,
+    start: [23.2080, 72.6280] as [number, number],
     destination: {
       name: 'Civil Hospital Waste Gate',
       address: 'Gate 4, Sector 12',
-      latitude: 23.2310,
-      longitude: 72.6520,
+      lat: 23.2310,
+      lng: 72.6520,
       category: 'Medical Waste',
       urgency: 'EMERGENCY' as const,
     },
-    speedKmh: 34,
-    fuelPct: 62,
+    speedKmh: 32,
+    fuelPct: 68,
   },
   {
-    id: 'drv-03',
-    name: 'Vikram Thakor',
-    phone: '+91 97123 88472',
-    vehicleNumber: 'GJ-18-GB-3341',
-    model: 'Mahindra Bolero Maxi Truck',
-    wardName: 'Sector 21 Commercial Zone',
-    wardCode: 'W-21',
-    status: 'en_route' as DriverStatus,
-    start: [23.2380, 72.6410] as [number, number], // Sector 21
-    destination: {
-      name: 'Sector 21 Shopping Hub',
-      address: 'Behind District Court, Sector 21',
-      latitude: 23.2450,
-      longitude: 72.6580,
-      category: 'Overflowing Bin',
-      urgency: 'NORMAL' as const,
-    },
-    speedKmh: 22,
-    fuelPct: 85,
-  },
-  {
-    id: 'drv-04',
+    id: 'drv-02',
     name: 'Dilip Makwana',
     phone: '+91 99044 56219',
     vehicleNumber: 'GJ-18-GB-8921',
@@ -118,59 +105,18 @@ const INITIAL_DRIVERS_SEED = [
     wardName: 'InfoCity Tech Corridor',
     wardCode: 'W-IC',
     status: 'delayed' as DriverStatus,
-    start: [23.1890, 72.6250] as [number, number], // DA-IICT area
+    isRealGps: false,
+    start: [23.1890, 72.6250] as [number, number],
     destination: {
       name: 'InfoCity Food Court Bin 3',
       address: 'Main Plaza, InfoCity, Gandhinagar',
-      latitude: 23.1945,
-      longitude: 72.6325,
+      lat: 23.1945,
+      lng: 72.6325,
       category: 'Illegal Dump',
       urgency: 'HIGH' as const,
     },
     speedKmh: 0,
     fuelPct: 41,
-  },
-  {
-    id: 'drv-05',
-    name: 'Mahesh Solanki',
-    phone: '+91 98982 34105',
-    vehicleNumber: 'GJ-18-GB-1290',
-    model: 'Eicher Pro Compactor 6T',
-    wardName: 'Sector 14-20 Ward',
-    wardCode: 'W-14',
-    status: 'idle' as DriverStatus,
-    start: [23.2210, 72.6560] as [number, number], // Sector 16
-    destination: {
-      name: 'Central Sector Solid Waste Yard',
-      address: 'CH-Road Processing Center',
-      latitude: 23.2395,
-      longitude: 72.6680,
-      category: 'General Waste',
-      urgency: 'NORMAL' as const,
-    },
-    speedKmh: 0,
-    fuelPct: 90,
-  },
-  {
-    id: 'drv-06',
-    name: 'Haresh Prajapati',
-    phone: '+91 98765 12098',
-    vehicleNumber: 'GJ-18-GB-7711',
-    model: 'Tata Ace Gold 2T',
-    wardName: 'Koba-Kudasan Ward',
-    wardCode: 'W-KB',
-    status: 'en_route' as DriverStatus,
-    start: [23.1750, 72.6180] as [number, number], // Kudasan
-    destination: {
-      name: 'Bhaijipura Cross Road Dump Point',
-      address: 'Near NH-8C Bypass, Kudasan',
-      latitude: 23.1880,
-      longitude: 72.6310,
-      category: 'Garbage Pile',
-      urgency: 'NORMAL' as const,
-    },
-    speedKmh: 31,
-    fuelPct: 53,
   },
 ];
 
@@ -189,12 +135,13 @@ class MockFleetEngine {
     this.isInitialized = true;
 
     for (const seed of INITIAL_DRIVERS_SEED) {
-      const destCoord: [number, number] = [seed.destination.latitude, seed.destination.longitude];
+      const destCoord: [number, number] = [seed.destination.lat, seed.destination.lng];
       const roadRoute = await getRoadSnappedRoute(seed.start, destCoord);
 
       const driver: SimulatedDriver = {
         id: seed.id,
         name: seed.name,
+        email: seed.email,
         phone: seed.phone,
         vehicleNumber: seed.vehicleNumber,
         model: seed.model,
@@ -206,7 +153,12 @@ class MockFleetEngine {
         heading: 45,
         speedKmh: seed.speedKmh,
         fuelPct: seed.fuelPct,
-        destination: seed.destination,
+        isRealGps: seed.isRealGps,
+        destination: {
+          ...seed.destination,
+          latitude: seed.destination.lat,
+          longitude: seed.destination.lng,
+        },
         route: roadRoute,
         routeProgressIndex: 0,
         etaMinutes: roadRoute.durationMinutes,
@@ -218,6 +170,21 @@ class MockFleetEngine {
       this.drivers.set(driver.id, driver);
     }
 
+    // Connect Real GPS Tracker for Parth Patel account (drv-parth-real)
+    realGpsTracker.startTracking(true);
+    realGpsTracker.subscribe((loc, status) => {
+      const parthDriver = this.drivers.get('drv-parth-real');
+      if (parthDriver && loc) {
+        parthDriver.currentLat = loc.latitude;
+        parthDriver.currentLng = loc.longitude;
+        parthDriver.speedKmh = loc.speed ?? 0;
+        parthDriver.heading = loc.heading ?? 0;
+        parthDriver.status = (loc.speed && loc.speed > 2) ? 'en_route' : 'idle';
+        parthDriver.lastUpdated = new Date().toISOString();
+        this.notifyListeners();
+      }
+    });
+
     this.notifyListeners();
     this.startSimulationLoop();
   }
@@ -225,7 +192,7 @@ class MockFleetEngine {
   private startSimulationLoop() {
     if (this.intervalId) return;
 
-    // Advance driver position along the real road route every 2.5 seconds
+    // Advance MOCK drivers only (real driver is driven by real GPS hardware)
     this.intervalId = setInterval(() => {
       this.stepSimulation();
     }, 2500);
@@ -235,6 +202,10 @@ class MockFleetEngine {
     let hasChanges = false;
 
     this.drivers.forEach((driver) => {
+      // Real driver only moves when physical phone coordinates update
+      if (driver.isRealGps) {
+        return;
+      }
       if (driver.status !== 'en_route' || !driver.route || driver.route.coordinates.length === 0) {
         return;
       }
