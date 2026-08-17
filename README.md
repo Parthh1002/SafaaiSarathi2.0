@@ -1,29 +1,45 @@
 <div align="center">
 
-# 🌿 SAFAAI SARATHI 2.0 (सफ़ाई सारथी)
-### **Next-Gen Autonomous Civic Waste Logistics, YOLOv8 Deep Learning & AI-Driven Urban Cleanliness Ecosystem**
-
-[![React](https://img.shields.io/badge/Frontend-React%2018%20%7C%20Vite%20%7C%20TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
-[![NodeJS](https://img.shields.io/badge/Backend-Node.js%20%7C%20Express-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![PostgreSQL](https://img.shields.io/badge/Database-Supabase%20PostgreSQL%20%7C%20Prisma%20ORM-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![YOLOv8](https://img.shields.io/badge/Vision%20AI-YOLOv8%20PyTorch-FF6F00?style=for-the-badge&logo=pytorch&logoColor=white)](https://ultralytics.com/)
-[![Groq AI](https://img.shields.io/badge/LLM%20Agent-Groq%20Llama%203.3%2070B-F55036?style=for-the-badge&logo=fastapi&logoColor=white)](https://groq.com/)
-[![ThreeJS](https://img.shields.io/badge/3D%20Graphics-Three.js%20%7C%20R3F-black?style=for-the-badge&logo=three.js&logoColor=white)](https://threejs.org/)
-[![Deployment](https://img.shields.io/badge/Live%20Cloud-Vercel%20%2B%20Render-blueviolet?style=for-the-badge)](https://safaai-sarathi2-0.vercel.app)
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:FFB6C1,30:FF69B4,70:FF1493,100:000000&height=300&section=header&text=🌿%20SAFAAI%20SARATHI%202.0&fontSize=68&fontAlignY=40&fontColor=ffffff&desc=सफ़ाई%20सारथी%20•%20India's%20Most%20Intelligent%20Civic%20Waste%20Ecosystem&descAlignY=62&descAlign=50&animation=twinkling" width="100%" alt="Safaai Sarathi 2.0 Header" />
 
 <br/>
 
-> **"Transforming municipal waste governance from passive, delayed grievance intake into an autonomous, AI-verified, real-time logistics and circular civic reward ecosystem."**
+<a href="https://safaai-sarathi2-0.vercel.app" target="_blank">
+  <img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=900&size=20&pause=900&color=FF69B4&background=00000000&center=true&vCenter=true&multiline=false&width=950&height=55&lines=🇮🇳+Swachh+Bharat+Mission+2.0+•+Next-Gen+Civic+AI;🤖+YOLOv8+Auto-Classify+Waste+in+%3C100ms;💬+Groq+Llama+3.3+70B+Multilingual+Action+Agent;📡+60fps+Real-Time+WebSocket+Fleet+Tracking;🚨+30-Min+Emergency+SLA+•+Zero+Fake+Closures;🌱+Gamified+Green+Credits+•+Tax+Rebates+%26+BRTS+Passes" alt="Animated Typing Banner" />
+</a>
+
+<br/><br/>
+
+[![Live Web App](https://img.shields.io/badge/🌐%20Live%20App-Vercel%20Production-FF69B4?style=for-the-badge&logo=vercel&logoColor=white&labelColor=000000)](https://safaai-sarathi2-0.vercel.app)
+[![API Backend](https://img.shields.io/badge/⚙️%20API%20Server-Render%20Cloud-FFB6C1?style=for-the-badge&logo=render&logoColor=black&labelColor=000000)](https://safaaisarathi2-0.onrender.com)
+[![YOLOv8 Vision](https://img.shields.io/badge/👁️%20Vision%20AI-YOLOv8%20PyTorch-FF1493?style=for-the-badge&logo=pytorch&logoColor=white&labelColor=000000)](https://pytorch.org/)
+[![Groq LLM](https://img.shields.io/badge/💬%20LLM%20Agent-Groq%20Llama%203.3-FF69B4?style=for-the-badge&logo=openai&logoColor=white&labelColor=000000)](https://groq.com/)
+[![Supabase](https://img.shields.io/badge/🗄️%20Database-Supabase%20PostgreSQL-FFB6C1?style=for-the-badge&logo=supabase&logoColor=black&labelColor=000000)](https://supabase.com/)
+[![ThreeJS](https://img.shields.io/badge/🎮%203D%20Graphics-Three.js%20|%20R3F-FF1493?style=for-the-badge&logo=threedotjs&logoColor=white&labelColor=000000)](https://threejs.org/)
+
+<br/>
+
+![GitHub repo size](https://img.shields.io/github/repo-size/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=FF69B4&labelColor=000000)
+![GitHub stars](https://img.shields.io/github/stars/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=FFB6C1&labelColor=000000)
+![GitHub forks](https://img.shields.io/github/forks/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=FF1493&labelColor=000000)
+![GitHub last commit](https://img.shields.io/github/last-commit/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=FF69B4&labelColor=000000)
+![Deployments](https://img.shields.io/badge/deployments-74%20production-FF1493?style=flat-square&labelColor=000000)
+
+<br/>
+
+> ### 💡 *"Transforming municipal waste governance from passive, delayed grievance intake into an autonomous, AI-verified, real-time logistics and circular civic reward ecosystem."*
 
 **[🌐 Live Web Application (Vercel)](https://safaai-sarathi2-0.vercel.app)** &nbsp;•&nbsp; **[⚙️ Production API Backend (Render)](https://safaaisarathi2-0.onrender.com)** &nbsp;•&nbsp; **[📑 System Architecture](#-end-to-end-system-architecture)** &nbsp;•&nbsp; **[🔑 Demo Test Credentials](#-demo-testing-credentials)**
 
+</div>
+
 ---
 
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF1493&height=60&text=🎯%20EXECUTIVE%20SUMMARY%20FOR%20HACKATHON%20JUDGES&fontColor=ffffff&fontSize=24&stroke=FFB6C1&strokeWidth=2&animation=fadeIn" width="100%" alt="Executive Summary Banner"/>
 </div>
 
 <br/>
-
-## 🎯 Executive Summary for Hackathon Judges & Evaluators
 
 In most Indian cities today, municipal waste management is plagued by **three fundamental systemic failures**:
 1. **Passive Grievance Redressal:** Citizens report garbage on legacy portals (like Swachhata App), but complaints sit in unorganized officer inboxes for days with zero automated triage.
@@ -39,9 +55,13 @@ In most Indian cities today, municipal waste management is plagued by **three fu
 
 ---
 
-## ⚖️ Why Safaai Sarathi Beats Legacy Portals (The 10x Innovation Matrix)
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF69B4&height=60&text=⚖️%20WHY%20SAFAAI%20SARATHI%20BEATS%20LEGACY%20PORTALS&fontColor=ffffff&fontSize=24&stroke=FF1493&strokeWidth=2&animation=fadeIn" width="100%" alt="Innovation Matrix Banner"/>
+</div>
 
-| Feature Dimension | Traditional ULB / Swachhata App | 🌿 Safaai Sarathi 2.0 (Our Platform) |
+<br/>
+
+| Feature Dimension | Traditional ULB / Swachhata App | 🌿 Safaai Sarathi 2.0 |
 | :--- | :--- | :--- |
 | **Complaint Verification** | Manual human review (takes 2-5 days) | **Instant YOLOv8 AI inference** (auto-approves in <100ms) |
 | **Resolution Authenticity** | Driver checks a checkbox (high fraud rate) | **Mandatory After-Cleanup photo proof** validated by API |
@@ -54,7 +74,11 @@ In most Indian cities today, municipal waste management is plagued by **three fu
 
 ---
 
-## 📁 Repository Structure & Directory Map
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF1493&height=60&text=📁%20REPOSITORY%20STRUCTURE%20%26%20DIRECTORY%20MAP&fontColor=ffffff&fontSize=24&stroke=FFB6C1&strokeWidth=2&animation=fadeIn" width="100%" alt="Folder Structure Banner"/>
+</div>
+
+<br/>
 
 ```text
 SafaaiSarathi2.0/
@@ -111,23 +135,27 @@ SafaaiSarathi2.0/
 
 ---
 
-## 🏗️ End-to-End System Architecture
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF69B4&height=60&text=🏗️%20END-TO-END%20SYSTEM%20ARCHITECTURE&fontColor=ffffff&fontSize=24&stroke=FF1493&strokeWidth=2&animation=fadeIn" width="100%" alt="Architecture Banner"/>
+</div>
+
+<br/>
 
 ```mermaid
 flowchart TB
-    subgraph ClientLayer ["1. CLIENT LAYER (React 18 + Vite + TypeScript)"]
+    subgraph ClientLayer ["🖥️ 1. CLIENT LAYER (React 18 + Vite + TypeScript)"]
         CP["📱 Citizen Super-App (/app/*)"]
         DP["🚛 Driver Shift Navigator (/driver/*)"]
         OP["🏢 Ward Officer Console (/officer/*)"]
         AP["👑 Super Admin HQ (/admin/*)"]
     end
 
-    subgraph SecurityGate ["2. SECURITY & PORTAL ISOLATION"]
+    subgraph SecurityGate ["🔐 2. SECURITY & PORTAL ISOLATION"]
         AUTH["Argon2id + Rotating JWT + Refresh Cookies"]
         GUARD["Strict Audience Guard: 403 PORTAL_MISMATCH"]
     end
 
-    subgraph BackendCore ["3. API GATEWAY & LOGISTICS (Node.js Express ESM)"]
+    subgraph BackendCore ["⚡ 3. API GATEWAY & LOGISTICS (Node.js Express ESM)"]
         TRIAGE["YOLOv8 AI Auto-Approval Engine (≥70% Gate)"]
         DEDUP["100m Spatial & 24h Deduplicator"]
         SCHED["24h Advance Event Scheduler & Cron"]
@@ -135,12 +163,12 @@ flowchart TB
         SOCKET["Socket.io Real-Time WebSockets"]
     end
 
-    subgraph AIEngines ["4. DUAL AI MICROSERVICES"]
+    subgraph AIEngines ["🧠 4. DUAL AI MICROSERVICES"]
         YOLO["👁️ Ultralytics YOLOv8 PyTorch (Port 8100)"]
         GROQ["⚡ Groq Cloud Llama 3.3 70B Versatile"]
     end
 
-    subgraph DataStorage ["5. PERSISTENCE & STORAGE"]
+    subgraph DataStorage ["💾 5. PERSISTENCE & STORAGE"]
         PG[("🐘 Supabase PostgreSQL 17 (Prisma ORM)")]
         S3["📦 Supabase Cloud Storage (Proof Uploads)"]
     end
@@ -156,7 +184,17 @@ flowchart TB
 
 ---
 
-## 🛠️ Complete Tech Stack & Engineering Justifications
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF1493&height=60&text=🛠️%20COMPLETE%20TECH%20STACK%20%26%20ENGINEERING%20JUSTIFICATIONS&fontColor=ffffff&fontSize=22&stroke=FF69B4&strokeWidth=2&animation=fadeIn" width="100%" alt="Tech Stack Banner"/>
+</div>
+
+<br/>
+
+<div align="center">
+<img src="https://skillicons.dev/icons?i=react,typescript,vite,tailwind,threejs,nodejs,express,postgres,prisma,python,fastapi,pytorch,github,vercel,html,css,js,git&perline=9" alt="Tech Stack Icons" />
+</div>
+
+<br/>
 
 | Technology | Layer / Role | Why We Chose It (Engineering Justification & Alternatives Considered) |
 | :--- | :--- | :--- |
@@ -173,7 +211,11 @@ flowchart TB
 
 ---
 
-## 🔄 Core Operational Workflows (Step-By-Step)
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF69B4&height=60&text=🔄%20CORE%20OPERATIONAL%20WORKFLOWS&fontColor=ffffff&fontSize=24&stroke=FFB6C1&strokeWidth=2&animation=fadeIn" width="100%" alt="Workflows Banner"/>
+</div>
+
+<br/>
 
 ### 1️⃣ Spot it, Snap it: AI Waste Report & Cleanup Lifecycle
 1. **Citizen Capture:** Citizen opens `/app/report`, snaps a live waste photo; GPS coordinates are captured automatically.
@@ -195,7 +237,11 @@ flowchart TB
 
 ---
 
-## 🛡️ Judge FAQ: Anticipating Tough Technical Questions
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF1493&height=60&text=🛡️%20JUDGE%20FAQ%3A%20ANTICIPATING%20TOUGH%20TECHNICAL%20QUESTIONS&fontColor=ffffff&fontSize=20&stroke=FF69B4&strokeWidth=2&animation=fadeIn" width="100%" alt="Judges FAQ Banner"/>
+</div>
+
+<br/>
 
 #### Q1: "What if a citizen submits a fake image or a photo downloaded from Google?"
 > **Answer:** Safaai Sarathi enforces a multi-tier defense:
@@ -214,7 +260,11 @@ flowchart TB
 
 ---
 
-## 🔑 Demo Testing Credentials
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF69B4&height=60&text=🔑%20DEMO%20TESTING%20CREDENTIALS&fontColor=ffffff&fontSize=24&stroke=FF1493&strokeWidth=2&animation=fadeIn" width="100%" alt="Demo Credentials Banner"/>
+</div>
+
+<br/>
 
 Try every role live on [https://safaai-sarathi2-0.vercel.app](https://safaai-sarathi2-0.vercel.app):
 
@@ -229,7 +279,10 @@ Try every role live on [https://safaai-sarathi2-0.vercel.app](https://safaai-sar
 
 <div align="center">
 
-Made with ❤️ for **Swachh Bharat Abhiyan & National Smart Cities Mission** 🇮🇳  
-*Safaai Sarathi 2.0 — Developed for Hackathon & Civic Tech Innovation.*
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:000000,40:FF1493,80:FF69B4,100:FFB6C1&height=130&section=footer&text=Made%20with%20💗%20for%20Swachh%20Bharat%20Abhiyan%20%26%20National%20Smart%20Cities%20Mission%20🇮🇳&fontSize=18&fontColor=ffffff&animation=fadeIn" width="100%" alt="Footer Wave"/>
+
+*Safaai Sarathi 2.0 — Developed for Hackathon & Civic Tech Innovation*
+
+**[⬆ Back to Top](#-safaai-sarathi-20-सफ़ाई-सारथी)**
 
 </div>
