@@ -1,27 +1,27 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:FFB6C1,50:FF69B4,100:000000&height=280&section=header&text=Safaai%20Sarathi%202.0&fontSize=72&fontAlignY=38&fontColor=ffffff&desc=सफ़ाई%20सारथी%20•%20Autonomous%20AI-Driven%20Civic%20Cleanliness%20Ecosystem&descAlignY=60&descAlign=50&animation=fadeIn" width="100%" alt="Safaai Sarathi 2.0 Header" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:34D399,30:10B981,70:059669,100:000000&height=280&section=header&text=Safaai%20Sarathi%202.0&fontSize=72&fontAlignY=38&fontColor=ffffff&desc=सफ़ाई%20सारथी%20•%20Autonomous%20AI-Driven%20Civic%20Cleanliness%20Ecosystem&descAlignY=60&descAlign=50&animation=fadeIn" width="100%" alt="Safaai Sarathi 2.0 Header" />
 
 <br/>
 
 <a href="https://safaai-sarathi2-0.vercel.app" target="_blank">
-  <img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=900&size=22&pause=800&color=FF69B4&background=00000000&center=true&vCenter=true&width=900&height=55&lines=🤖+NEXT-GEN+MUNICIPAL+AI+ECOSYSTEM;👁️+YOLOv8+DEEP+LEARNING+WASTE+TRIAGE;💬+GROQ+LLM+MULTI-LINGUAL+ACTION+AGENT;🗓️+24H+ADVANCE+SCHEDULED+EVENT+PICKUPS;📡+REAL-TIME+WEBSOCKET+FLEET+TELEMETRY;🚨+30-MINUTE+CRITICAL+EMERGENCY+SLA;🌱+GAMIFIED+GREEN+CREDITS+ECONOMY" alt="Typing Banner" />
+  <img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=900&size=22&pause=800&color=10B981&background=00000000&center=true&vCenter=true&width=900&height=55&lines=🤖+NEXT-GEN+MUNICIPAL+AI+ECOSYSTEM;👁️+YOLOv8+DEEP+LEARNING+WASTE+TRIAGE;💬+GROQ+LLM+MULTI-LINGUAL+ACTION+AGENT;🗓️+24H+ADVANCE+SCHEDULED+EVENT+PICKUPS;📡+REAL-TIME+WEBSOCKET+FLEET+TELEMETRY;🚨+30-MINUTE+CRITICAL+EMERGENCY+SLA;🌱+GAMIFIED+GREEN+CREDITS+ECONOMY" alt="Typing Banner" />
 </a>
 
 <br/><br/>
 
-[![Live Web App](https://img.shields.io/badge/🌐%20Live%20Platform-Vercel%20Production-FF69B4?style=for-the-badge&logo=vercel&logoColor=white&labelColor=000000)](https://safaai-sarathi2-0.vercel.app)
-[![API Server](https://img.shields.io/badge/⚙️%20API%20Engine-Render%20Cloud-FFB6C1?style=for-the-badge&logo=render&logoColor=black&labelColor=000000)](https://safaaisarathi2-0.onrender.com)
-[![YOLOv8 AI](https://img.shields.io/badge/🧠%20YOLOv8-FastAPI%20|%20PyTorch-FF1493?style=for-the-badge&logo=pytorch&logoColor=white&labelColor=000000)](https://pytorch.org/)
-[![PostgreSQL](https://img.shields.io/badge/🗄️%20Database-Supabase%20PostgreSQL-FFB6C1?style=for-the-badge&logo=supabase&logoColor=black&labelColor=000000)](https://supabase.com/)
-[![Groq AI](https://img.shields.io/badge/💬%20LLM%20Agent-Groq%20Llama%203.3-FF69B4?style=for-the-badge&logo=openai&logoColor=white&labelColor=000000)](https://groq.com/)
+[![Live Web App](https://img.shields.io/badge/🌐%20Live%20Platform-Vercel%20Production-10B981?style=for-the-badge&logo=vercel&logoColor=white&labelColor=000000)](https://safaai-sarathi2-0.vercel.app)
+[![API Server](https://img.shields.io/badge/⚙️%20API%20Engine-Render%20Cloud-34D399?style=for-the-badge&logo=render&logoColor=black&labelColor=000000)](https://safaaisarathi2-0.onrender.com)
+[![YOLOv8 AI](https://img.shields.io/badge/🧠%20YOLOv8-FastAPI%20|%20PyTorch-059669?style=for-the-badge&logo=pytorch&logoColor=white&labelColor=000000)](https://pytorch.org/)
+[![PostgreSQL](https://img.shields.io/badge/🗄️%20Database-Supabase%20PostgreSQL-34D399?style=for-the-badge&logo=supabase&logoColor=black&labelColor=000000)](https://supabase.com/)
+[![Groq AI](https://img.shields.io/badge/💬%20LLM%20Agent-Groq%20Llama%203.3-10B981?style=for-the-badge&logo=openai&logoColor=white&labelColor=000000)](https://groq.com/)
 
 <br/>
 
-![GitHub repo size](https://img.shields.io/github/repo-size/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=FF69B4&labelColor=000000)
-![GitHub stars](https://img.shields.io/github/stars/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=FFB6C1&labelColor=000000)
-![GitHub forks](https://img.shields.io/github/forks/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=FF1493&labelColor=000000)
-![GitHub last commit](https://img.shields.io/github/last-commit/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=FF69B4&labelColor=000000)
+![GitHub repo size](https://img.shields.io/github/repo-size/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=10B981&labelColor=000000)
+![GitHub stars](https://img.shields.io/github/stars/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=34D399&labelColor=000000)
+![GitHub forks](https://img.shields.io/github/forks/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=059669&labelColor=000000)
+![GitHub last commit](https://img.shields.io/github/last-commit/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=10B981&labelColor=000000)
 
 <br/>
 
@@ -36,7 +36,7 @@
 <br/>
 
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF69B4&height=55&text=🏆%20EXECUTIVE%20PITCH%20%26%20CORE%20INNOVATION&fontColor=ffffff&fontSize=22&stroke=FF69B4&strokeWidth=2" width="100%" alt="Executive Pitch Banner"/>
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:059669&height=55&text=🏆%20EXECUTIVE%20PITCH%20%26%20CORE%20INNOVATION&fontColor=ffffff&fontSize=22&stroke=34D399&strokeWidth=2" width="100%" alt="Executive Pitch Banner"/>
 </div>
 
 <br/>
@@ -65,7 +65,7 @@
 <br/>
 
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF1493&height=55&text=🏗️%20END-TO-END%20SYSTEM%20ARCHITECTURE&fontColor=ffffff&fontSize=22&stroke=FFB6C1&strokeWidth=2" width="100%" alt="System Architecture Banner"/>
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:10B981&height=55&text=🏗️%20END-TO-END%20SYSTEM%20ARCHITECTURE&fontColor=ffffff&fontSize=22&stroke=059669&strokeWidth=2" width="100%" alt="System Architecture Banner"/>
 </div>
 
 <br/>
@@ -73,11 +73,11 @@
 ```mermaid
 flowchart TD
     %% Styling Configuration
-    classDef client fill:#1a0010,stroke:#FF69B4,stroke-width:2px,color:#FFB6C1;
-    classDef gateway fill:#0F0010,stroke:#FF1493,stroke-width:2px,color:#ffffff;
-    classDef ai fill:#1a0020,stroke:#FF69B4,stroke-width:2px,color:#FFB6C1;
-    classDef storage fill:#1E0515,stroke:#FF1493,stroke-width:2px,color:#ffffff;
-    classDef action fill:#0d0010,stroke:#FFB6C1,stroke-width:2px,color:#ffffff;
+    classDef client fill:#064E3B,stroke:#10B981,stroke-width:2px,color:#34D399;
+    classDef gateway fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#ffffff;
+    classDef ai fill:#1E293B,stroke:#10B981,stroke-width:2px,color:#34D399;
+    classDef storage fill:#064E3B,stroke:#059669,stroke-width:2px,color:#ffffff;
+    classDef action fill:#047857,stroke:#34D399,stroke-width:2px,color:#ffffff;
 
     subgraph CLIENTS ["1. CLIENT TIER (React 18 + Vite + TypeScript)"]
         C1["👤 Citizen Super-App\n(/app/*)"]:::client
@@ -125,7 +125,7 @@ flowchart TD
 <br/>
 
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF69B4&height=55&text=📂%20REPOSITORY%20STRUCTURE%20%26%20ORGANIZATION&fontColor=ffffff&fontSize=22&stroke=FF1493&strokeWidth=2" width="100%" alt="Folder Structure Banner"/>
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:059669&height=55&text=📂%20REPOSITORY%20STRUCTURE%20%26%20ORGANIZATION&fontColor=ffffff&fontSize=22&stroke=34D399&strokeWidth=2" width="100%" alt="Folder Structure Banner"/>
 </div>
 
 <br/>
@@ -178,7 +178,7 @@ SafaaiSarathi2.0/
 <br/>
 
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF1493&height=55&text=🛠️%20COMPLETE%20TECH%20STACK%20%26%20ENGINEERING%20RATIONALE&fontColor=ffffff&fontSize=22&stroke=FFB6C1&strokeWidth=2" width="100%" alt="Tech Stack Banner"/>
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:10B981&height=55&text=🛠️%20COMPLETE%20TECH%20STACK%20%26%20ENGINEERING%20RATIONALE&fontColor=ffffff&fontSize=22&stroke=059669&strokeWidth=2" width="100%" alt="Tech Stack Banner"/>
 </div>
 
 <br/>
@@ -212,7 +212,7 @@ SafaaiSarathi2.0/
 <br/>
 
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF69B4&height=55&text=👥%20FOUR%20ROLE-ISOLATED%20PORTALS&fontColor=ffffff&fontSize=22&stroke=FFB6C1&strokeWidth=2" width="100%" alt="Portals Banner"/>
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:059669&height=55&text=👥%20FOUR%20ROLE-ISOLATED%20PORTALS&fontColor=ffffff&fontSize=22&stroke=34D399&strokeWidth=2" width="100%" alt="Portals Banner"/>
 </div>
 
 <br/>
@@ -235,7 +235,7 @@ SafaaiSarathi2.0/
 <br/>
 
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF1493&height=55&text=🛡️%20JUDGES%20DEFENSE%20%26%20COUNTER-QUESTION%20ARMOR&fontColor=ffffff&fontSize=22&stroke=FF69B4&strokeWidth=2" width="100%" alt="Judges FAQ Banner"/>
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:10B981&height=55&text=🛡️%20JUDGES%20DEFENSE%20%26%20COUNTER-QUESTION%20ARMOR&fontColor=ffffff&fontSize=22&stroke=059669&strokeWidth=2" width="100%" alt="Judges FAQ Banner"/>
 </div>
 
 <br/>
@@ -267,7 +267,7 @@ SafaaiSarathi2.0/
 <br/>
 
 <div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:FF69B4&height=55&text=🚀%20LOCAL%20DEVELOPMENT%20%26%20DEPLOYMENT&fontColor=ffffff&fontSize=22&stroke=FF1493&strokeWidth=2" width="100%" alt="Setup Guide Banner"/>
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:059669&height=55&text=🚀%20LOCAL%20DEVELOPMENT%20%26%20DEPLOYMENT&fontColor=ffffff&fontSize=22&stroke=34D399&strokeWidth=2" width="100%" alt="Setup Guide Banner"/>
 </div>
 
 <br/>
@@ -321,7 +321,7 @@ uvicorn main:app --host 0.0.0.0 --port 8100
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:000000,50:FF69B4,100:FFB6C1&height=120&section=footer&text=Made%20with%20💗%20for%20Swachh%20Bharat%20Mission&fontSize=20&fontColor=ffffff&animation=fadeIn" width="100%" alt="Footer"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:000000,50:059669,100:10B981&height=120&section=footer&text=Made%20with%20💚%20for%20Swachh%20Bharat%20Mission&fontSize=20&fontColor=ffffff&animation=fadeIn" width="100%" alt="Footer"/>
 
 **[⬆ Back to Top](#-safaai-sarathi-20-सफ़ाई-सारथी)**
 
