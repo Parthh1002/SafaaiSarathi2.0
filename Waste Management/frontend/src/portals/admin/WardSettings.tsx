@@ -37,28 +37,29 @@ interface Point {
   lng: number;
 }
 
-// Custom draggable corner handle icon (White circle with emerald border & shadow)
+// Custom draggable corner handle icon (High visibility White/Emerald circle with drop shadow)
 function createVertexIcon(index: number) {
   return L.divIcon({
     className: 'custom-vertex-handle',
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
     html: `<div style="
-      width: 20px;
-      height: 20px;
+      width: 26px;
+      height: 26px;
       background-color: #ffffff;
-      border: 3px solid #16a34a;
+      border: 3.5px solid #10b981;
       border-radius: 50%;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.45);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
       cursor: grab;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 9px;
-      font-weight: 800;
-      color: #16a34a;
+      font-size: 10px;
+      font-weight: 900;
+      color: #065f46;
       user-select: none;
-    ">${index + 1}</div>`,
+      transition: transform 0.1s ease;
+    ">#${index + 1}</div>`,
   });
 }
 
@@ -510,10 +511,11 @@ export default function WardSettings() {
                   {/* Draggable Vertex Handles at each corner */}
                   {points.map((pt, idx) => (
                     <Marker
-                      key={`pt-${idx}-${pt.lat}-${pt.lng}`}
+                      key={`modal-vertex-${idx}`}
                       position={[pt.lat, pt.lng]}
                       icon={createVertexIcon(idx)}
                       draggable={true}
+                      autoPan={true}
                       eventHandlers={{
                         drag(e) {
                           const latlng = e.target.getLatLng();
@@ -525,8 +527,11 @@ export default function WardSettings() {
                         },
                       }}
                     >
-                      <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
-                        Point {idx + 1}: {pt.lat.toFixed(5)}, {pt.lng.toFixed(5)}
+                      <Tooltip direction="top" offset={[0, -12]} opacity={0.95}>
+                        <div className="text-center font-sans py-0.5">
+                          <strong className="text-emerald-700 font-bold block">Point #{idx + 1}</strong>
+                          <span className="text-[10px] text-slate-700 font-mono block">{pt.lat.toFixed(5)}, {pt.lng.toFixed(5)}</span>
+                        </div>
                       </Tooltip>
                     </Marker>
                   ))}
@@ -663,17 +668,22 @@ export default function WardSettings() {
           {/* Top Fullscreen Floating Toolbar */}
           <div className="absolute top-4 left-4 right-4 z-[1000] flex flex-wrap items-center justify-between gap-3 pointer-events-none">
             
-            {/* Ward Info & Points Counter */}
-            <div className="pointer-events-auto flex items-center gap-2.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 px-4 py-2.5 text-white shadow-2xl backdrop-blur-xl">
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-600 text-white font-bold">
+            {/* Ward Info & Points Counter with High-Contrast Green Text Highlights */}
+            <div className="pointer-events-auto flex items-center gap-3 rounded-2xl bg-black/95 border border-emerald-500/50 px-4 py-2.5 text-white shadow-2xl backdrop-blur-xl">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white font-bold shadow-md">
                 <MapPinned className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-fluid-sm font-extrabold leading-tight">
-                  {form.name || 'Editing Boundary'} ({form.code || 'W-01'})
-                </h3>
-                <p className="text-[11px] text-emerald-400 font-mono">
-                  {points.length} Boundary Corner Points Active
+                <div className="flex items-center gap-2">
+                  <h3 className="text-fluid-sm font-extrabold text-white tracking-tight leading-tight">
+                    {form.name || 'Sector 1–7'}
+                  </h3>
+                  <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase font-mono">
+                    {form.code || 'W-01'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-emerald-400 font-semibold mt-0.5">
+                  🟢 {form.zone || 'North Zone'} Municipal Ward Section · {points.length} Corner Vertices Active
                 </p>
               </div>
             </div>
@@ -683,7 +693,7 @@ export default function WardSettings() {
               <button
                 type="button"
                 onClick={handleSortPerimeter}
-                className="flex items-center gap-1.5 rounded-2xl bg-slate-900/90 border border-slate-700 px-3.5 py-2.5 text-xs font-bold text-slate-200 shadow-xl hover:bg-slate-800 transition cursor-pointer"
+                className="flex items-center gap-1.5 rounded-2xl bg-black/90 border border-slate-700 px-3.5 py-2.5 text-xs font-bold text-slate-200 shadow-xl hover:bg-slate-800 transition cursor-pointer"
                 title="Uncross and fix boundary perimeter"
               >
                 <RotateCw className="h-4 w-4 text-emerald-400" />
@@ -703,7 +713,7 @@ export default function WardSettings() {
               <button
                 type="button"
                 onClick={() => setIsFullscreenMap(false)}
-                className="flex items-center gap-2 rounded-2xl bg-red-600/90 hover:bg-red-700 border border-red-500/50 px-4 py-2.5 text-xs font-bold text-white shadow-2xl transition cursor-pointer"
+                className="flex items-center gap-2 rounded-2xl bg-red-600/95 hover:bg-red-700 border border-red-500/50 px-4 py-2.5 text-xs font-bold text-white shadow-2xl transition cursor-pointer"
                 title="Press ESC or Click to Exit Fullscreen"
               >
                 <Minimize2 className="h-4 w-4" />
@@ -740,13 +750,14 @@ export default function WardSettings() {
                 />
               )}
 
-              {/* Draggable Vertex Handles with Numbered Tooltips */}
+              {/* Draggable Vertex Handles with Numbered Tooltips (Stable Key prevents unmounting during drag) */}
               {points.map((pt, idx) => (
                 <Marker
-                  key={`fullscreen-pt-${idx}-${pt.lat}-${pt.lng}`}
+                  key={`fullscreen-vertex-${idx}`}
                   position={[pt.lat, pt.lng]}
                   icon={createVertexIcon(idx)}
                   draggable={true}
+                  autoPan={true}
                   eventHandlers={{
                     drag(e) {
                       const latlng = e.target.getLatLng();
@@ -758,8 +769,10 @@ export default function WardSettings() {
                     },
                   }}
                 >
-                  <Tooltip direction="top" offset={[0, -10]} opacity={0.95} permanent>
-                    #{idx + 1}
+                  <Tooltip direction="top" offset={[0, -12]} opacity={0.95} permanent>
+                    <div className="text-center font-sans font-extrabold text-[11px] text-emerald-800">
+                      #{idx + 1}
+                    </div>
                   </Tooltip>
                 </Marker>
               ))}
