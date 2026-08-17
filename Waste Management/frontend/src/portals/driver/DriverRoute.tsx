@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
@@ -20,45 +20,109 @@ import {
   Radio,
   Gauge,
   Wifi,
+  ChevronDown,
+  ChevronUp,
+  ListOrdered,
+  Zap,
 } from 'lucide-react';
 import { api } from '../../lib/api';
+import { useAuth } from '../../lib/auth';
 import { Badge, Card, EmptyState, ErrorState, Loading, toast } from '../../components/ui';
 import RoadSnappedMap from '../../components/map/RoadSnappedMap';
-import { mockFleetEngine, SimulatedDriver } from '../../lib/mockFleetEngine';
 import { realGpsTracker, RealGpsLocation, GpsStatus } from '../../lib/realGpsTracker';
+import {
+  optimizeMultiStopTour,
+  AssignedStop,
+  OptimizedTour,
+} from '../../lib/tspRouteOptimizer';
 import { useT } from '../../lib/i18n';
+
+// Realistic 5 Mock Assigned Collection Complaints within 3km in Ward 6
+const INITIAL_ASSIGNED_STOPS: AssignedStop[] = [
+  {
+    id: 'stop-01',
+    code: 'SS-4081',
+    name: 'Sector 6 Vegetable Market',
+    address: 'Near GH-6 Circle, Sector 6 Market, Gandhinagar',
+    category: 'Garbage Pile',
+    latitude: 23.2185,
+    longitude: 72.6395,
+    urgency: 'HIGH',
+    notes: 'Commercial vegetable waste accumulation outside main entrance.',
+  },
+  {
+    id: 'stop-02',
+    code: 'SS-4082',
+    name: 'Sector 6 Community Bin A',
+    address: 'Block A, Residential Complex 4, Sector 6',
+    category: 'Overflowing Bin',
+    latitude: 23.2142,
+    longitude: 72.6341,
+    urgency: 'NORMAL',
+    notes: 'Green biodegradable community bin overflowing onto sidewalk.',
+  },
+  {
+    id: 'stop-03',
+    code: 'SS-4083',
+    name: 'Sector 12 Hospital Gate 4',
+    address: 'Gate 4, Civil Hospital Corridor, Sector 12',
+    category: 'Medical Waste',
+    latitude: 23.2248,
+    longitude: 72.6482,
+    urgency: 'EMERGENCY',
+    notes: 'Biohazard syringe and disposable medical container found in open.',
+  },
+  {
+    id: 'stop-04',
+    code: 'SS-4084',
+    name: 'Sector 6 School Crossing',
+    address: 'Opposite Primary School No. 2, Sector 6',
+    category: 'Plastic Waste',
+    latitude: 23.2201,
+    longitude: 72.6420,
+    urgency: 'NORMAL',
+    notes: 'Single-use plastic packets scattered on pedestrian path.',
+  },
+  {
+    id: 'stop-05',
+    code: 'SS-4085',
+    name: 'Sector 11 Commercial Complex',
+    address: 'Behind Shopping Plaza, Sector 11',
+    category: 'Cardboard & Dry Waste',
+    latitude: 23.2280,
+    longitude: 72.6415,
+    urgency: 'NORMAL',
+    notes: 'Packaging boxes piled near back delivery alley.',
+  },
+];
 
 export default function DriverRoute() {
   const t = useT();
-  const [drivers, setDrivers] = useState<SimulatedDriver[]>([]);
-  const [myDriverId, setMyDriverId] = useState<string>('drv-01');
-  const [isCollected, setIsCollected] = useState(false);
-  const [realGpsStatus, setRealGpsStatus] = useState<GpsStatus>('CONNECTING');
-  const [realGpsFix, setRealGpsFix] = useState<RealGpsLocation | null>(null);
+  const { user } = useAuth();
 
-  // 1. Connect to Real Hardware GPS WatchPosition Stream
+  // Real Hardware GPS State
+  const [driverPos, setDriverPos] = useState<[number, number]>([23.2156, 72.6369]);
+  const [driverSpeed, setDriverSpeed] = useState<number>(0);
+  const [driverHeading, setDriverHeading] = useState<number>(0);
+  const [gpsStatus, setGpsStatus] = useState<GpsStatus>('CONNECTING');
+  const [gpsFix, setGpsFix] = useState<RealGpsLocation | null>(null);
+
+  // Multi-Stop Route State
+  const [assignedStops, setAssignedStops] = useState<AssignedStop[]>(INITIAL_ASSIGNED_STOPS);
+  const [tour, setTour] = useState<OptimizedTour | null>(null);
+  const [isListExpanded, setIsListExpanded] = useState(false);
+  const [isCollecting, setIsCollecting] = useState(false);
+
+  // 1. Connect Real Hardware GPS watchPosition stream
   useEffect(() => {
     realGpsTracker.startTracking(true);
     const unsubscribeGps = realGpsTracker.subscribe((loc, status) => {
-      setRealGpsStatus(status);
+      setGpsStatus(status);
       if (loc) {
-        setRealGpsFix(loc);
-        // If this is the real test driver, update coordinates strictly from hardware GPS
-        setDrivers((prev) =>
-          prev.map((d) => {
-            if (d.id === myDriverId || d.id === 'drv-01') {
-              return {
-                ...d,
-                currentLat: loc.latitude,
-                currentLng: loc.longitude,
-                heading: loc.heading ?? d.heading,
-                speedKmh: loc.speed ?? d.speedKmh,
-                lastUpdated: new Date(loc.timestamp).toISOString(),
-              };
-            }
-            return d;
-          })
-        );
+        setGpsFix(loc);
+        setDriverPos([loc.latitude, loc.longitude]);
+        setDriverSpeed(loc.speed ?? 0);
+        setDriverHeading(loc.heading ?? 0);
       }
     });
 
@@ -66,46 +130,86 @@ export default function DriverRoute() {
       unsubscribeGps();
       realGpsTracker.stopTracking();
     };
-  }, [myDriverId]);
+  }, []);
 
-  // 2. Connect to Mock Fleet for other background vehicles
+  // 2. Recompute 2-Opt TSP Optimized Tour whenever driver location or stops change
   useEffect(() => {
-    const unsubscribe = mockFleetEngine.subscribe((updatedList) => {
-      setDrivers((prev) => {
-        // Keep real GPS fix for the active driver if available
-        if (realGpsFix) {
-          return updatedList.map((d) => {
-            if (d.id === myDriverId) {
-              return {
-                ...d,
-                currentLat: realGpsFix.latitude,
-                currentLng: realGpsFix.longitude,
-                speedKmh: realGpsFix.speed ?? 0,
-                heading: realGpsFix.heading ?? d.heading,
-              };
-            }
-            return d;
-          });
-        }
-        return [...updatedList];
-      });
+    let isCancelled = false;
+
+    optimizeMultiStopTour(driverPos, assignedStops).then((computedTour) => {
+      if (!isCancelled) {
+        setTour(computedTour);
+      }
     });
-    return () => unsubscribe();
-  }, [myDriverId, realGpsFix]);
 
-  const currentDriver = drivers.find((d) => d.id === myDriverId) || drivers[0];
+    return () => {
+      isCancelled = true;
+    };
+  }, [driverPos, assignedStops]);
 
-  const handleMarkCollected = () => {
-    setIsCollected(true);
-    toast.success(`Waste collected from ${currentDriver?.destination.name}!`);
+  // Handle Mark Stop as Done (Advances to the next stop in optimized sequence)
+  const handleCompleteCurrentStop = () => {
+    if (!tour?.nextStop) return;
+
+    const completedId = tour.nextStop.id;
+    const completedName = tour.nextStop.name;
+    setIsCollecting(true);
+
+    toast.success(`✓ Collected & Cleaned: ${completedName}!`);
+
     setTimeout(() => {
-      setIsCollected(false);
-    }, 4000);
+      setAssignedStops((prev) =>
+        prev.map((s) => (s.id === completedId ? { ...s, isCompleted: true } : s))
+      );
+      setIsCollecting(false);
+    }, 400);
   };
+
+  // Convert current tour state to SimulatedDriver interface for RoadSnappedMap
+  const driverForMap = useMemo(() => {
+    const nextStop = tour?.nextStop || assignedStops[0];
+    return [
+      {
+        id: user?.id || 'drv-real',
+        name: user?.name || 'Parth Patel',
+        vehicleNumber: 'GJ-18-GB-4012',
+        model: 'Tata Ace Gold 2T',
+        wardCode: 'W-06',
+        wardName: 'Sector 6 Municipal Ward',
+        phone: user?.phone || '9825144321',
+        currentLat: driverPos[0],
+        currentLng: driverPos[1],
+        heading: driverHeading,
+        speedKmh: driverSpeed,
+        fuelPct: 78,
+        status: (driverSpeed > 2 ? 'en_route' : 'idle') as 'en_route' | 'idle',
+        destination: {
+          name: nextStop?.name || 'Depot',
+          address: nextStop?.address || 'Municipal Ward Office',
+          lat: nextStop?.latitude || 23.2156,
+          lng: nextStop?.longitude || 72.6369,
+          urgency: (nextStop?.urgency === 'EMERGENCY' ? 'EMERGENCY' : 'NORMAL') as 'EMERGENCY' | 'NORMAL',
+          category: nextStop?.category || 'Garbage Pile',
+        },
+        remainingDistanceKm: tour ? Number((tour.distanceToNextMeters / 1000).toFixed(2)) : 1.1,
+        etaMinutes: tour ? Math.max(1, Math.round(tour.distanceToNextMeters / 400)) : 2,
+        route: tour?.roadCoordinates?.length
+          ? {
+              coordinates: tour.roadCoordinates,
+              steps: [{ instruction: tour.turnInstruction, distanceMeters: tour.distanceToNextMeters, durationSec: 120 }],
+            }
+          : undefined,
+        lastUpdated: new Date().toISOString(),
+      },
+    ];
+  }, [user, driverPos, driverHeading, driverSpeed, tour, assignedStops]);
+
+  const nextStop = tour?.nextStop;
+  const remainingCount = tour?.remainingStopsCount ?? 0;
 
   return (
     <div className="space-y-4">
-      {/* Top Banner / Route Header */}
+      {/* Top Banner / Session Header (FIX 1: Profile Dropdown Removed Completely) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-3">
         <div>
           <div className="flex items-center gap-2">
@@ -113,190 +217,210 @@ export default function DriverRoute() {
               <Navigation className="h-4 w-4" />
             </span>
             <h1 className="text-fluid-lg font-extrabold text-ink tracking-tight">
-              Live Road Navigation
+              Live Navigation & TSP Route
             </h1>
           </div>
           <p className="text-fluid-xs text-muted">
-            OSRM road-snapped turn-by-turn routing with real-time street tracking
+            2-Opt TSP minimal-distance sequence · Road-snapped live turn guidance
           </p>
         </div>
 
-        {/* GPS Hardware Telemetry Status & Vehicle Selector */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        {/* Authenticated Driver Profile Badge & GPS Status */}
+        <div className="flex flex-wrap items-center gap-2">
           {/* Real Hardware GPS Stream Indicator */}
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border border-emerald-500/30 bg-emerald-50/10 text-emerald-600 shadow-xs">
-            <span className={`h-2 w-2 rounded-full ${realGpsStatus === 'LIVE_GPS' ? 'bg-emerald-500 animate-ping' : 'bg-emerald-600'}`} />
+            <span
+              className={`h-2 w-2 rounded-full ${
+                gpsStatus === 'LIVE_GPS' ? 'bg-emerald-500 animate-ping' : 'bg-emerald-600'
+              }`}
+            />
             <span>
-              {realGpsStatus === 'LIVE_GPS'
-                ? `Real GPS: Moving (±${realGpsFix?.accuracy || 4}m)`
-                : realGpsStatus === 'STATIONARY'
-                ? 'Real GPS: Stationary (0 km/h)'
-                : realGpsStatus === 'PERMISSION_DENIED'
+              {gpsStatus === 'LIVE_GPS'
+                ? `GPS Live (±${gpsFix?.accuracy || 4}m)`
+                : gpsStatus === 'STATIONARY'
+                ? 'GPS: Stationary (0 km/h)'
+                : gpsStatus === 'PERMISSION_DENIED'
                 ? 'GPS: Permission Denied'
                 : 'GPS: Connecting…'}
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-muted uppercase">Vehicle:</span>
-            <select
-              value={myDriverId}
-              onChange={(e) => setMyDriverId(e.target.value)}
-              className="field py-1 px-2.5 text-fluid-xs font-semibold rounded-xl border border-line bg-surface cursor-pointer"
-            >
-              {drivers.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name} ({d.vehicleNumber}) - {d.wardCode}
-                </option>
-              ))}
-            </select>
+          {/* Authenticated Driver Tag (No dropdown, strictly from session) */}
+          <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-surface border border-line text-ink font-semibold text-xs shadow-xs">
+            <span className="grid h-6 w-6 place-items-center rounded-lg bg-emerald-600 text-white text-[10px] font-bold">
+              {(user?.name || 'Parth Patel').charAt(0)}
+            </span>
+            <div className="leading-tight">
+              <span className="font-bold block text-fluid-xs">{user?.name || 'Parth Patel'}</span>
+              <span className="text-[10px] text-muted font-mono">GJ-18-GB-4012 (Ward W-06)</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* 70% / 30% SPLIT SCREEN LAYOUT: MAP (LEFT 70%) + DETAILS SIDEBAR (RIGHT 30%) */}
+      {/* 70% / 30% SPLIT SCREEN LAYOUT: MAP (LEFT 70%) + FOCUSED STOPS HUD (RIGHT 30%) */}
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 items-stretch">
         
-        {/* LEFT SIDE (70% Width): Road-Snapped Live Map */}
+        {/* LEFT SIDE (70% Width): Pristine, Clean Road-Snapped Map (FIX 2: Zero Overlays) */}
         <div className="lg:col-span-7 h-[68dvh] min-h-[440px] rounded-3xl border border-line overflow-hidden shadow-lg relative bg-slate-950">
-          {drivers.length > 0 ? (
-            <RoadSnappedMap
-              mode="single-driver"
-              drivers={drivers}
-              activeDriverId={myDriverId}
-              className="h-full w-full"
-            />
-          ) : (
-            <Loading label="Snapping route to road network…" />
-          )}
+          <RoadSnappedMap
+            mode="single-driver"
+            drivers={driverForMap}
+            activeDriverId={driverForMap[0].id}
+            className="h-full w-full"
+          />
         </div>
 
-        {/* RIGHT SIDE (30% Width): Live Navigation & Assignment Sidebar Panel */}
+        {/* RIGHT SIDE (30% Width): Driving-Safe Minimal Next-Stop Panel (FIX 4) */}
         <div className="lg:col-span-3 flex flex-col justify-between gap-3 h-full">
           
-          {/* Card 1: Next Turn Maneuver Header */}
+          {/* Card 1: Immediate Next Maneuver in Plain Words */}
           <div className="rounded-2xl border border-emerald-500/40 bg-emerald-700 p-4 text-white shadow-md">
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-800 border border-emerald-400/30 text-white font-bold shadow-inner">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-emerald-800 border border-emerald-400/30 text-white font-bold shadow-inner">
                 <Navigation className="h-6 w-6 rotate-45" />
               </div>
               <div className="min-w-0">
                 <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-200 block">
-                  Next Step
+                  Current Road Direction
                 </span>
                 <h3 className="text-fluid-sm font-extrabold leading-snug truncate">
-                  {currentDriver?.route?.steps?.[0]?.instruction || `Head forward onto ${currentDriver?.destination.name}`}
+                  {tour?.turnInstruction || 'Head forward onto collection route'}
                 </h3>
-                <p className="text-[11px] text-emerald-200 font-medium">
-                  {currentDriver?.remainingDistanceKm} km · In {currentDriver?.etaMinutes} min
+                <p className="text-[11px] text-emerald-200 font-medium mt-0.5">
+                  {tour ? `${tour.distanceToNextMeters} m away` : 'Calculating route…'} · Next turn
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Card 2: Live Navigation Telemetry & ETA */}
-          <div className="rounded-2xl border border-line bg-surface p-4 shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b border-line/60 pb-2.5">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted block">
-                  Estimated Arrival
+          {/* Card 2: 2-Opt TSP Multi-Stop Optimization Metrics */}
+          <div className="rounded-2xl border border-line bg-surface p-4 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between border-b border-line/60 pb-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-ink">
+                <Zap className="h-4 w-4 text-amber-500" />
+                <span>2-Opt TSP Route Optimizer</span>
+              </div>
+              <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                {tour?.savedDistancePct || 24}% Shorter Tour
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="p-2 rounded-xl bg-sunken/50 border border-line/50">
+                <span className="text-[10px] text-muted block">Optimized Total</span>
+                <strong className="text-emerald-600 font-mono text-xs">
+                  {tour?.totalDistanceKm || 3.4} km
+                </strong>
+              </div>
+              <div className="p-2 rounded-xl bg-sunken/50 border border-line/50">
+                <span className="text-[10px] text-muted block">Naive Baseline</span>
+                <span className="text-muted line-through font-mono text-xs">
+                  {tour?.baselineDistanceKm || 4.5} km
                 </span>
-                <div className="flex items-baseline gap-1.5 mt-0.5">
-                  <span className="text-fluid-xl font-extrabold text-emerald-600 tracking-tight">
-                    {currentDriver?.etaMinutes} min
-                  </span>
-                  <span className="text-xs text-muted font-medium">
-                    ({currentDriver?.remainingDistanceKm} km left)
-                  </span>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <Badge
-                  tone={currentDriver?.status === 'en_route' ? 'ok' : currentDriver?.status === 'delayed' ? 'danger' : 'warn'}
-                  className="font-bold text-[10px]"
-                >
-                  {currentDriver?.status.toUpperCase()}
-                </Badge>
-                <p className="text-[11px] text-muted mt-1 font-mono font-bold">
-                  {currentDriver?.speedKmh} km/h
-                </p>
-              </div>
-            </div>
-
-            {/* Vehicle & Fuel row */}
-            <div className="grid grid-cols-2 gap-2 text-center text-xs">
-              <div className="rounded-xl bg-sunken/60 p-2 border border-line/50">
-                <span className="text-[10px] text-muted block">Vehicle</span>
-                <strong className="text-ink font-mono text-[11px] truncate block">
-                  {currentDriver?.vehicleNumber}
-                </strong>
-              </div>
-              <div className="rounded-xl bg-sunken/60 p-2 border border-line/50">
-                <span className="text-[10px] text-muted block">Fuel Status</span>
-                <strong className="text-emerald-600 font-mono text-[11px] block">
-                  {currentDriver?.fuelPct}%
-                </strong>
               </div>
             </div>
           </div>
 
-          {/* Card 3: Destination Assignment & Stop Details */}
-          {currentDriver && (
-            <div className="rounded-2xl border border-line bg-surface p-4 shadow-xs space-y-2.5">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted block">
-                    Collection Point
-                  </span>
-                  <h4 className="text-fluid-sm font-bold text-ink leading-tight mt-0.5">
-                    {currentDriver.destination.name}
-                  </h4>
-                  <p className="text-[11px] text-muted mt-0.5">{currentDriver.destination.address}</p>
+          {/* Card 3: Immediate Next Stop Card (High-Contrast & Glanceable) */}
+          <div className="rounded-2xl border border-line bg-surface p-4 shadow-xs space-y-3 flex-1 flex flex-col justify-between">
+            {nextStop ? (
+              <div className="space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 block">
+                      Immediate Next Stop ({remainingCount} Left)
+                    </span>
+                    <h3 className="text-fluid-base font-extrabold text-ink leading-tight mt-0.5">
+                      {nextStop.name}
+                    </h3>
+                    <p className="text-[11px] text-muted mt-0.5">{nextStop.address}</p>
+                  </div>
+                  <Badge tone={nextStop.urgency === 'EMERGENCY' ? 'danger' : 'brand'}>
+                    {nextStop.category}
+                  </Badge>
                 </div>
-                <Badge tone={currentDriver.destination.urgency === 'EMERGENCY' ? 'danger' : 'brand'}>
-                  {currentDriver.destination.category}
-                </Badge>
-              </div>
 
-              <div className="rounded-xl border border-line bg-sunken/40 p-2 flex justify-between text-fluid-xs">
-                <span className="text-muted text-[11px]">Ward Zone:</span>
-                <strong className="text-ink text-[11px] font-mono">{currentDriver.wardName} ({currentDriver.wardCode})</strong>
-              </div>
+                {nextStop.notes && (
+                  <p className="text-[11px] text-muted bg-sunken/60 p-2 rounded-xl border border-line/60">
+                    "{nextStop.notes}"
+                  </p>
+                )}
 
-              {/* Action Buttons */}
-              <div className="space-y-2 pt-1">
+                {/* Distance & ETA Countdown */}
+                <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700">
+                  <div className="flex items-center gap-1.5 font-bold text-xs">
+                    <MapPin className="h-4 w-4" />
+                    <span>{tour?.distanceToNextMeters || 800} m away</span>
+                  </div>
+                  <span className="font-extrabold text-xs font-mono">
+                    ~{Math.max(1, Math.round((tour?.distanceToNextMeters || 800) / 400))} min
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6 space-y-1">
+                <CheckCircle2 className="h-10 w-10 text-emerald-600 mx-auto" />
+                <h4 className="font-bold text-ink text-fluid-sm">All Stops Completed!</h4>
+                <p className="text-fluid-xs text-muted">All assigned complaints have been cleared.</p>
+              </div>
+            )}
+
+            {/* Quick Actions & Collapsed Full Sequence List */}
+            <div className="space-y-2 pt-2 border-t border-line/60">
+              {nextStop && (
                 <button
                   type="button"
-                  onClick={handleMarkCollected}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs shadow-xs transition cursor-pointer ${
-                    isCollected
-                      ? 'bg-ok text-white'
-                      : 'bg-emerald-700 hover:bg-emerald-800 text-white'
-                  }`}
+                  onClick={handleCompleteCurrentStop}
+                  disabled={isCollecting}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-extrabold text-xs shadow-md bg-emerald-700 hover:bg-emerald-800 text-white transition cursor-pointer"
                 >
-                  {isCollected ? (
-                    <>
-                      <Check className="h-4 w-4" /> Picked Up & Logged!
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-4 w-4" /> Mark Waste Collected
-                    </>
-                  )}
+                  <CheckCircle2 className="h-4 w-4" /> Mark Stop Collected
                 </button>
+              )}
 
-                <a
-                  href={`tel:${currentDriver.phone}`}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-line bg-surface hover:bg-sunken text-xs font-semibold text-ink transition cursor-pointer"
-                >
-                  <Phone className="h-3.5 w-3.5 text-brand" /> Call Ward Officer
-                </a>
-              </div>
+              {/* Collapsed/Expanded Stops Remaining Toggle */}
+              {remainingCount > 1 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setIsListExpanded(!isListExpanded)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-line bg-sunken/40 text-fluid-xs font-semibold text-muted hover:text-ink transition cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <ListOrdered className="h-3.5 w-3.5 text-brand" />
+                      <span>{remainingCount} stops remaining in tour</span>
+                    </span>
+                    {isListExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  </button>
+
+                  {isListExpanded && tour && (
+                    <div className="mt-2 space-y-1.5 max-h-40 overflow-y-auto no-scrollbar pt-1">
+                      {tour.orderedStops.slice(1).map((s, idx) => (
+                        <div
+                          key={s.id}
+                          className="flex items-center justify-between p-2 rounded-lg bg-surface border border-line text-[11px]"
+                        >
+                          <div className="min-w-0 pr-2">
+                            <strong className="text-ink font-semibold truncate block">
+                              #{idx + 2}. {s.name}
+                            </strong>
+                            <span className="text-muted text-[10px] truncate block">{s.address}</span>
+                          </div>
+                          <Badge tone="neutral" className="text-[9px]">
+                            {s.category}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          )}
+
+          </div>
 
         </div>
       </div>

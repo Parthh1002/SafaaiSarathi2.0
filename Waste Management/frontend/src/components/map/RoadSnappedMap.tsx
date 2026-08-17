@@ -203,38 +203,6 @@ export default function RoadSnappedMap({
         </div>
       )}
 
-      {/* ----------------- DRIVER MODE: Top Navigation Maneuver Banner ----------------- */}
-      {mode === 'single-driver' && activeDriver && activeDriver.route && (
-        <div className="absolute top-4 left-4 right-4 z-[1000] max-w-lg mx-auto animate-fade-in">
-          <div className="flex items-center justify-between gap-3 rounded-2xl bg-emerald-700 p-4 text-white shadow-2xl border border-emerald-500/40 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-emerald-800 border border-emerald-400/30 text-white font-bold shadow-inner">
-                <Navigation className="h-7 w-7 rotate-45" />
-              </div>
-              <div className="min-w-0">
-                <span className="text-[11px] uppercase font-bold tracking-wider text-emerald-200 block">
-                  Next Maneuver
-                </span>
-                <p className="text-fluid-base font-extrabold leading-snug truncate">
-                  {activeDriver.route.steps?.[0]?.instruction || `Continue on ${activeDriver.destination.name}`}
-                </p>
-                <p className="text-xs text-emerald-200 font-medium">
-                  {activeDriver.remainingDistanceKm} km · In {activeDriver.etaMinutes} min
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className="p-2 rounded-xl bg-emerald-800/80 hover:bg-emerald-800 text-emerald-200 transition cursor-pointer"
-              title="Toggle Navigation Voice"
-            >
-              {soundEnabled ? <Volume2 className="h-5 w-5 text-white" /> : <VolumeX className="h-5 w-5 text-emerald-400" />}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ----------------- Leaflet Road-Snapped Map ----------------- */}
       <MapContainer
@@ -364,50 +332,6 @@ export default function RoadSnappedMap({
         </button>
       </div>
 
-      {/* ----------------- DRIVER MODE: Bottom Navigation HUD Sheet ----------------- */}
-      {mode === 'single-driver' && activeDriver && (
-        <div className="absolute bottom-4 left-4 right-4 z-[1000] max-w-lg mx-auto">
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/95 p-5 shadow-2xl backdrop-blur-xl text-slate-100 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-fluid-xl font-extrabold text-emerald-400 tracking-tight">
-                    {activeDriver.etaMinutes} min
-                  </span>
-                  <span className="text-sm text-slate-400">({activeDriver.remainingDistanceKm} km)</span>
-                </div>
-                <p className="text-xs text-slate-400 font-medium">
-                  Assigned Point: <strong className="text-slate-100">{activeDriver.destination.name}</strong>
-                </p>
-              </div>
-
-              <div className="text-right">
-                <Badge tone={activeDriver.status === 'en_route' ? 'ok' : 'warn'} className="font-bold">
-                  {activeDriver.status.toUpperCase()}
-                </Badge>
-                <p className="text-[11px] text-slate-400 mt-1 font-mono">{activeDriver.speedKmh} km/h</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
-              <div className="rounded-xl bg-slate-800/60 p-2 border border-slate-700/50">
-                <span className="text-[10px] text-slate-400 block">Vehicle</span>
-                <strong className="text-slate-200 font-mono text-[11px] truncate block">
-                  {activeDriver.vehicleNumber}
-                </strong>
-              </div>
-              <div className="rounded-xl bg-slate-800/60 p-2 border border-slate-700/50">
-                <span className="text-[10px] text-slate-400 block">Fuel Level</span>
-                <strong className="text-emerald-400 font-mono text-[11px] block">{activeDriver.fuelPct}%</strong>
-              </div>
-              <div className="rounded-xl bg-slate-800/60 p-2 border border-slate-700/50">
-                <span className="text-[10px] text-slate-400 block">Ward Zone</span>
-                <strong className="text-slate-200 text-[11px] truncate block">{activeDriver.wardCode}</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ----------------- SUPER ADMIN MODE: Floating Fleet Inspector Drawer ----------------- */}
       {mode === 'multi-driver' && activeDriver && (
