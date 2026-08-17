@@ -98,6 +98,18 @@ router.get(
 );
 
 /**
+ * GET /api/officer/wards
+ * Returns ward performance and boundaries for officer's assigned wards
+ */
+router.get(
+  '/wards',
+  asyncHandler(async (req, res) => {
+    const { ids } = await scope(req);
+    res.json(await analytics.wardPerformance(ids));
+  })
+);
+
+/**
  * FEATURE 2: AI Complaint Queue
  * GET /api/officer/queue & GET /api/officer/complaints
  */

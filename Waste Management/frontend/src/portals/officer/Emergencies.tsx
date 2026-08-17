@@ -39,7 +39,9 @@ export default function Emergencies() {
     queryFn: async () => (await api('officer').get('/officer/wards')).data,
   });
 
-  useSocket('officer', (wards.data ?? []).map((w: any) => `ward:${w.id}`), {
+  const wardRooms = Array.isArray(wards.data) ? wards.data.map((w: any) => `ward:${w.id}`) : [];
+
+  useSocket('officer', wardRooms, {
     [SOCKET_EVENTS.EMERGENCY_NEW]: () => {
       void queryClient.invalidateQueries({ queryKey: ['officer', 'emergencies'] });
       toast.error('New emergency reported');
@@ -68,16 +70,19 @@ export default function Emergencies() {
   if (isLoading) return <Loading />;
   if (error) return <ErrorState message="Could not load emergencies" onRetry={() => refetch()} />;
 
+  const sosList = Array.isArray(sos.data) ? sos.data : [];
+  const emergenciesList = Array.isArray(data) ? data : [];
+
   return (
     <div className="space-y-5">
       {/* Driver SOS outranks everything else on this screen. */}
-      {sos.data?.length > 0 && (
+      {sosList.length > 0 && (
         <section>
           <h2 className="mb-2 flex items-center gap-2 text-fluid-lg font-semibold">
             <Siren className="h-5 w-5 text-danger" /> Driver SOS
           </h2>
           <ul className="space-y-2.5">
-            {sos.data.map((alert: any) => (
+            {sosList.map((alert: any) => (
               <li key={alert.id}>
                 <Card className="border-danger/50 bg-danger/5 p-4">
                   <div className="flex flex-wrap items-start gap-3">
@@ -119,7 +124,7 @@ export default function Emergencies() {
 
       <section>
         <h2 className="mb-2 text-fluid-lg font-semibold">Open emergencies</h2>
-        {(data ?? []).length === 0 ? (
+        {(emergenciesList ?? []).length === 0 ? (
           <EmptyState
             title="No open emergencies"
             hint="Dead animals, medical waste, burning waste and sewage overflows appear here immediately with a 30-minute clock."
@@ -127,7 +132,7 @@ export default function Emergencies() {
           />
         ) : (
           <ul className="grid gap-3 lg:grid-cols-2">
-            {data.map((c: any) => {
+            {emergenciesList.map((c: any) => {
               const dueMs = c.dueAt ? new Date(c.dueAt).getTime() - now : null;
               const minutesLeft = dueMs != null ? Math.round(dueMs / 60_000) : null;
               const overdue = dueMs != null && dueMs < 0;

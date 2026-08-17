@@ -42,7 +42,9 @@ export default function Fleet() {
     queryFn: async () => (await api('officer').get('/officer/wards')).data,
   });
 
-  useSocket('officer', (wards.data ?? []).map((w: any) => `ward:${w.id}`), {
+  const wardRooms = Array.isArray(wards.data) ? wards.data.map((w: any) => `ward:${w.id}`) : [];
+
+  useSocket('officer', wardRooms, {
     [SOCKET_EVENTS.TRUCK_UPDATE]: (payload: any) => {
       if (payload?.id) setLive((prev) => ({ ...prev, [payload.id]: payload }));
     },
@@ -84,8 +86,8 @@ export default function Fleet() {
   if (fleet.isLoading) return <Loading />;
   if (fleet.error) return <ErrorState message="Could not load the fleet" onRetry={() => fleet.refetch()} />;
 
-  const vehicles = (fleet.data ?? []).map((v: any) => ({ ...v, ...(live[v.id] ?? {}) }));
-  const positioned = vehicles.filter((v: any) => v.latitude != null);
+  const vehicles = (Array.isArray(fleet.data) ? fleet.data : []).map((v: any) => ({ ...v, ...(live[v.id] ?? {}) }));
+  const positioned = vehicles.filter((v: any) => v.latitude != null && v.longitude != null);
 
   return (
     <div className="space-y-5">
@@ -220,10 +222,10 @@ export default function Fleet() {
             </div>
 
             <div className="h-64 overflow-hidden rounded-xl border border-line">
-              <BaseMap center={[plan.stops[0].latitude, plan.stops[0].longitude]} zoom={13}>
-                <FitBounds points={plan.stops.map((s: any) => [s.latitude, s.longitude])} />
+              <BaseMap center={[plan.stops?.[0]?.latitude || 23.2156, plan.stops?.[0]?.longitude || 72.6369]} zoom={13}>
+                <FitBounds points={(Array.isArray(plan?.stops) ? plan.stops : []).map((s: any) => [s.latitude, s.longitude])} />
                 <RouteLine polyline={plan.polyline} progressIndex={0} />
-                {plan.stops.map((s: any) => (
+                {(Array.isArray(plan?.stops) ? plan.stops : []).map((s: any) => (
                   <PinMarker
                     key={s.seq}
                     latitude={s.latitude}
@@ -238,7 +240,7 @@ export default function Fleet() {
             <div>
               <p className="label">Stop sequence — emergencies are pulled to the front</p>
               <ol className="space-y-1.5">
-                {plan.stops.map((s: any) => (
+                {(Array.isArray(plan?.stops) ? plan.stops : []).map((s: any) => (
                   <li key={s.seq} className="flex items-center gap-2.5 text-fluid-sm">
                     <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-sunken text-fluid-xs font-bold">
                       {s.seq}
@@ -294,7 +296,7 @@ export default function Fleet() {
           <div>
             <label className="label">Ward</label>
             <div className="flex flex-wrap gap-1.5">
-              {(wards.data ?? []).map((w: any) => (
+              {(Array.isArray(wards.data) ? wards.data : []).map((w: any) => (
                 <button
                   key={w.id}
                   type="button"

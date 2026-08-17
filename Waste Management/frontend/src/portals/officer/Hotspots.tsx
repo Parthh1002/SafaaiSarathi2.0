@@ -44,6 +44,11 @@ export default function Hotspots() {
 
   const recCards = recommendations.data?.recommendations ?? [];
 
+  const wardsList: any[] = Array.isArray(wards.data) ? wards.data : [];
+  const mapPoints: Array<[number, number]> = wardsList
+    .filter((w: any) => w?.center?.latitude != null && w?.center?.longitude != null)
+    .map((w: any) => [w.center.latitude, w.center.longitude]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -84,10 +89,10 @@ export default function Hotspots() {
         <Card className="overflow-hidden p-0">
           <div className="h-[46dvh] min-h-[320px] w-full xl:h-[500px]">
             <BaseMap center={[23.2156, 72.6369]} zoom={12}>
-              <FitBounds points={(wards.data ?? []).map((w: any) => [w.center.latitude, w.center.longitude])} />
-              {wards.data && (
+              {mapPoints.length > 0 && <FitBounds points={mapPoints} />}
+              {wardsList.length > 0 && (
                 <WardLayer
-                  wards={wards.data.map((w: any) => ({ ...w, openComplaints: w.openComplaints }))}
+                  wards={wardsList}
                   colorFor={(w: any) => riskColour(riskById[w.id] ?? 0)}
                 />
               )}

@@ -54,10 +54,27 @@ export default function OfficerDashboard() {
   if (overview.isLoading) return <Loading label="Loading your ward…" />;
   if (overview.error) return <ErrorState message="Could not load the dashboard" onRetry={() => overview.refetch()} />;
 
-  const kpis = overview.data.kpis;
-  const liveTrucks = { ...Object.fromEntries((fleet.data ?? []).map((v: any) => [v.id, v])), ...trucks };
+  const kpis = overview.data?.kpis?.kpis || overview.data?.kpis || overview.data || {};
+  const openComplaints = kpis.openComplaints ?? 0;
+  const complaintsToday = kpis.complaintsToday ?? 0;
+  const emergenciesOpen = kpis.emergenciesOpen ?? 0;
+  const reviewNeeded = kpis.reviewNeeded ?? 0;
+  const slaCompliancePct = kpis.slaCompliancePct ?? 90;
+  const overdue = kpis.overdue ?? 0;
 
-  const mapPoints: Array<[number, number]> = (wards.data ?? []).map((w: any) => [w.center.latitude, w.center.longitude]);
+  const liveTrucks = {
+    ...Object.fromEntries((Array.isArray(fleet.data) ? fleet.data : []).map((v: any) => [v.id, v])),
+    ...trucks,
+  };
+
+  const wardsList: any[] = Array.isArray(wards.data) ? wards.data : [];
+  const heatmapList: any[] = Array.isArray(heatmap.data) ? heatmap.data : [];
+  const statusList: any[] = Array.isArray(overview.data?.statusBreakdown) ? overview.data.statusBreakdown : [];
+  const categoryList: any[] = Array.isArray(overview.data?.categoryBreakdown) ? overview.data.categoryBreakdown : [];
+
+  const mapPoints: Array<[number, number]> = wardsList
+    .filter((w: any) => w?.center?.latitude != null && w?.center?.longitude != null)
+    .map((w: any) => [w.center.latitude, w.center.longitude]);
 
   return (
     <div className="space-y-5">
@@ -65,29 +82,29 @@ export default function OfficerDashboard() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
           label="Open complaints"
-          value={kpis.openComplaints}
-          hint={`${kpis.complaintsToday} reported today`}
+          value={openComplaints}
+          hint={`${complaintsToday} reported today`}
           icon={<Clock className="h-4 w-4" />}
         />
         <Stat
           label="Emergencies"
-          value={kpis.emergenciesOpen}
-          tone={kpis.emergenciesOpen > 0 ? 'danger' : 'ok'}
-          hint={kpis.emergenciesOpen > 0 ? 'Needs acknowledgement' : 'All clear'}
+          value={emergenciesOpen}
+          tone={emergenciesOpen > 0 ? 'danger' : 'ok'}
+          hint={emergenciesOpen > 0 ? 'Needs acknowledgement' : 'All clear'}
           icon={<Siren className="h-4 w-4" />}
         />
         <Stat
           label="Needs review"
-          value={kpis.reviewNeeded}
+          value={reviewNeeded}
           tone="warn"
           hint="AI confidence below threshold"
           icon={<Eye className="h-4 w-4" />}
         />
         <Stat
           label="SLA compliance"
-          value={pct(kpis.slaCompliancePct)}
-          tone={kpis.slaCompliancePct >= 80 ? 'ok' : 'warn'}
-          hint={`${kpis.overdue} overdue now`}
+          value={pct(slaCompliancePct)}
+          tone={slaCompliancePct >= 80 ? 'ok' : 'warn'}
+          hint={`${overdue} overdue now`}
           icon={<CheckCircle2 className="h-4 w-4" />}
         />
       </div>
@@ -99,30 +116,30 @@ export default function OfficerDashboard() {
             <h2 className="text-fluid-sm font-semibold">Live ward map</h2>
             <Badge tone="ok" className="ml-auto">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ok" />
-              {Object.values(liveTrucks).filter((t: any) => t.online || t.status === 'ON_ROUTE').length} trucks live
+              {Object.values(liveTrucks).filter((t: any) => t?.online || t?.status === 'ON_ROUTE').length} trucks live
             </Badge>
-            <Badge tone="neutral">{heatmap.data?.length ?? 0} complaints</Badge>
+            <Badge tone="neutral">{heatmapList.length} complaints</Badge>
           </div>
 
           <div className="h-[52dvh] min-h-[320px] w-full xl:h-[560px]">
             <BaseMap center={[23.2156, 72.6369]} zoom={12}>
-              <FitBounds points={mapPoints} />
-              {wards.data && (
+              {mapPoints.length > 0 && <FitBounds points={mapPoints} />}
+              {wardsList.length > 0 && (
                 <WardLayer
-                  wards={wards.data}
+                  wards={wardsList}
                   colorFor={(w: any) => (w.load > 60 ? '#dc2626' : w.load > 30 ? '#f59e0b' : '#16a34a')}
                 />
               )}
-              {heatmap.data && <ComplaintLayer points={heatmap.data} />}
+              {heatmapList.length > 0 && <ComplaintLayer points={heatmapList} />}
               {Object.values(liveTrucks).map((truck: any) =>
-                truck.latitude != null ? (
+                truck?.latitude != null && truck?.longitude != null ? (
                   <TruckMarker
                     key={truck.id}
                     latitude={truck.latitude}
                     longitude={truck.longitude}
                     heading={truck.heading ?? 0}
                     active={truck.status === 'ON_ROUTE'}
-                    label={`${truck.registrationNumber} · ${truck.status}`}
+                    label={`${truck.registrationNumber || truck.name || 'Truck'} · ${truck.status}`}
                   />
                 ) : null
               )}
@@ -147,15 +164,15 @@ export default function OfficerDashboard() {
             <SectionTitle title="Fleet" action={<Link to="/officer/fleet" className="text-fluid-xs font-semibold text-brand hover:underline">Manage</Link>} />
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="rounded-xl bg-sunken p-2.5">
-                <p className="text-fluid-lg font-bold tabular-nums">{kpis.vehiclesOnRoute}</p>
+                <p className="text-fluid-lg font-bold tabular-nums">{kpis.vehiclesOnRoute ?? 0}</p>
                 <p className="text-fluid-xs text-muted">On route</p>
               </div>
               <div className="rounded-xl bg-sunken p-2.5">
-                <p className="text-fluid-lg font-bold tabular-nums">{kpis.vehiclesOnline}</p>
+                <p className="text-fluid-lg font-bold tabular-nums">{kpis.vehiclesOnline ?? 0}</p>
                 <p className="text-fluid-xs text-muted">Online</p>
               </div>
               <div className="rounded-xl bg-sunken p-2.5">
-                <p className="text-fluid-lg font-bold tabular-nums">{kpis.vehiclesTotal}</p>
+                <p className="text-fluid-lg font-bold tabular-nums">{kpis.vehiclesTotal ?? 0}</p>
                 <p className="text-fluid-xs text-muted">Total</p>
               </div>
             </div>
@@ -164,10 +181,10 @@ export default function OfficerDashboard() {
           <Card className="p-4">
             <SectionTitle title="Ward load" />
             <ul className="space-y-2">
-              {(wards.data ?? []).map((w: any) => (
+              {wardsList.map((w: any) => (
                 <li key={w.id} className="flex items-center gap-2">
                   <span className="min-w-0 flex-1 truncate text-fluid-sm">{w.name}</span>
-                  <span className="text-fluid-xs tabular-nums text-muted">{w.openComplaints} open</span>
+                  <span className="text-fluid-xs tabular-nums text-muted">{w.openComplaints ?? 0} open</span>
                   <span
                     className="h-2 w-2 shrink-0 rounded-full"
                     style={{ background: w.load > 60 ? '#dc2626' : w.load > 30 ? '#f59e0b' : '#16a34a' }}
@@ -180,7 +197,7 @@ export default function OfficerDashboard() {
           <Card className="p-4">
             <SectionTitle title="By status" />
             <ul className="space-y-1.5">
-              {(overview.data.statusBreakdown ?? []).map((s: any) => (
+              {statusList.map((s: any) => (
                 <li key={s.status} className="flex items-center justify-between gap-2">
                   <Badge tone={STATUS_TONE[s.status]}>{t(`status.${s.status}`)}</Badge>
                   <span className="text-fluid-sm font-semibold tabular-nums">{s.count}</span>
@@ -199,7 +216,7 @@ export default function OfficerDashboard() {
             subtitle="AI confidence fell below the auto-approve threshold"
             action={<Link to="/officer/queue?reviewNeeded=1" className="text-fluid-xs font-semibold text-brand hover:underline">Open queue</Link>}
           />
-          {kpis.reviewNeeded === 0 ? (
+          {reviewNeeded === 0 ? (
             <p className="flex items-center gap-2 text-fluid-sm text-muted">
               <CheckCircle2 className="h-4 w-4 text-ok" /> Nothing waiting on you.
             </p>
@@ -207,7 +224,7 @@ export default function OfficerDashboard() {
             <p className="flex items-center gap-2 text-fluid-sm">
               <AlertTriangle className="h-4 w-4 text-warn" />
               <span>
-                <span className="font-bold">{kpis.reviewNeeded}</span> report{kpis.reviewNeeded === 1 ? '' : 's'} need a
+                <span className="font-bold">{reviewNeeded}</span> report{reviewNeeded === 1 ? '' : 's'} need a
                 human decision before dispatch.
               </span>
             </p>
@@ -217,7 +234,7 @@ export default function OfficerDashboard() {
         <Card className="p-4">
           <SectionTitle title="Top categories this week" />
           <ul className="space-y-2">
-            {(overview.data.categoryBreakdown ?? []).slice(0, 5).map((c: any) => (
+            {categoryList.slice(0, 5).map((c: any) => (
               <li key={c.category}>
                 <div className="mb-1 flex items-center justify-between gap-2 text-fluid-xs">
                   <span className="truncate">{c.label}</span>
