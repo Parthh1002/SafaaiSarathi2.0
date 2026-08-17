@@ -142,44 +142,64 @@ SafaaiSarathi2.0/
 <br/>
 
 ```mermaid
-flowchart TB
-    subgraph ClientLayer ["🖥️ 1. CLIENT LAYER (React 18 + Vite + TypeScript)"]
-        CP["📱 Citizen Super-App (/app/*)"]
-        DP["🚛 Driver Shift Navigator (/driver/*)"]
-        OP["🏢 Ward Officer Console (/officer/*)"]
-        AP["👑 Super Admin HQ (/admin/*)"]
+graph TD
+    %% ==========================================
+    %% 🎨 n8n / CANVA-STYLE SYSTEM ARCHITECTURE
+    %% ==========================================
+    classDef client fill:#064E3B,stroke:#10B981,stroke-width:2px,color:#E6FFFA;
+    classDef gateway fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#BAE6FD;
+    classDef ai fill:#2E1065,stroke:#A855F7,stroke-width:2px,color:#F3E8FF;
+    classDef logic fill:#047857,stroke:#34D399,stroke-width:2px,color:#ECFDF5;
+    classDef realtime fill:#78350F,stroke:#F59E0B,stroke-width:2px,color:#FEF3C7;
+    classDef db fill:#1E293B,stroke:#64748B,stroke-width:2px,color:#F1F5F9;
+
+    %% 1. CLIENT LAYER
+    subgraph S1 ["1️⃣ CLIENT TIER (React 18 + Vite + TypeScript PWA)"]
+        direction LR
+        C_CITIZEN["📱 Citizen Super-App\n(/app/report • Green Rewards)"]:::client
+        C_DRIVER["🚛 Driver Navigator\n(/driver/route • GPS Photo Proof)"]:::client
+        C_OFFICER["🏢 Ward Officer Console\n(/officer/queue • 30m War Room)"]:::client
+        C_ADMIN["👑 Super Admin HQ\n(/admin/analytics • Fleet Telematics)"]:::client
     end
 
-    subgraph SecurityGate ["🔐 2. SECURITY & PORTAL ISOLATION"]
-        AUTH["Argon2id + Rotating JWT + Refresh Cookies"]
-        GUARD["Strict Audience Guard: 403 PORTAL_MISMATCH"]
+    %% 2. GATEWAY
+    subgraph S2 ["2️⃣ SECURITY & PORTAL ISOLATION GATEWAY"]
+        GW["🛡️ Argon2id + Scoped JWT Audience Guard\n(403 PORTAL_MISMATCH Protection • Anti-Spam Rate Limiter)"]:::gateway
     end
 
-    subgraph BackendCore ["⚡ 3. API GATEWAY & LOGISTICS (Node.js Express ESM)"]
-        TRIAGE["YOLOv8 AI Auto-Approval Engine (≥70% Gate)"]
-        DEDUP["100m Spatial & 24h Deduplicator"]
-        SCHED["24h Advance Event Scheduler & Cron"]
-        ESCAL["30m Emergency & 24h SLA Sweeper"]
-        SOCKET["Socket.io Real-Time WebSockets"]
+    %% 3. DUAL AI ENGINES
+    subgraph S3 ["3️⃣ DUAL AI INTELLIGENCE MICROSERVICES"]
+        direction LR
+        AI_VISION["👁️ YOLOv8 PyTorch (:8100)\n• Sub-100ms Deep Learning Inference\n• ≥70% Confidence Auto-Approval Gate"]:::ai
+        AI_LLM["⚡ Groq Cloud Llama 3.3 70B\n• 300+ Tokens/sec LPU Hardware\n• Multi-Lingual EN/HI/GU Action Assistant"]:::ai
     end
 
-    subgraph AIEngines ["🧠 4. DUAL AI MICROSERVICES"]
-        YOLO["👁️ Ultralytics YOLOv8 PyTorch (Port 8100)"]
-        GROQ["⚡ Groq Cloud Llama 3.3 70B Versatile"]
+    %% 4. CORE LOGISTICS & BUSINESS ENGINES
+    subgraph S4 ["4️⃣ CORE LOGISTICS & MUNICIPAL ENGINES (Node.js Express ESM)"]
+        LOGIC_1["📍 100m Spatial Radius & 24h Duplicate Deduplicator"]:::logic
+        LOGIC_2["🗓️ 24h Advance Event Waste Pickup Scheduler & Background Cron"]:::logic
+        LOGIC_3["🚨 30-Minute Priority Emergency War Room SLA Dispatcher"]:::logic
+        LOGIC_4["🌱 Gamified Green Credits Wallet & Double-Entry Ledger"]:::logic
     end
 
-    subgraph DataStorage ["💾 5. PERSISTENCE & STORAGE"]
-        PG[("🐘 Supabase PostgreSQL 17 (Prisma ORM)")]
-        S3["📦 Supabase Cloud Storage (Proof Uploads)"]
+    %% 5. PERSISTENCE & REAL-TIME STREAMING
+    subgraph S5 ["5️⃣ PERSISTENCE & REAL-TIME STREAMING TIER"]
+        direction LR
+        RT_SOCKET["🛰️ Socket.io WebSockets\n(60 FPS Rotated Vehicle Telemetry)"]:::realtime
+        DB_POSTGRES[("🐘 Supabase PostgreSQL 17\n(Prisma ORM • 18 Relational Entities)")]:::db
+        DB_STORAGE["📦 Supabase Cloud S3 CDN\n(Permanent Photo Proof Bucket)"]:::db
     end
 
-    CP & DP & OP & AP --> SecurityGate
-    SecurityGate --> GUARD --> BackendCore
-    BackendCore <--> YOLO
-    BackendCore <--> GROQ
-    BackendCore <--> PG
-    BackendCore <--> S3
-    SOCKET <--> CP & DP & OP
+    %% Flow Orchestration
+    C_CITIZEN & C_DRIVER & C_OFFICER & C_ADMIN ==>|HTTPS / WSS Requests| GW
+    GW ==>|Raw Image Stream| AI_VISION
+    GW ==>|Citizen Query Context| AI_LLM
+    AI_VISION & AI_LLM ==>|Triage Metadata| LOGIC_1
+    LOGIC_1 --> LOGIC_2 --> LOGIC_3 --> LOGIC_4
+    LOGIC_4 ==>|Broadcast Real-Time Events| RT_SOCKET
+    LOGIC_4 ==>|Atomic Transactions| DB_POSTGRES
+    LOGIC_4 ==>|Store Before/After Proofs| DB_STORAGE
+    RT_SOCKET -.->|Live GPS Tracking & Push Sirens| C_CITIZEN & C_DRIVER & C_OFFICER
 ```
 
 ---
