@@ -77,10 +77,25 @@ export default function ComplaintDetail() {
 
       {/* Status timeline (plan §2.1) */}
       <Card className="p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-fluid-sm font-semibold">Status</p>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-fluid-sm font-semibold">Resolution Progress</p>
           <Badge tone={STATUS_TONE[data.status]}>{t(`status.${data.status}`)}</Badge>
         </div>
+
+        {!rejected && (
+          <div className="mb-4 space-y-1">
+            <div className="flex justify-between text-[11px] font-bold text-muted font-mono">
+              <span>Step {Math.max(1, currentIndex + 1)} of {FLOW.length}</span>
+              <span>{Math.round(((Math.max(0, currentIndex) + 1) / FLOW.length) * 100)}% Complete</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-line">
+              <div
+                className="h-full rounded-full bg-brand transition-all duration-500"
+                style={{ width: `${((Math.max(0, currentIndex) + 1) / FLOW.length) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {rejected ? (
           <p className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-fluid-sm text-danger">

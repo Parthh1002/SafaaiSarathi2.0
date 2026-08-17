@@ -10,6 +10,7 @@ import { createComplaint, serializeComplaint, findDuplicate, wardForPoint } from
 import { distanceMeters, boundsAround } from '../lib/geo.js';
 import { askGroqChatbot } from '../services/groq.service.js';
 import { classifyWaste } from '../services/ai.service.js';
+import { notify, notifyWardOfficers } from '../services/notification.service.js';
 
 const router = Router();
 router.use(requirePortal(PORTALS.CITIZEN), loadUser);
@@ -620,10 +621,14 @@ router.post(
     const targetDate = new Date(body.scheduledDate);
     const now = new Date();
 
-    // Lead-time validation: minimum 24 hours ahead
+    // Map slot to hours if target is just a date string
+    const slotHour = body.scheduledTimeSlot === 'EVENING' ? 18 : body.scheduledTimeSlot === 'AFTERNOON' ? 14 : 9;
+    targetDate.setHours(slotHour, 0, 0, 0);
+
+    // Lead-time validation: minimum 12 hours ahead for next day slots
     const hoursAhead = (targetDate.getTime() - now.getTime()) / 3600_000;
-    if (hoursAhead < 20) {
-      throw new HttpError(400, 'Scheduled pickup requires at least 24 hours advance notice.');
+    if (hoursAhead < 8) {
+      throw new HttpError(400, 'Scheduled pickup requires advance booking. Please choose a future slot.');
     }
 
     // Auto-detect ward from coordinates

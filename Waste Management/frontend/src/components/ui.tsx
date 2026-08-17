@@ -281,41 +281,47 @@ export function LanguageSwitcher({ className = '', compact = false }: { classNam
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label="Change language"
-        className={`flex min-h-touch items-center gap-1.5 rounded-xl border border-line px-2.5 text-fluid-sm font-semibold text-muted transition hover:bg-sunken ${className}`}
+        aria-label={`Current language: ${LOCALES[locale]?.native || 'English'}. Click to change.`}
+        className={`flex min-h-touch items-center gap-1.5 rounded-xl border border-line px-2.5 text-fluid-sm font-semibold text-muted transition hover:bg-sunken hover:text-ink cursor-pointer ${className}`}
       >
-        <Globe className="h-4 w-4 shrink-0" />
+        <Globe className="h-4 w-4 shrink-0 text-brand" />
         {/* The native name, so it is recognisable to someone who cannot read the current language. */}
-        <span className={compact ? 'sr-only' : ''}>{LOCALES[locale].native}</span>
+        <span className={compact ? 'hidden sm:inline text-fluid-xs font-bold' : 'text-fluid-xs font-bold'}>
+          {LOCALES[locale]?.native || 'English'}
+        </span>
       </button>
 
       {open && (
         <ul
           role="listbox"
-          className="absolute right-0 top-[calc(100%+0.375rem)] z-50 min-w-[10rem] overflow-hidden rounded-xl border border-line bg-elevated p-1 shadow-lift"
+          aria-label="Language selection"
+          className="absolute right-0 top-[calc(100%+0.375rem)] z-50 min-w-[11rem] overflow-hidden rounded-xl border border-line bg-elevated p-1 shadow-lift backdrop-blur-xl animate-fade-up"
         >
-          {LOCALE_LIST.map((code) => (
-            <li key={code}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={locale === code}
-                onClick={() => {
-                  setLocale(code);
-                  setOpen(false);
-                }}
-                className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-fluid-sm transition ${
-                  locale === code ? 'bg-brand/10 font-semibold text-brand' : 'text-ink hover:bg-sunken'
-                }`}
-              >
-                <span>
-                  {LOCALES[code].native}
-                  {code !== 'en' && <span className="ml-1.5 text-fluid-xs text-faint">{LOCALES[code].label}</span>}
-                </span>
-                {locale === code && <Check className="h-4 w-4 shrink-0" />}
-              </button>
-            </li>
-          ))}
+          {LOCALE_LIST.map((code) => {
+            const isSelected = locale === code;
+            return (
+              <li key={code}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    setLocale(code);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-fluid-sm transition cursor-pointer ${
+                    isSelected ? 'bg-brand/15 font-bold text-brand shadow-xs' : 'text-ink hover:bg-sunken'
+                  }`}
+                >
+                  <span className="flex flex-col">
+                    <span className="font-semibold text-fluid-sm">{LOCALES[code].native}</span>
+                    <span className="text-[10px] text-muted">{LOCALES[code].label}</span>
+                  </span>
+                  {isSelected && <Check className="h-4 w-4 shrink-0 text-brand stroke-[2.5]" />}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

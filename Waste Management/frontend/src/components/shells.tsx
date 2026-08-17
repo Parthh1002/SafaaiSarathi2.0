@@ -385,7 +385,15 @@ function AccountModal({
             onClick={async () => {
               onClose();
               await signOut();
-              navigate('/login');
+              const loginPath =
+                user?.role === 'DRIVER'
+                  ? '/driver/login'
+                  : user?.role === 'OFFICER'
+                  ? '/officer/login'
+                  : user?.role === 'ADMIN'
+                  ? '/admin/login'
+                  : '/login';
+              navigate(loginPath, { replace: true });
             }}
             className="flex w-full items-center gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-2.5 text-fluid-xs font-semibold text-danger transition hover:bg-danger/20 cursor-pointer"
           >

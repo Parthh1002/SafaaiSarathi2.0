@@ -102,12 +102,12 @@ export default function Landing() {
 
   return (
     <div className="min-h-dvh bg-surface">
-      {/* ---- Nav (Untouched as requested) ---- */}
-      <header className="fixed top-0 z-40 w-full transition-all duration-500">
-        {/* Tricolor strip — always visible at top */}
-        <div className={`flex h-1 w-full transition-all duration-500 ${scrolled ? 'opacity-0 h-0' : 'opacity-100'}`}>
+      {/* ---- Fixed Header with Permanent Tricolor Border (Never disappears on scroll) ---- */}
+      <header className="fixed top-0 z-50 w-full transition-all duration-300">
+        {/* Tricolor top indicator — permanently fixed at top edge */}
+        <div className="flex h-1 w-full shadow-xs">
           <div className="flex-1 bg-[#FF9933]" />
-          <div className="flex-1 bg-white" />
+          <div className="flex-1 bg-white dark:bg-white/80" />
           <div className="flex-1 bg-[#138808]" />
         </div>
 
@@ -363,7 +363,12 @@ export default function Landing() {
                   <img
                     src="https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=800&q=80&auto=format&fit=crop"
                     alt="AI Waste Detection Preview"
-                    className="h-full w-full object-cover brightness-95"
+                    onError={(e) => {
+                      // Fallback to high-res resilient image if offline or throttled
+                      (e.currentTarget as HTMLImageElement).src = '/auth-bg.jpg';
+                    }}
+                    className="h-full w-full object-cover brightness-95 transition-opacity duration-300"
+                    loading="eager"
                   />
 
                   {/* Simulated Neural Bounding Box */}
@@ -467,9 +472,21 @@ export default function Landing() {
                       <div className="absolute -right-4 -top-4 opacity-5 transition-transform duration-500 group-hover:scale-110 group-hover:opacity-10">
                         <step.icon className="h-24 w-24" />
                       </div>
-                      <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-brand">
-                        Step {i + 1}
-                      </span>
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-brand">
+                          Step {i + 1} of 4
+                        </span>
+                        <span className="text-[11px] font-bold text-muted font-mono">
+                          {((i + 1) / 4) * 100}% Complete
+                        </span>
+                      </div>
+                      {/* Step Progress Mini-bar */}
+                      <div className="mb-3 h-1 w-full overflow-hidden rounded-full bg-line/60">
+                        <div
+                          className="h-full rounded-full bg-brand transition-all duration-500"
+                          style={{ width: `${((i + 1) / 4) * 100}%` }}
+                        />
+                      </div>
                       <h3 className="text-fluid-lg font-bold text-ink">{t(`landing.how.${step.key}.title`)}</h3>
                       <p className="mt-2 text-fluid-sm leading-relaxed text-muted">
                         {t(`landing.how.${step.key}.body`)}
