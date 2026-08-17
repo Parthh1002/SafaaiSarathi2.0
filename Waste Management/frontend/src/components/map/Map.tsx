@@ -20,19 +20,34 @@ export function BaseMap({
   children,
   className = 'h-full w-full',
   scrollWheelZoom = true,
+  minHeight,
 }: {
-  center?: [number, number];
+  center?: [number, number] | { lat?: number; lng?: number } | null;
   zoom?: number;
   children?: ReactNode;
   className?: string;
   scrollWheelZoom?: boolean;
+  minHeight?: string;
 }) {
+  const safeCenter: [number, number] = useMemo(() => {
+    if (!center) return GANDHINAGAR;
+    if (Array.isArray(center)) {
+      const lat = Number(center[0]);
+      const lng = Number(center[1]);
+      return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : GANDHINAGAR;
+    }
+    const lat = Number((center as any).lat);
+    const lng = Number((center as any).lng);
+    return !isNaN(lat) && !isNaN(lng) ? [lat, lng] : GANDHINAGAR;
+  }, [center]);
+
   return (
     <MapContainer
-      center={center}
+      center={safeCenter}
       zoom={zoom}
       scrollWheelZoom={scrollWheelZoom}
       className={className}
+      style={minHeight ? { minHeight } : undefined}
       zoomControl={false}
       preferCanvas
     >
@@ -310,22 +325,34 @@ export function FitBounds({ points }: { points: Array<[number, number]> }) {
 export function LocationPicker({
   latitude,
   longitude,
+  position,
   onChange,
 }: {
-  latitude: number;
-  longitude: number;
-  onChange: (lat: number, lng: number) => void;
+  latitude?: number;
+  longitude?: number;
+  position?: { lat: number; lng: number } | [number, number] | null;
+  onChange: (lat: number | { lat: number; lng: number }, lng?: number) => void;
 }) {
   const map = useMap();
+
+  const lat = Number(
+    latitude ?? (Array.isArray(position) ? position[0] : position?.lat) ?? 23.2156
+  );
+  const lng = Number(
+    longitude ?? (Array.isArray(position) ? position[1] : position?.lng) ?? 72.6369
+  );
+
   useEffect(() => {
-    const handler = (e: L.LeafletMouseEvent) => onChange(e.latlng.lat, e.latlng.lng);
+    const handler = (e: L.LeafletMouseEvent) => {
+      onChange(e.latlng.lat, e.latlng.lng);
+    };
     map.on('click', handler);
     return () => {
       map.off('click', handler);
     };
   }, [map, onChange]);
 
-  return <PinMarker latitude={latitude} longitude={longitude} label="Drag or tap the map to adjust" />;
+  return <PinMarker latitude={lat} longitude={lng} label="Drag or tap the map to adjust" />;
 }
 
 export { Polygon, Polyline, CircleMarker, Marker, Popup, useMap };

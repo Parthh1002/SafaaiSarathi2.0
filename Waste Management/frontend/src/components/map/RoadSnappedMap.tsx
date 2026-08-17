@@ -247,7 +247,10 @@ export default function RoadSnappedMap({
 
             {/* Destination Point Marker */}
             <Marker
-              position={[activeDriver.destination.latitude, activeDriver.destination.longitude]}
+              position={[
+                Number(activeDriver.destination.lat ?? (activeDriver.destination as any).latitude ?? 23.2185),
+                Number(activeDriver.destination.lng ?? (activeDriver.destination as any).longitude ?? 72.6395),
+              ]}
               icon={destinationIcon}
             >
               <Popup className="road-snapped-popup">

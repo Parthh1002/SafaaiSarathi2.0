@@ -590,12 +590,18 @@ export default function NewReport() {
               </div>
 
               <div className="h-[360px] w-full overflow-hidden rounded-2xl border border-line">
-                <BaseMap center={position ?? { lat: 23.2156, lng: 72.6369 }} zoom={16} minHeight="360px">
+                <BaseMap center={position ? [position.lat, position.lng] : [23.2156, 72.6369]} zoom={16} minHeight="360px">
                   <LocationPicker
-                    position={position}
-                    onChange={(next) => {
-                      setPosition(next);
-                      void checkForDuplicates(next);
+                    position={position ?? { lat: 23.2156, lng: 72.6369 }}
+                    latitude={position?.lat ?? 23.2156}
+                    longitude={position?.lng ?? 72.6369}
+                    onChange={(latOrObj: any, lngVal?: number) => {
+                      const nextPos =
+                        typeof latOrObj === 'object' && latOrObj !== null && 'lat' in latOrObj
+                          ? latOrObj
+                          : { lat: Number(latOrObj), lng: Number(lngVal ?? 72.6369) };
+                      setPosition(nextPos);
+                      void checkForDuplicates(nextPos);
                     }}
                   />
                 </BaseMap>
