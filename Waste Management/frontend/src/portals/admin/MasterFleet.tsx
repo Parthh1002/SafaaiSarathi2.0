@@ -1,323 +1,227 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Truck, Wifi, WifiOff, Wrench, MapPin, Filter } from 'lucide-react';
+import {
+  Loader2,
+  Plus,
+  Truck,
+  Wifi,
+  WifiOff,
+  Wrench,
+  MapPin,
+  Filter,
+  Search,
+  AlertTriangle,
+  RefreshCw,
+  Phone,
+  Layers,
+  Sparkles,
+} from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { Badge, Card, ErrorState, Loading, Modal, SectionTitle, toast } from '../../components/ui';
-import { BaseMap, TruckMarker, PinMarker, FitBounds } from '../../components/map/Map';
-import { useSocket, SOCKET_EVENTS } from '../../lib/socket';
-import { timeAgo } from '../../lib/format';
+import RoadSnappedMap from '../../components/map/RoadSnappedMap';
+import { mockFleetEngine, SimulatedDriver } from '../../lib/mockFleetEngine';
 
 export default function MasterFleet() {
   const queryClient = useQueryClient();
   const [adding, setAdding] = useState(false);
-  const [selectedWard, setSelectedWard] = useState<string>('');
-  const [livePositions, setLivePositions] = useState<Record<string, any>>({});
-  const [form, setForm] = useState({
-    registrationNumber: '',
-    wardId: '',
-    driverId: '',
-    model: 'Tata Ace',
-    capacityKg: 2000,
-  });
+  const [drivers, setDrivers] = useState<SimulatedDriver[]>([]);
+  const [selectedDriverId, setSelectedDriverId] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const fleet = useQuery({
-    queryKey: ['admin', 'fleet', selectedWard],
-    queryFn: async () =>
-      (await api('admin').get('/admin/fleet', { params: { wardId: selectedWard || undefined } })).data,
-    refetchInterval: 45_000,
-  });
-
-  const wards = useQuery({
-    queryKey: ['admin', 'wards'],
-    queryFn: async () => (await api('admin').get('/admin/wards')).data,
-  });
-
-  const drivers = useQuery({
-    queryKey: ['admin', 'users', 'DRIVER'],
-    queryFn: async () => (await api('admin').get('/admin/users', { params: { role: 'DRIVER', pageSize: 100 } })).data,
-  });
-
-  // Subscribe to all ward rooms and city room for live truck telemetry pings
-  const wardRooms = (wards.data ?? []).map((w: any) => `ward:${w.id}`);
-  useSocket('admin', ['city', ...wardRooms], {
-    [SOCKET_EVENTS.TRUCK_UPDATE]: (payload: any) => {
-      if (payload?.id && payload?.latitude != null) {
-        setLivePositions((prev) => ({ ...prev, [payload.id]: payload }));
+  // Connect to shared real road-snapped fleet simulation (or WebSocket)
+  useEffect(() => {
+    const unsubscribe = mockFleetEngine.subscribe((list) => {
+      setDrivers([...list]);
+      if (!selectedDriverId && list.length > 0) {
+        setSelectedDriverId(list[0].id);
       }
-    },
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const filteredDrivers = drivers.filter((d) => {
+    const matchSearch =
+      d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.vehicleNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      d.wardName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchStatus = statusFilter === 'all' || d.status === statusFilter;
+    return matchSearch && matchStatus;
   });
 
-  const create = useMutation({
-    mutationFn: async () =>
-      (
-        await api('admin').post('/admin/fleet', {
-          registrationNumber: form.registrationNumber,
-          wardId: form.wardId || undefined,
-          driverId: form.driverId || undefined,
-          model: form.model,
-          capacityKg: Number(form.capacityKg),
-        })
-      ).data,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['admin', 'fleet'] });
-      toast.success('Vehicle registered');
-      setAdding(false);
-      setForm({ registrationNumber: '', wardId: '', driverId: '', model: 'Tata Ace', capacityKg: 2000 });
-    },
-    onError: (err) => toast.error(errorMessage(err)),
-  });
-
-  const update = useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: any }) =>
-      (await api('admin').patch(`/admin/fleet/${id}`, patch)).data,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['admin', 'fleet'] });
-      toast.success('Vehicle updated');
-    },
-    onError: (err) => toast.error(errorMessage(err)),
-  });
-
-  if (fleet.isLoading) return <Loading />;
-  if (fleet.error) return <ErrorState message="Could not load the fleet" onRetry={() => fleet.refetch()} />;
-
-  const vehicles = (fleet.data ?? []).map((v: any) => ({
-    ...v,
-    ...(livePositions[v.id] ?? {}),
-  }));
-
-  const mapPoints: Array<[number, number]> = vehicles
-    .filter((v: any) => v.latitude != null)
-    .map((v: any) => [v.latitude, v.longitude]);
+  const activeCount = drivers.filter((d) => d.status === 'en_route').length;
+  const delayedCount = drivers.filter((d) => d.status === 'delayed' || d.isOffRoute).length;
+  const idleCount = drivers.filter((d) => d.status === 'idle').length;
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-4">
         <div>
-          <h1 className="text-fluid-xl font-bold tracking-tight">City-Wide Fleet Command</h1>
-          <p className="text-fluid-xs text-muted">
-            Live GPS telemetry, status, and maintenance registry for all {vehicles.length} vehicles
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 font-bold">
+              <Truck className="h-5 w-5" />
+            </div>
+            <h1 className="text-fluid-xl font-extrabold tracking-tight text-ink">City-Wide Fleet Command</h1>
+          </div>
+          <p className="mt-1 text-fluid-xs text-muted">
+            Real-time road-snapped fleet tracking, OSRM routing, live speeds, and off-route roaming detection
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Ward filter */}
-          <div className="flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 shadow-sm">
-            <Filter className="h-4 w-4 text-muted" />
-            <select
-              value={selectedWard}
-              onChange={(e) => setSelectedWard(e.target.value)}
-              className="bg-transparent text-fluid-xs font-semibold text-ink focus:outline-none"
-            >
-              <option value="">All Wards (City-Wide)</option>
-              {(wards.data ?? []).map((w: any) => (
-                <option key={w.id} value={w.id}>
-                  {w.name} ({w.code})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button type="button" className="btn-primary btn-sm" onClick={() => setAdding(true)}>
-            <Plus className="h-3.5 w-3.5" /> Register Vehicle
-          </button>
+          <Badge tone="ok" className="font-bold py-1.5 px-3">
+            {activeCount} Trucks En Route
+          </Badge>
+          {delayedCount > 0 && (
+            <Badge tone="danger" className="font-bold py-1.5 px-3">
+              {delayedCount} Delayed
+            </Badge>
+          )}
         </div>
       </div>
 
-      {/* FEATURE 2: Master Live Fleet Map */}
-      <Card className="overflow-hidden p-0 shadow-md">
-        <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-3 w-3">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ok opacity-75"></span>
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-ok"></span>
-            </span>
-            <h2 className="text-fluid-sm font-bold">Live Fleet GPS Map</h2>
+      {/* Fleet Stats Overview */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="rounded-2xl border border-line bg-surface p-4 shadow-xs">
+          <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">Total Fleet Active</span>
+          <p className="mt-1 text-fluid-lg font-extrabold text-ink">{drivers.length} Vehicles</p>
+          <p className="text-[11px] text-ok font-semibold">100% GPS Connected</p>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-surface p-4 shadow-xs">
+          <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">En Route Collecting</span>
+          <p className="mt-1 text-fluid-lg font-extrabold text-emerald-600">{activeCount} Vehicles</p>
+          <p className="text-[11px] text-muted">Moving along road routes</p>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-surface p-4 shadow-xs">
+          <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">Idle / Processing</span>
+          <p className="mt-1 text-fluid-lg font-extrabold text-amber-500">{idleCount} Vehicles</p>
+          <p className="text-[11px] text-muted">At collection wards</p>
+        </div>
+
+        <div className="rounded-2xl border border-line bg-surface p-4 shadow-xs">
+          <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">Delayed / Off-Route</span>
+          <p className="mt-1 text-fluid-lg font-extrabold text-red-500">{delayedCount} Vehicles</p>
+          <p className="text-[11px] text-red-500 font-semibold">{delayedCount > 0 ? 'Action required' : 'All on schedule'}</p>
+        </div>
+      </div>
+
+      {/* Main Multi-Driver Road-Snapped Fleet Map */}
+      <div className="relative h-[55dvh] min-h-[400px] w-full overflow-hidden rounded-3xl border border-line shadow-lg">
+        {drivers.length > 0 ? (
+          <RoadSnappedMap
+            mode="multi-driver"
+            drivers={drivers}
+            activeDriverId={selectedDriverId}
+            onSelectDriver={(drv) => setSelectedDriverId(drv.id)}
+          />
+        ) : (
+          <Loading label="Connecting to GPS fleet stream…" />
+        )}
+      </div>
+
+      {/* Fleet Filter Bar & Driver Cards Grid */}
+      <section className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted" />
+            <input
+              type="text"
+              placeholder="Search driver, vehicle or ward…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="field pl-9 py-2 text-fluid-xs rounded-xl border border-line bg-surface w-full"
+            />
           </div>
-          <span className="text-fluid-xs text-muted">
-            {vehicles.filter((v: any) => !v.isOffline && v.latitude != null).length} active on-road
-          </span>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            {['all', 'en_route', 'idle', 'delayed'].map((st) => (
+              <button
+                key={st}
+                type="button"
+                onClick={() => setStatusFilter(st)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition capitalize cursor-pointer ${
+                  statusFilter === st
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-surface border border-line text-muted hover:text-ink'
+                }`}
+              >
+                {st === 'en_route' ? 'En Route' : st}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="h-[44dvh] min-h-[320px] w-full xl:h-[420px]">
-          <BaseMap center={[23.2156, 72.6369]} zoom={12}>
-            {mapPoints.length > 0 && <FitBounds points={mapPoints} />}
-            {vehicles
-              .filter((v: any) => v.latitude != null)
-              .map((v: any) => (
-                <TruckMarker
-                  key={v.id}
-                  latitude={v.latitude}
-                  longitude={v.longitude}
-                  heading={v.heading ?? 0}
-                  registrationNumber={v.registrationNumber}
-                  driverName={v.driver?.name}
-                  status={v.status}
-                />
-              ))}
-          </BaseMap>
-        </div>
-      </Card>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredDrivers.map((drv) => {
+            const isSelected = drv.id === selectedDriverId;
+            return (
+              <div
+                key={drv.id}
+                onClick={() => setSelectedDriverId(drv.id)}
+                className={`p-4 rounded-2xl border transition cursor-pointer flex flex-col justify-between ${
+                  isSelected
+                    ? 'border-emerald-600 bg-emerald-50/10 shadow-md ring-2 ring-emerald-500/30'
+                    : 'border-line bg-surface hover:border-emerald-500/40 hover:shadow-xs'
+                }`}
+              >
+                <div className="space-y-2.5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 font-bold">
+                        <Truck className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <h4 className="text-fluid-sm font-bold text-ink leading-tight">{drv.name}</h4>
+                        <p className="text-[11px] font-mono text-muted">{drv.vehicleNumber}</p>
+                      </div>
+                    </div>
 
-      {/* Fleet Table */}
-      <Card className="overflow-hidden p-0">
-        <div className="table-scroll">
-          <table className="w-full min-w-[60rem] text-left text-fluid-sm">
-            <thead className="border-b border-line bg-sunken/60 text-fluid-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="px-4 py-2.5">Registration</th>
-                <th className="px-4 py-2.5">Driver</th>
-                <th className="px-4 py-2.5">Contact</th>
-                <th className="px-4 py-2.5">Ward</th>
-                <th className="px-4 py-2.5">Status</th>
-                <th className="px-4 py-2.5">GPS Health</th>
-                <th className="px-4 py-2.5">Last Ping</th>
-                <th className="px-4 py-2.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
-              {vehicles.map((v: any) => (
-                <tr key={v.id} className="hover:bg-sunken/50">
-                  <td className="px-4 py-2.5">
-                    <span className="font-mono font-medium">{v.registrationNumber}</span>
-                    <p className="text-fluid-xs text-muted">
-                      {v.model} · {v.capacityKg} kg
-                    </p>
-                  </td>
-                  <td className="px-4 py-2.5">{v.driver?.name ?? <span className="text-faint">Unassigned</span>}</td>
-                  <td className="px-4 py-2.5">
-                    {v.driver?.phone ? (
-                      <a href={`tel:${v.driver.phone}`} className="font-mono text-fluid-xs text-brand hover:underline">
-                        {v.driver.phone}
-                      </a>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5">{v.ward?.name ?? '—'}</td>
-                  <td className="px-4 py-2.5">
-                    <Badge tone={v.status === 'ON_ROUTE' ? 'ok' : v.status === 'MAINTENANCE' ? 'warn' : 'neutral'}>
-                      {v.status}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    {!v.isOffline ? (
-                      <span className="inline-flex items-center gap-1 text-fluid-xs text-ok font-semibold">
-                        <Wifi className="h-3.5 w-3.5" /> Live
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-fluid-xs text-faint">
-                        <WifiOff className="h-3.5 w-3.5" /> Offline
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5 text-fluid-xs text-muted">{v.lastPingAt ? timeAgo(v.lastPingAt) : '—'}</td>
-                  <td className="px-4 py-2.5 text-right">
-                    <button
-                      type="button"
-                      className="btn-ghost btn-sm"
-                      onClick={() => update.mutate({ id: v.id, patch: { maintenanceFlag: !v.maintenanceFlag } })}
+                    <Badge
+                      tone={drv.status === 'en_route' ? 'ok' : drv.status === 'delayed' ? 'danger' : 'warn'}
+                      className="font-bold text-[10px]"
                     >
-                      <Wrench className="h-3.5 w-3.5" />
-                      {v.maintenanceFlag ? 'Clear flag' : 'Flag maintenance'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                      {drv.status.toUpperCase()}
+                    </Badge>
+                  </div>
 
-      {/* Modal */}
-      <Modal
-        open={adding}
-        onClose={() => setAdding(false)}
-        title="Register a vehicle"
-        footer={
-          <button
-            className="btn-primary w-full"
-            disabled={!form.registrationNumber || create.isPending}
-            onClick={() => create.mutate()}
-          >
-            {create.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Register
-          </button>
-        }
-      >
-        <div className="space-y-3">
-          <div>
-            <label className="label" htmlFor="reg">
-              Registration number
-            </label>
-            <input
-              id="reg"
-              className="field font-mono"
-              value={form.registrationNumber}
-              onChange={(e) => setForm({ ...form, registrationNumber: e.target.value.toUpperCase() })}
-              placeholder="GJ 18 SS 1001"
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="model">
-              Model
-            </label>
-            <input
-              id="model"
-              className="field"
-              value={form.model}
-              onChange={(e) => setForm({ ...form, model: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="cap">
-              Capacity (kg)
-            </label>
-            <input
-              id="cap"
-              type="number"
-              className="field"
-              value={form.capacityKg}
-              onChange={(e) => setForm({ ...form, capacityKg: Number(e.target.value) })}
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="ward">
-              Ward
-            </label>
-            <select
-              id="ward"
-              className="field"
-              value={form.wardId}
-              onChange={(e) => setForm({ ...form, wardId: e.target.value })}
-            >
-              <option value="">Unassigned</option>
-              {(wards.data ?? []).map((w: any) => (
-                <option key={w.id} value={w.id}>
-                  {w.name} ({w.code})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="label" htmlFor="driver">
-              Driver
-            </label>
-            <select
-              id="driver"
-              className="field"
-              value={form.driverId}
-              onChange={(e) => setForm({ ...form, driverId: e.target.value })}
-            >
-              <option value="">Unassigned</option>
-              {(drivers.data?.items ?? []).map((d: any) => (
-                <option key={d.id} value={d.id}>
-                  {d.name} · {d.phone}
-                </option>
-              ))}
-            </select>
-          </div>
+                  <div className="rounded-xl border border-line bg-sunken/40 p-2.5 space-y-1 text-fluid-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted text-[11px]">Ward:</span>
+                      <strong className="text-ink text-[11px]">{drv.wardName}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted text-[11px]">Destination:</span>
+                      <span className="text-ink text-[11px] truncate max-w-[170px] font-medium">
+                        {drv.destination.name}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted text-[11px]">Road Distance / ETA:</span>
+                      <strong className="text-emerald-600 text-[11px] font-mono">
+                        {drv.remainingDistanceKm} km · {drv.etaMinutes} min
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between pt-2 border-t border-line/60 text-[11px]">
+                  <span className="text-muted font-mono">{drv.speedKmh} km/h</span>
+                  <a
+                    href={`tel:${drv.phone}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1 font-bold text-brand hover:underline"
+                  >
+                    <Phone className="h-3 w-3" /> Call Driver
+                  </a>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </Modal>
+      </section>
     </div>
   );
 }
