@@ -4,7 +4,7 @@
 
 - **Plan:** `C:\Users\hayan\Downloads\safaai-sarathi-implementation-plan.md`
 - **Root:** `D:\Cllg\Projects\Waste Management`
-- **Last updated:** 2026-08-14 — running and verified end to end
+- **Last updated:** 2026-08-17 — Live on Vercel & Render with YOLOv8 & Groq Llama 3.3 AI
 
 ---
 
