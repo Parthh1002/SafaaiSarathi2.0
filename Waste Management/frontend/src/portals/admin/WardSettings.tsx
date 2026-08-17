@@ -12,6 +12,11 @@ import {
   Crosshair,
   FileCode,
   Map as MapIcon,
+  Maximize2,
+  Minimize2,
+  Sparkles,
+  RotateCw,
+  HelpCircle,
 } from 'lucide-react';
 import L from 'leaflet';
 import {
@@ -19,11 +24,12 @@ import {
   TileLayer,
   Polygon,
   Marker,
+  Tooltip,
   useMap,
   useMapEvents,
 } from 'react-leaflet';
 import { api, errorMessage } from '../../lib/api';
-import { Card, ErrorState, Loading, Modal, SectionTitle, toast } from '../../components/ui';
+import { Badge, Card, ErrorState, Loading, SectionTitle, toast } from '../../components/ui';
 import { BaseMap, WardLayer, FitBounds, GANDHINAGAR } from '../../components/map/Map';
 
 interface Point {
@@ -32,20 +38,29 @@ interface Point {
 }
 
 // Custom draggable corner handle icon (White circle with emerald border & shadow)
-const vertexIcon = L.divIcon({
-  className: 'custom-vertex-handle',
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
-  html: `<div style="
-    width: 16px;
-    height: 16px;
-    background-color: #ffffff;
-    border: 2.5px solid #16a34a;
-    border-radius: 50%;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-    cursor: grab;
-  "></div>`,
-});
+function createVertexIcon(index: number) {
+  return L.divIcon({
+    className: 'custom-vertex-handle',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    html: `<div style="
+      width: 20px;
+      height: 20px;
+      background-color: #ffffff;
+      border: 3px solid #16a34a;
+      border-radius: 50%;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.45);
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 800;
+      color: #16a34a;
+      user-select: none;
+    ">${index + 1}</div>`,
+  });
+}
 
 /** Leaflet Map Event Listener to add points on click */
 function MapClickHandler({ onAddPoint }: { onAddPoint: (lat: number, lng: number) => void }) {
@@ -63,15 +78,28 @@ function MapFitPolygon({ points }: { points: Point[] }) {
   useEffect(() => {
     if (points.length >= 2) {
       const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng]));
-      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
     }
   }, [map]);
+  return null;
+}
+
+/** Helper component to invalidate map size when toggling fullscreen */
+function MapResizeInvalidator({ isFullscreen }: { isFullscreen: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [map, isFullscreen]);
   return null;
 }
 
 export default function WardSettings() {
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
+  const [isFullscreenMap, setIsFullscreenMap] = useState(false);
   const [form, setForm] = useState({
     id: '',
     name: '',
@@ -86,6 +114,21 @@ export default function WardSettings() {
     { lat: 23.197157, lng: 72.615923 },
     { lat: 23.206223, lng: 72.616277 },
   ]);
+
+  // Handle ESC key to exit fullscreen map mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isFullscreenMap) {
+          setIsFullscreenMap(false);
+        } else if (modalOpen) {
+          setModalOpen(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreenMap, modalOpen]);
 
   const wards = useQuery({
     queryKey: ['admin', 'wards'],
@@ -126,6 +169,7 @@ export default function WardSettings() {
       await queryClient.invalidateQueries({ queryKey: ['admin', 'wards'] });
       toast.success('Ward boundary saved successfully');
       setModalOpen(false);
+      setIsFullscreenMap(false);
       resetForm();
     },
     onError: (err: any) => toast.error(err?.message || errorMessage(err)),
@@ -191,11 +235,12 @@ export default function WardSettings() {
   const handleAddPoint = (lat?: number, lng?: number) => {
     if (lat !== undefined && lng !== undefined) {
       setPoints((prev) => [...prev, { lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) }]);
-      toast.info(`Added point at Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
+      toast.info(`Added Point ${points.length + 1} at Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
     } else {
-      // Add point near last point
-      const last = points[points.length - 1] || { lat: 23.2156, lng: 72.6369 };
-      setPoints((prev) => [...prev, { lat: Number((last.lat + 0.003).toFixed(6)), lng: Number((last.lng + 0.003).toFixed(6)) }]);
+      // Add point near centroid
+      const center = centerCoord;
+      setPoints((prev) => [...prev, { lat: Number((center[0] + 0.002).toFixed(6)), lng: Number((center[1] + 0.002).toFixed(6)) }]);
+      toast.info(`Added Point ${points.length + 1}`);
     }
   };
 
@@ -205,6 +250,19 @@ export default function WardSettings() {
       return;
     }
     setPoints((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  /** Sorts points clockwise around their center of mass to fix crossed/hourglass boundaries */
+  const handleSortPerimeter = () => {
+    if (points.length < 3) return;
+    const center = centerCoord;
+    const sorted = [...points].sort((a, b) => {
+      const angleA = Math.atan2(a.lat - center[0], a.lng - center[1]);
+      const angleB = Math.atan2(b.lat - center[0], b.lng - center[1]);
+      return angleA - angleB;
+    });
+    setPoints(sorted);
+    toast.success('Cleaned up polygon perimeter geometry!');
   };
 
   const handleGeoJsonUpload = async (file: File) => {
@@ -326,12 +384,18 @@ export default function WardSettings() {
             
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-line px-6 py-4 bg-surface/80">
-              <h2 className="text-fluid-base font-bold text-ink">
-                {form.id ? `Edit ${form.name}` : 'Add a ward'}
-              </h2>
+              <div>
+                <h2 className="text-fluid-base font-bold text-ink leading-tight">
+                  {form.id ? `Edit ${form.name}` : 'Add a ward'}
+                </h2>
+                <p className="text-[11px] text-muted font-mono">{form.code || 'New Ward Registration'}</p>
+              </div>
               <button
                 type="button"
-                onClick={() => setModalOpen(false)}
+                onClick={() => {
+                  setModalOpen(false);
+                  setIsFullscreenMap(false);
+                }}
                 className="p-1.5 text-muted hover:text-ink hover:bg-sunken rounded-xl transition cursor-pointer"
                 aria-label="Close"
               >
@@ -396,13 +460,24 @@ export default function WardSettings() {
               </div>
 
               {/* Section Header: Boundary Coordinates */}
-              <div>
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-ink mb-0.5">
-                  BOUNDARY COORDINATES
-                </h3>
-                <p className="text-fluid-xs text-muted">
-                  Click the map to drop a point, or drag the white corner handles to reshape. At least 3 points are needed to form an area.
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-ink mb-0.5">
+                    BOUNDARY COORDINATES
+                  </h3>
+                  <p className="text-fluid-xs text-muted">
+                    Click the map to drop a point, or drag the numbered corner handles. At least 3 points are needed.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSortPerimeter}
+                  className="btn-ghost btn-sm text-[11px] font-bold gap-1 border border-line cursor-pointer hover:bg-brand/10 hover:text-brand"
+                  title="Automatically fix crossed polygon boundaries"
+                >
+                  <RotateCw className="h-3 w-3 text-brand" /> Fix Perimeter
+                </button>
               </div>
 
               {/* Interactive Draggable Leaflet Map Container */}
@@ -437,7 +512,7 @@ export default function WardSettings() {
                     <Marker
                       key={`pt-${idx}-${pt.lat}-${pt.lng}`}
                       position={[pt.lat, pt.lng]}
-                      icon={vertexIcon}
+                      icon={createVertexIcon(idx)}
                       draggable={true}
                       eventHandlers={{
                         drag(e) {
@@ -449,17 +524,35 @@ export default function WardSettings() {
                           handlePointDrag(idx, latlng.lat, latlng.lng);
                         },
                       }}
-                    />
+                    >
+                      <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
+                        Point {idx + 1}: {pt.lat.toFixed(5)}, {pt.lng.toFixed(5)}
+                      </Tooltip>
+                    </Marker>
                   ))}
 
                   <MapClickHandler onAddPoint={handleAddPoint} />
                   <MapFitPolygon points={points} />
+                  <MapResizeInvalidator isFullscreen={isFullscreenMap} />
                 </MapContainer>
 
-                {/* Corner Quick Tool Badge */}
-                <div className="absolute top-2.5 right-2.5 z-[1000] bg-black/75 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white tracking-wide border border-white/20 pointer-events-none flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Drag corners or click to add point
+                {/* Top Overlay Controls: Fullscreen Expand & Tip Badge */}
+                <div className="absolute top-2.5 left-2.5 right-2.5 z-[1000] flex items-center justify-between pointer-events-none">
+                  <div className="bg-black/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white tracking-wide border border-white/20 flex items-center gap-1.5 shadow-md">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Drag dots or click to add point
+                  </div>
+
+                  {/* Expand to Full Screen Map Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsFullscreenMap(true)}
+                    className="pointer-events-auto bg-emerald-700 hover:bg-emerald-800 text-white p-2 rounded-xl shadow-lg border border-emerald-500/50 flex items-center gap-1.5 text-xs font-bold transition cursor-pointer"
+                    title="Open Fullscreen Boundary Editor"
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Fullscreen Map</span>
+                  </button>
                 </div>
               </div>
 
@@ -558,6 +651,144 @@ export default function WardSettings() {
             </div>
 
           </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* IMMERSIVE FULLSCREEN MAP BOUNDARY EDITOR (ESC to Exit / Minimize)        */}
+      {/* ========================================================================= */}
+      {isFullscreenMap && (
+        <div className="fixed inset-0 z-[99999] w-screen h-screen bg-slate-950 flex flex-col animate-fade-in select-none">
+          
+          {/* Top Fullscreen Floating Toolbar */}
+          <div className="absolute top-4 left-4 right-4 z-[1000] flex flex-wrap items-center justify-between gap-3 pointer-events-none">
+            
+            {/* Ward Info & Points Counter */}
+            <div className="pointer-events-auto flex items-center gap-2.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 px-4 py-2.5 text-white shadow-2xl backdrop-blur-xl">
+              <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-600 text-white font-bold">
+                <MapPinned className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-fluid-sm font-extrabold leading-tight">
+                  {form.name || 'Editing Boundary'} ({form.code || 'W-01'})
+                </h3>
+                <p className="text-[11px] text-emerald-400 font-mono">
+                  {points.length} Boundary Corner Points Active
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Actions & Minimize / Exit (ESC) */}
+            <div className="pointer-events-auto flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSortPerimeter}
+                className="flex items-center gap-1.5 rounded-2xl bg-slate-900/90 border border-slate-700 px-3.5 py-2.5 text-xs font-bold text-slate-200 shadow-xl hover:bg-slate-800 transition cursor-pointer"
+                title="Uncross and fix boundary perimeter"
+              >
+                <RotateCw className="h-4 w-4 text-emerald-400" />
+                <span>Fix Perimeter</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleAddPoint()}
+                className="flex items-center gap-1.5 rounded-2xl bg-emerald-700 border border-emerald-500/50 px-3.5 py-2.5 text-xs font-bold text-white shadow-xl hover:bg-emerald-800 transition cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add Point</span>
+              </button>
+
+              {/* Minimize / Exit Fullscreen Button */}
+              <button
+                type="button"
+                onClick={() => setIsFullscreenMap(false)}
+                className="flex items-center gap-2 rounded-2xl bg-red-600/90 hover:bg-red-700 border border-red-500/50 px-4 py-2.5 text-xs font-bold text-white shadow-2xl transition cursor-pointer"
+                title="Press ESC or Click to Exit Fullscreen"
+              >
+                <Minimize2 className="h-4 w-4" />
+                <span>Minimize (ESC)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Fullscreen Map Canvas */}
+          <div className="h-full w-full relative">
+            <MapContainer
+              center={centerCoord}
+              zoom={15}
+              scrollWheelZoom={true}
+              className="h-full w-full"
+              preferCanvas
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                maxZoom={19}
+              />
+
+              {/* Fullscreen Polygon */}
+              {points.length >= 3 && (
+                <Polygon
+                  positions={points.map((p) => [p.lat, p.lng])}
+                  pathOptions={{
+                    color: '#10b981',
+                    fillColor: '#10b981',
+                    fillOpacity: 0.32,
+                    weight: 3.5,
+                  }}
+                />
+              )}
+
+              {/* Draggable Vertex Handles with Numbered Tooltips */}
+              {points.map((pt, idx) => (
+                <Marker
+                  key={`fullscreen-pt-${idx}-${pt.lat}-${pt.lng}`}
+                  position={[pt.lat, pt.lng]}
+                  icon={createVertexIcon(idx)}
+                  draggable={true}
+                  eventHandlers={{
+                    drag(e) {
+                      const latlng = e.target.getLatLng();
+                      handlePointDrag(idx, latlng.lat, latlng.lng);
+                    },
+                    dragend(e) {
+                      const latlng = e.target.getLatLng();
+                      handlePointDrag(idx, latlng.lat, latlng.lng);
+                    },
+                  }}
+                >
+                  <Tooltip direction="top" offset={[0, -10]} opacity={0.95} permanent>
+                    #{idx + 1}
+                  </Tooltip>
+                </Marker>
+              ))}
+
+              <MapClickHandler onAddPoint={handleAddPoint} />
+              <MapResizeInvalidator isFullscreen={isFullscreenMap} />
+            </MapContainer>
+          </div>
+
+          {/* Bottom Floating Quick Save HUD */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-3 bg-slate-900/95 border border-slate-700/80 p-2 rounded-2xl shadow-2xl backdrop-blur-xl">
+            <div className="px-3 text-xs text-slate-300 font-medium">
+              Click anywhere on map to drop new points · Drag numbers to reshape
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsFullscreenMap(false);
+                save.mutate();
+              }}
+              disabled={points.length < 3 || save.isPending}
+              className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-lg transition cursor-pointer"
+            >
+              <Check className="h-4 w-4" />
+              <span>Save & Done</span>
+            </button>
+          </div>
+
         </div>
       )}
     </div>
