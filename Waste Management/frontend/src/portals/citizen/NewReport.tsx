@@ -455,18 +455,19 @@ export default function NewReport() {
 
               {/* AI Inference Telemetry Box */}
               <div className="p-4 space-y-3 bg-surface">
-                {visionAi && visionAi.status === 'success' ? (
+                {visionAi && visionAi.status === 'success' && visionAi.predicted_category ? (
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <span className="inline-flex items-center gap-1.5 text-fluid-xs font-bold text-brand">
-                        <Sparkles className="h-4 w-4" /> AI Confidence: {visionAi.confidence}%
+                        <Sparkles className="h-4 w-4 text-brand animate-pulse" /> AI Detected:{' '}
+                        {CATEGORY_META[visionAi.predicted_category]?.label || visionAi.predicted_category.replace(/_/g, ' ')} ({visionAi.confidence}%)
                       </span>
                       <Badge tone={visionAi.confidence >= 70 ? 'ok' : 'warn'}>
-                        {visionAi.confidence >= 70 ? 'Auto-Approve Ready' : 'Officer Review Flag'}
+                        {visionAi.confidence >= 70 ? '✓ Auto-Selected' : 'Needs Review'}
                       </Badge>
                     </div>
                     <p className="text-fluid-xs text-muted italic leading-relaxed">
-                      "{visionAi.remark || 'Multi-class visual cues verified.'}"
+                      "{visionAi.remark || 'Multi-class visual cues verified by YOLOv8.'}"
                     </p>
                   </div>
                 ) : (

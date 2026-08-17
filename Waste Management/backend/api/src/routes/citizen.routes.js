@@ -9,6 +9,7 @@ import { PORTALS, WASTE_CATEGORIES, EMERGENCY_TYPES, CREDIT_RULES } from '../con
 import { createComplaint, serializeComplaint, findDuplicate, wardForPoint } from '../services/complaint.service.js';
 import { distanceMeters, boundsAround } from '../lib/geo.js';
 import { askGroqChatbot } from '../services/groq.service.js';
+import { classifyWaste } from '../services/ai.service.js';
 
 const router = Router();
 router.use(requirePortal(PORTALS.CITIZEN), loadUser);
@@ -105,6 +106,43 @@ router.get(
       }));
 
     res.json(nearby);
+  })
+);
+
+/** Real-time YOLOv8 Waste Classification for Citizen Photo Preview */
+router.post(
+  '/classify-waste',
+  upload.single('file'),
+  asyncHandler(async (req, res) => {
+    const file = fileFromRequest(req);
+    if (!file) {
+      return res.status(400).json({ status: 'error', error: 'No image file uploaded' });
+    }
+
+    const aiResult = await classifyWaste({
+      buffer: file.buffer,
+      mimetype: file.mimetype,
+      filename: file.originalname || 'photo.jpg',
+      hint: req.body?.hint,
+    });
+
+    const category = aiResult.predicted_category || aiResult.category || 'garbage_pile';
+    const confidence =
+      aiResult.confidence !== undefined
+        ? aiResult.confidence <= 1
+          ? Math.round(aiResult.confidence * 100)
+          : Math.round(aiResult.confidence)
+        : 85;
+
+    res.json({
+      status: aiResult.status || 'success',
+      predicted_category: category,
+      confidence,
+      needs_manual_review: confidence < 70,
+      remark: aiResult.remark || `AI detected ${category.replace(/_/g, ' ')} with ${confidence}% confidence.`,
+      detections: aiResult.detections || [],
+      degraded: aiResult.degraded || false,
+    });
   })
 );
 
