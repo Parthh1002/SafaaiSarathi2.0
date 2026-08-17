@@ -400,10 +400,19 @@ export default function WardSettings() {
         lng: Number(lng),
       }));
 
-      setPoints(pts);
+      recordHistorySnapshot();
+      setPoints(pts.length >= 3 ? pts : ring.map(([lng, lat]: [number, number]) => ({ lat: Number(lat), lng: Number(lng) })));
       toast.success(`Loaded ${pts.length} boundary points from GeoJSON`);
     } catch {
       toast.error('Failed to parse GeoJSON file');
+    }
+  };
+
+  const handleGeoJsonImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleGeoJsonUpload(file);
+      e.target.value = '';
     }
   };
 
