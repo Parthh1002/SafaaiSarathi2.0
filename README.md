@@ -1,21 +1,14 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:34D399,30:10B981,70:059669,100:000000&height=300&section=header&text=🌿%20SAFAAI%20SARATHI%202.0&fontSize=68&fontAlignY=40&fontColor=ffffff&desc=सफ़ाई%20सारथी%20•%20India's%20Most%20Intelligent%20Civic%20Waste%20Ecosystem&descAlignY=62&descAlign=50&animation=twinkling" width="100%" alt="Safaai Sarathi 2.0 Header" />
+# 🌿 SAFAAI SARATHI 2.0
+### *सफ़ाई सारथी • Next-Generation Autonomous Civic Waste Management Ecosystem*
 
-<br/>
-
-<a href="https://safaai-sarathi2-0.vercel.app" target="_blank">
-  <img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=900&size=20&pause=900&color=10B981&background=00000000&center=true&vCenter=true&multiline=false&width=950&height=55&lines=🇮🇳+Swachh+Bharat+Mission+2.0+•+Next-Gen+Civic+AI;🤖+YOLOv8+Auto-Classify+Waste+in+%3C100ms;💬+Groq+Llama+3.3+70B+Multilingual+Action+Agent;📡+60fps+Real-Time+WebSocket+Fleet+Tracking;🚨+30-Min+Emergency+SLA+•+Zero+Fake+Closures;🌱+Gamified+Green+Credits+•+Tax+Rebates+%26+BRTS+Passes" alt="Animated Typing Banner" />
-</a>
-
-<br/><br/>
-
+[![Swachh Bharat Mission](https://img.shields.io/badge/🇮🇳%20Swachh%20Bharat%20Mission-2.0%20National%20Initiative-10B981?style=for-the-badge&labelColor=000000)](https://safaai-sarathi2-0.vercel.app)
 [![Live Web App](https://img.shields.io/badge/🌐%20Live%20App-Vercel%20Production-10B981?style=for-the-badge&logo=vercel&logoColor=white&labelColor=000000)](https://safaai-sarathi2-0.vercel.app)
 [![API Backend](https://img.shields.io/badge/⚙️%20API%20Server-Render%20Cloud-34D399?style=for-the-badge&logo=render&logoColor=black&labelColor=000000)](https://safaaisarathi2-0.onrender.com)
-[![YOLOv8 Vision](https://img.shields.io/badge/👁️%20Vision%20AI-YOLOv8%20PyTorch-059669?style=for-the-badge&logo=pytorch&logoColor=white&labelColor=000000)](https://pytorch.org/)
+[![Vision AI](https://img.shields.io/badge/👁️%20Vision%20AI-YOLOv8%20PyTorch-059669?style=for-the-badge&logo=pytorch&logoColor=white&labelColor=000000)](https://pytorch.org/)
 [![Groq LLM](https://img.shields.io/badge/💬%20LLM%20Agent-Groq%20Llama%203.3-10B981?style=for-the-badge&logo=openai&logoColor=white&labelColor=000000)](https://groq.com/)
-[![Supabase](https://img.shields.io/badge/🗄️%20Database-Supabase%20PostgreSQL-34D399?style=for-the-badge&logo=supabase&logoColor=black&labelColor=000000)](https://supabase.com/)
-[![ThreeJS](https://img.shields.io/badge/🎮%203D%20Graphics-Three.js%20|%20R3F-059669?style=for-the-badge&logo=threedotjs&logoColor=white&labelColor=000000)](https://threejs.org/)
+[![Database](https://img.shields.io/badge/🗄️%20Database-Supabase%20PostgreSQL-34D399?style=for-the-badge&logo=supabase&logoColor=black&labelColor=000000)](https://supabase.com/)
 
 <br/>
 
@@ -23,7 +16,7 @@
 ![GitHub stars](https://img.shields.io/github/stars/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=34D399&labelColor=000000)
 ![GitHub forks](https://img.shields.io/github/forks/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=059669&labelColor=000000)
 ![GitHub last commit](https://img.shields.io/github/last-commit/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=10B981&labelColor=000000)
-![Deployments](https://img.shields.io/badge/deployments-75%20production-059669?style=flat-square&labelColor=000000)
+![Deployments](https://img.shields.io/badge/deployments-78%20production-059669?style=flat-square&labelColor=000000)
 
 <br/>
 
@@ -35,11 +28,7 @@
 
 ---
 
-<div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:059669&height=60&text=🎯%20EXECUTIVE%20SUMMARY%20FOR%20HACKATHON%20JUDGES&fontColor=ffffff&fontSize=24&stroke=34D399&strokeWidth=2&animation=fadeIn" width="100%" alt="Executive Summary Banner"/>
-</div>
-
-<br/>
+## 🎯 Executive Summary for Hackathon Judges
 
 In most Indian cities today, municipal waste management is plagued by **three fundamental systemic failures**:
 1. **Passive Grievance Redressal:** Citizens report garbage on legacy portals (like Swachhata App), but complaints sit in unorganized officer inboxes for days with zero automated triage.
@@ -55,11 +44,7 @@ In most Indian cities today, municipal waste management is plagued by **three fu
 
 ---
 
-<div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:10B981&height=60&text=⚖️%20WHY%20SAFAAI%20SARATHI%20BEATS%20LEGACY%20PORTALS&fontColor=ffffff&fontSize=24&stroke=059669&strokeWidth=2&animation=fadeIn" width="100%" alt="Innovation Matrix Banner"/>
-</div>
-
-<br/>
+## ⚖️ Why Safaai Sarathi Beats Legacy Portals
 
 | Feature Dimension | Traditional ULB / Swachhata App | 🌿 Safaai Sarathi 2.0 |
 | :--- | :--- | :--- |
@@ -74,11 +59,7 @@ In most Indian cities today, municipal waste management is plagued by **three fu
 
 ---
 
-<div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:059669&height=60&text=📁%20REPOSITORY%20STRUCTURE%20%26%20DIRECTORY%20MAP&fontColor=ffffff&fontSize=24&stroke=34D399&strokeWidth=2&animation=fadeIn" width="100%" alt="Folder Structure Banner"/>
-</div>
-
-<br/>
+## 📁 Repository Structure & Directory Map
 
 ```text
 SafaaiSarathi2.0/
@@ -135,16 +116,12 @@ SafaaiSarathi2.0/
 
 ---
 
-<div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:10B981&height=60&text=🏗️%20END-TO-END%20SYSTEM%20ARCHITECTURE&fontColor=ffffff&fontSize=24&stroke=059669&strokeWidth=2&animation=fadeIn" width="100%" alt="Architecture Banner"/>
-</div>
-
-<br/>
+## 🏗️ End-to-End System Architecture
 
 ```mermaid
 graph TD
     %% ==========================================
-    %% 🎨 n8n / CANVA-STYLE SYSTEM ARCHITECTURE
+    %% 🎨 HIGH-IMPACT SYSTEM ARCHITECTURE
     %% ==========================================
     classDef client fill:#064E3B,stroke:#10B981,stroke-width:2px,color:#E6FFFA;
     classDef gateway fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#BAE6FD;
@@ -204,11 +181,7 @@ graph TD
 
 ---
 
-<div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:059669&height=60&text=🛠️%20COMPLETE%20TECH%20STACK%20%26%20ENGINEERING%20JUSTIFICATIONS&fontColor=ffffff&fontSize=22&stroke=10B981&strokeWidth=2&animation=fadeIn" width="100%" alt="Tech Stack Banner"/>
-</div>
-
-<br/>
+## 🛠️ Complete Tech Stack & Engineering Justifications
 
 <div align="center">
 <img src="https://skillicons.dev/icons?i=react,typescript,vite,tailwind,threejs,nodejs,express,postgres,prisma,python,fastapi,pytorch,github,vercel,html,css,js,git&perline=9" alt="Tech Stack Icons" />
@@ -231,11 +204,7 @@ graph TD
 
 ---
 
-<div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:10B981&height=60&text=🔄%20CORE%20OPERATIONAL%20WORKFLOWS&fontColor=ffffff&fontSize=24&stroke=34D399&strokeWidth=2&animation=fadeIn" width="100%" alt="Workflows Banner"/>
-</div>
-
-<br/>
+## 🔄 Core Operational Workflows
 
 ### 1️⃣ Spot it, Snap it: AI Waste Report & Cleanup Lifecycle
 1. **Citizen Capture:** Citizen opens `/app/report`, snaps a live waste photo; GPS coordinates are captured automatically.
@@ -257,11 +226,7 @@ graph TD
 
 ---
 
-<div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:059669&height=60&text=🛡️%20JUDGE%20FAQ%3A%20ANTICIPATING%20TOUGH%20TECHNICAL%20QUESTIONS&fontColor=ffffff&fontSize=20&stroke=10B981&strokeWidth=2&animation=fadeIn" width="100%" alt="Judges FAQ Banner"/>
-</div>
-
-<br/>
+## 🛡️ Judge FAQ: Anticipating Tough Technical Questions
 
 #### Q1: "What if a citizen submits a fake image or a photo downloaded from Google?"
 > **Answer:** Safaai Sarathi enforces a multi-tier defense:
@@ -280,13 +245,9 @@ graph TD
 
 ---
 
-<div align="center">
-  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:10B981&height=60&text=🔑%20DEMO%20TESTING%20CREDENTIALS&fontColor=ffffff&fontSize=24&stroke=059669&strokeWidth=2&animation=fadeIn" width="100%" alt="Demo Credentials Banner"/>
-</div>
+## 🔑 Demo Testing Credentials
 
-<br/>
-
-Try every role live on [https://safaai-sarathi2-0.vercel.app](https://safaai-sarathi2-0.vercel.app):
+Try every role live on **[https://safaai-sarathi2-0.vercel.app](https://safaai-sarathi2-0.vercel.app)**:
 
 | Portal Role | Direct Login URL | Demo Email / Phone | Password |
 | :--- | :--- | :--- | :--- |
@@ -299,10 +260,8 @@ Try every role live on [https://safaai-sarathi2-0.vercel.app](https://safaai-sar
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:000000,40:047857,80:059669,100:10B981&height=130&section=footer&text=Made%20with%20💚%20for%20Swachh%20Bharat%20Abhiyan%20%26%20National%20Smart%20Cities%20Mission%20🇮🇳&fontSize=18&fontColor=ffffff&animation=fadeIn" width="100%" alt="Footer Wave"/>
+### 🇮🇳 *Developed with 💚 for Swachh Bharat Abhiyan & National Smart Cities Mission*
 
-*Safaai Sarathi 2.0 — Developed for Hackathon & Civic Tech Innovation*
-
-**[⬆ Back to Top](#-safaai-sarathi-20-सफ़ाई-सारथी)**
+**[⬆ Back to Top](#-safaai-sarathi-20)**
 
 </div>
