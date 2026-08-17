@@ -167,9 +167,12 @@ export default function RoadSnappedMap({
     return drivers.filter((d) => d.status === 'delayed' || d.isOffRoute);
   }, [drivers]);
 
-  const centerPos: [number, number] = activeDriver
-    ? [activeDriver.currentLat, activeDriver.currentLng]
-    : [23.2156, 72.6369];
+  const centerPos: [number, number] = useMemo(() => {
+    if (!activeDriver) return [23.2156, 72.6369];
+    const lat = Number(activeDriver.currentLat);
+    const lng = Number(activeDriver.currentLng);
+    return !isNaN(lat) && !isNaN(lng) && lat !== 0 ? [lat, lng] : [23.2156, 72.6369];
+  }, [activeDriver]);
 
   return (
     <div className={`relative overflow-hidden bg-slate-950 text-slate-100 ${className}`}>
@@ -203,7 +206,6 @@ export default function RoadSnappedMap({
         </div>
       )}
 
-
       {/* ----------------- Leaflet Road-Snapped Map ----------------- */}
       <MapContainer
         center={centerPos}
@@ -220,7 +222,7 @@ export default function RoadSnappedMap({
         />
 
         {/* Render Road-Snapped Polylines for Active Driver */}
-        {activeDriver && activeDriver.route && activeDriver.route.coordinates.length > 1 && (
+        {activeDriver && activeDriver.route && activeDriver.route.coordinates && activeDriver.route.coordinates.length > 1 && (
           <>
             {/* Dark contrast casing behind road polyline for Google Maps feel */}
             <Polyline
@@ -246,30 +248,32 @@ export default function RoadSnappedMap({
             />
 
             {/* Destination Point Marker */}
-            <Marker
-              position={[
-                Number(activeDriver.destination.lat ?? (activeDriver.destination as any).latitude ?? 23.2185),
-                Number(activeDriver.destination.lng ?? (activeDriver.destination as any).longitude ?? 72.6395),
-              ]}
-              icon={destinationIcon}
-            >
-              <Popup className="road-snapped-popup">
-                <div className="p-1 space-y-1">
-                  <p className="font-bold text-xs text-ink">{activeDriver.destination.name}</p>
-                  <p className="text-[10px] text-muted">{activeDriver.destination.address}</p>
-                  <Badge tone="brand" className="text-[10px]">
-                    {activeDriver.destination.category}
-                  </Badge>
-                </div>
-              </Popup>
-            </Marker>
+            {activeDriver.destination && (
+              <Marker
+                position={[
+                  Number(activeDriver.destination.lat ?? (activeDriver.destination as any).latitude ?? 23.2185),
+                  Number(activeDriver.destination.lng ?? (activeDriver.destination as any).longitude ?? 72.6395),
+                ]}
+                icon={destinationIcon}
+              >
+                <Popup className="road-snapped-popup">
+                  <div className="p-1 space-y-1">
+                    <p className="font-bold text-xs text-ink">{activeDriver.destination.name}</p>
+                    <p className="text-[10px] text-muted">{activeDriver.destination.address}</p>
+                    <Badge tone="brand" className="text-[10px]">
+                      {activeDriver.destination.category}
+                    </Badge>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
           </>
         )}
 
         {/* Multi-Driver Mode: Render Inactive Driver Polylines (semi-transparent) */}
         {mode === 'multi-driver' &&
           drivers.map((drv) => {
-            if (drv.id === selectedId || !drv.route) return null;
+            if (drv.id === selectedId || !drv.route || !drv.route.coordinates) return null;
             return (
               <Polyline
                 key={`route-${drv.id}`}
@@ -287,10 +291,14 @@ export default function RoadSnappedMap({
         {/* Live Truck Markers for All Drivers */}
         {drivers.map((drv) => {
           const isSelected = drv.id === selectedId;
+          const lat = Number(drv.currentLat ?? 23.2156);
+          const lng = Number(drv.currentLng ?? 72.6369);
+          if (isNaN(lat) || isNaN(lng)) return null;
+
           return (
             <Marker
               key={drv.id}
-              position={[drv.currentLat, drv.currentLng]}
+              position={[lat, lng]}
               icon={createTruckIcon(drv.heading, drv.status, isSelected)}
               eventHandlers={{
                 click: () => {

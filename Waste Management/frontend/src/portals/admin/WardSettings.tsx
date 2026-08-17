@@ -85,16 +85,59 @@ function MapFitPolygon({ points }: { points: Point[] }) {
   return null;
 }
 
-/** Helper component to invalidate map size when toggling fullscreen */
-function MapResizeInvalidator({ isFullscreen }: { isFullscreen: boolean }) {
-  const map = useMap();
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      map.invalidateSize();
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [map, isFullscreen]);
-  return null;
+/** Dedicated Draggable Vertex Marker to maintain smooth Leaflet native mouse drag sessions */
+function DraggableVertexMarker({
+  index,
+  point,
+  onPositionChange,
+  isPermanentTooltip = false,
+}: {
+  index: number;
+  point: Point;
+  onPositionChange: (index: number, lat: number, lng: number) => void;
+  isPermanentTooltip?: boolean;
+}) {
+  const markerRef = useRef<L.Marker>(null);
+
+  const eventHandlers = useMemo(
+    () => ({
+      drag(e: any) {
+        const marker = e.target;
+        if (marker) {
+          const latlng = marker.getLatLng();
+          onPositionChange(index, latlng.lat, latlng.lng);
+        }
+      },
+      dragend(e: any) {
+        const marker = e.target;
+        if (marker) {
+          const latlng = marker.getLatLng();
+          onPositionChange(index, latlng.lat, latlng.lng);
+        }
+      },
+    }),
+    [index, onPositionChange]
+  );
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={[point.lat, point.lng]}
+      icon={createVertexIcon(index)}
+      draggable={true}
+      autoPan={true}
+      eventHandlers={eventHandlers}
+    >
+      <Tooltip direction="top" offset={[0, -14]} opacity={0.95} permanent={isPermanentTooltip}>
+        <div className="text-center font-sans py-0.5">
+          <strong className="text-emerald-700 font-bold block">Point #{index + 1}</strong>
+          <span className="text-[10px] text-slate-700 font-mono block">
+            {point.lat.toFixed(5)}, {point.lng.toFixed(5)}
+          </span>
+        </div>
+      </Tooltip>
+    </Marker>
+  );
 }
 
 export default function WardSettings() {
@@ -508,37 +551,18 @@ export default function WardSettings() {
                     />
                   )}
 
-                  {/* Draggable Vertex Handles at each corner */}
+                  {/* Draggable Vertex Handles at each corner using dedicated uncoupled drag session */}
                   {points.map((pt, idx) => (
-                    <Marker
+                    <DraggableVertexMarker
                       key={`modal-vertex-${idx}`}
-                      position={[pt.lat, pt.lng]}
-                      icon={createVertexIcon(idx)}
-                      draggable={true}
-                      autoPan={true}
-                      eventHandlers={{
-                        drag(e) {
-                          const latlng = e.target.getLatLng();
-                          handlePointDrag(idx, latlng.lat, latlng.lng);
-                        },
-                        dragend(e) {
-                          const latlng = e.target.getLatLng();
-                          handlePointDrag(idx, latlng.lat, latlng.lng);
-                        },
-                      }}
-                    >
-                      <Tooltip direction="top" offset={[0, -12]} opacity={0.95}>
-                        <div className="text-center font-sans py-0.5">
-                          <strong className="text-emerald-700 font-bold block">Point #{idx + 1}</strong>
-                          <span className="text-[10px] text-slate-700 font-mono block">{pt.lat.toFixed(5)}, {pt.lng.toFixed(5)}</span>
-                        </div>
-                      </Tooltip>
-                    </Marker>
+                      index={idx}
+                      point={pt}
+                      onPositionChange={handlePointDrag}
+                    />
                   ))}
 
                   <MapClickHandler onAddPoint={handleAddPoint} />
                   <MapFitPolygon points={points} />
-                  <MapResizeInvalidator isFullscreen={isFullscreenMap} />
                 </MapContainer>
 
                 {/* Top Overlay Controls: Fullscreen Expand & Tip Badge */}
@@ -750,35 +774,18 @@ export default function WardSettings() {
                 />
               )}
 
-              {/* Draggable Vertex Handles with Numbered Tooltips (Stable Key prevents unmounting during drag) */}
+              {/* Draggable Vertex Handles with Numbered Tooltips using dedicated uncoupled drag session */}
               {points.map((pt, idx) => (
-                <Marker
+                <DraggableVertexMarker
                   key={`fullscreen-vertex-${idx}`}
-                  position={[pt.lat, pt.lng]}
-                  icon={createVertexIcon(idx)}
-                  draggable={true}
-                  autoPan={true}
-                  eventHandlers={{
-                    drag(e) {
-                      const latlng = e.target.getLatLng();
-                      handlePointDrag(idx, latlng.lat, latlng.lng);
-                    },
-                    dragend(e) {
-                      const latlng = e.target.getLatLng();
-                      handlePointDrag(idx, latlng.lat, latlng.lng);
-                    },
-                  }}
-                >
-                  <Tooltip direction="top" offset={[0, -12]} opacity={0.95} permanent>
-                    <div className="text-center font-sans font-extrabold text-[11px] text-emerald-800">
-                      #{idx + 1}
-                    </div>
-                  </Tooltip>
-                </Marker>
+                  index={idx}
+                  point={pt}
+                  onPositionChange={handlePointDrag}
+                  isPermanentTooltip={true}
+                />
               ))}
 
               <MapClickHandler onAddPoint={handleAddPoint} />
-              <MapResizeInvalidator isFullscreen={isFullscreenMap} />
             </MapContainer>
           </div>
 
