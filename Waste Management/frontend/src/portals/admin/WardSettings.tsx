@@ -17,6 +17,8 @@ import {
   Sparkles,
   RotateCw,
   HelpCircle,
+  Undo2,
+  Redo2,
 } from 'lucide-react';
 import L from 'leaflet';
 import {
@@ -37,28 +39,29 @@ interface Point {
   lng: number;
 }
 
-// Custom draggable corner handle icon (High visibility White/Emerald circle with drop shadow)
+// Custom draggable corner handle icon (High visibility White/Emerald circle with large 34px touch/click target)
 function createVertexIcon(index: number) {
   return L.divIcon({
-    className: 'custom-vertex-handle',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    className: 'custom-vertex-handle-container',
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
     html: `<div style="
-      width: 26px;
-      height: 26px;
-      background-color: #ffffff;
-      border: 3.5px solid #10b981;
-      border-radius: 50%;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      width: 32px;
+      height: 32px;
+      background: radial-gradient(circle at 30% 30%, #ffffff, #f1f5f9);
+      border: 4px solid #059669;
+      border-radius: 9999px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.7), 0 0 0 2px rgba(255,255,255,0.9);
       cursor: grab;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 900;
-      color: #065f46;
+      color: #064e3b;
       user-select: none;
-      transition: transform 0.1s ease;
+      pointer-events: auto;
+      touch-action: none;
     ">#${index + 1}</div>`,
   });
 }
@@ -90,17 +93,22 @@ function DraggableVertexMarker({
   index,
   point,
   onPositionChange,
+  onDragStart,
   isPermanentTooltip = false,
 }: {
   index: number;
   point: Point;
   onPositionChange: (index: number, lat: number, lng: number) => void;
+  onDragStart?: () => void;
   isPermanentTooltip?: boolean;
 }) {
   const markerRef = useRef<L.Marker>(null);
 
   const eventHandlers = useMemo(
     () => ({
+      dragstart() {
+        if (onDragStart) onDragStart();
+      },
       drag(e: any) {
         const marker = e.target;
         if (marker) {
@@ -116,7 +124,7 @@ function DraggableVertexMarker({
         }
       },
     }),
-    [index, onPositionChange]
+    [index, onPositionChange, onDragStart]
   );
 
   return (
@@ -126,10 +134,18 @@ function DraggableVertexMarker({
       icon={createVertexIcon(index)}
       draggable={true}
       autoPan={true}
+      zIndexOffset={2000}
       eventHandlers={eventHandlers}
     >
-      <Tooltip direction="top" offset={[0, -14]} opacity={0.95} permanent={isPermanentTooltip}>
-        <div className="text-center font-sans py-0.5">
+      <Tooltip
+        direction="top"
+        offset={[0, -18]}
+        opacity={0.95}
+        permanent={isPermanentTooltip}
+        interactive={false}
+        className="pointer-events-none select-none"
+      >
+        <div className="text-center font-sans py-0.5 pointer-events-none">
           <strong className="text-emerald-700 font-bold block">Point #{index + 1}</strong>
           <span className="text-[10px] text-slate-700 font-mono block">
             {point.lat.toFixed(5)}, {point.lng.toFixed(5)}
@@ -159,6 +175,39 @@ export default function WardSettings() {
     { lat: 23.206223, lng: 72.616277 },
   ]);
 
+  // Undo & Redo History State Stacks
+  const [history, setHistory] = useState<Point[][]>([]);
+  const [future, setFuture] = useState<Point[][]>([]);
+
+  const recordHistorySnapshot = () => {
+    setHistory((prev) => [...prev.slice(-30), points.map((p) => ({ ...p }))]);
+    setFuture([]);
+  };
+
+  const handleUndo = () => {
+    if (history.length === 0) {
+      toast.info('No more steps to undo');
+      return;
+    }
+    const previous = history[history.length - 1];
+    setFuture((prev) => [points.map((p) => ({ ...p })), ...prev]);
+    setHistory((prev) => prev.slice(0, prev.length - 1));
+    setPoints(previous);
+    toast.info('↺ Undo: Reverted boundary change');
+  };
+
+  const handleRedo = () => {
+    if (future.length === 0) {
+      toast.info('No more steps to redo');
+      return;
+    }
+    const next = future[0];
+    setHistory((prev) => [...prev, points.map((p) => ({ ...p }))]);
+    setFuture((prev) => prev.slice(1));
+    setPoints(next);
+    toast.info('↻ Redo: Reapplied boundary change');
+  };
+
   // Handle ESC key to exit fullscreen map mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -168,11 +217,19 @@ export default function WardSettings() {
         } else if (modalOpen) {
           setModalOpen(false);
         }
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        if (e.shiftKey) {
+          handleRedo();
+        } else {
+          handleUndo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        handleRedo();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFullscreenMap, modalOpen]);
+  }, [isFullscreenMap, modalOpen, history, future, points]);
 
   const wards = useQuery({
     queryKey: ['admin', 'wards'],
@@ -221,6 +278,8 @@ export default function WardSettings() {
 
   const resetForm = () => {
     setForm({ id: '', name: '', code: '', zone: '', population: 0, slaMinutes: 1440 });
+    setHistory([]);
+    setFuture([]);
     setPoints([
       { lat: 23.196603, lng: 72.59669 },
       { lat: 23.197304, lng: 72.60610 },
@@ -238,6 +297,8 @@ export default function WardSettings() {
       population: w.population || 0,
       slaMinutes: w.slaMinutes || 1440,
     });
+    setHistory([]);
+    setFuture([]);
 
     // Extract coordinates from boundary GeoJSON
     try {
@@ -265,6 +326,7 @@ export default function WardSettings() {
   };
 
   const handlePointChange = (index: number, field: 'lat' | 'lng', val: string) => {
+    recordHistorySnapshot();
     const num = parseFloat(val);
     setPoints((prev) => {
       const copy = [...prev];
@@ -277,6 +339,7 @@ export default function WardSettings() {
   };
 
   const handleAddPoint = (lat?: number, lng?: number) => {
+    recordHistorySnapshot();
     if (lat !== undefined && lng !== undefined) {
       setPoints((prev) => [...prev, { lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) }]);
       toast.info(`Added Point ${points.length + 1} at Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
@@ -293,12 +356,15 @@ export default function WardSettings() {
       toast.warn('A ward boundary requires at least 3 points.');
       return;
     }
+    recordHistorySnapshot();
     setPoints((prev) => prev.filter((_, i) => i !== index));
+    toast.info(`Deleted Point #${index + 1}`);
   };
 
   /** Sorts points clockwise around their center of mass to fix crossed/hourglass boundaries */
   const handleSortPerimeter = () => {
     if (points.length < 3) return;
+    recordHistorySnapshot();
     const center = centerCoord;
     const sorted = [...points].sort((a, b) => {
       const angleA = Math.atan2(a.lat - center[0], a.lng - center[1]);
@@ -538,10 +604,11 @@ export default function WardSettings() {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
 
-                  {/* Polygon shape */}
+                  {/* Polygon shape with non-blocking interactive=false */}
                   {points.length >= 3 && (
                     <Polygon
                       positions={points.map((p) => [p.lat, p.lng])}
+                      interactive={false}
                       pathOptions={{
                         color: '#16a34a',
                         fillColor: '#16a34a',
@@ -558,6 +625,7 @@ export default function WardSettings() {
                       index={idx}
                       point={pt}
                       onPositionChange={handlePointDrag}
+                      onDragStart={recordHistorySnapshot}
                     />
                   ))}
 
@@ -565,11 +633,33 @@ export default function WardSettings() {
                   <MapFitPolygon points={points} />
                 </MapContainer>
 
-                {/* Top Overlay Controls: Fullscreen Expand & Tip Badge */}
+                {/* Top Overlay Controls: Fullscreen Expand, Undo/Redo & Tip Badge */}
                 <div className="absolute top-2.5 left-2.5 right-2.5 z-[1000] flex items-center justify-between pointer-events-none">
-                  <div className="bg-black/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white tracking-wide border border-white/20 flex items-center gap-1.5 shadow-md">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    Drag dots or click to add point
+                  <div className="flex items-center gap-1.5 pointer-events-auto">
+                    <div className="bg-black/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white tracking-wide border border-white/20 flex items-center gap-1.5 shadow-md">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                      Drag dots or click to add
+                    </div>
+
+                    {/* Quick Undo & Redo Buttons */}
+                    <button
+                      type="button"
+                      onClick={handleUndo}
+                      disabled={history.length === 0}
+                      className="bg-black/80 hover:bg-black text-white p-1.5 rounded-lg border border-white/20 disabled:opacity-40 disabled:cursor-not-allowed shadow-md transition cursor-pointer"
+                      title="Undo last change (Ctrl+Z)"
+                    >
+                      <Undo2 className="h-3.5 w-3.5 text-emerald-400" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRedo}
+                      disabled={future.length === 0}
+                      className="bg-black/80 hover:bg-black text-white p-1.5 rounded-lg border border-white/20 disabled:opacity-40 disabled:cursor-not-allowed shadow-md transition cursor-pointer"
+                      title="Redo change (Ctrl+Y)"
+                    >
+                      <Redo2 className="h-3.5 w-3.5 text-emerald-400" />
+                    </button>
                   </div>
 
                   {/* Expand to Full Screen Map Button */}
@@ -596,25 +686,33 @@ export default function WardSettings() {
 
                     {/* Latitude Input */}
                     <div className="flex-1">
+                      <label className="text-[10px] uppercase font-bold text-muted block mb-0.5">
+                        Latitude
+                      </label>
                       <input
                         type="number"
                         step="any"
                         value={pt.lat}
                         onChange={(e) => handlePointChange(idx, 'lat', e.target.value)}
-                        placeholder="Latitude"
-                        className="field py-2 text-fluid-xs font-mono rounded-xl border border-line bg-surface text-ink w-full"
+                        className="field font-mono text-xs w-full py-1.5"
+                        placeholder="23.2156"
+                        required
                       />
                     </div>
 
                     {/* Longitude Input */}
                     <div className="flex-1">
+                      <label className="text-[10px] uppercase font-bold text-muted block mb-0.5">
+                        Longitude
+                      </label>
                       <input
                         type="number"
                         step="any"
                         value={pt.lng}
                         onChange={(e) => handlePointChange(idx, 'lng', e.target.value)}
-                        placeholder="Longitude"
-                        className="field py-2 text-fluid-xs font-mono rounded-xl border border-line bg-surface text-ink w-full"
+                        className="field font-mono text-xs w-full py-1.5"
+                        placeholder="72.6369"
+                        required
                       />
                     </div>
 
@@ -623,12 +721,8 @@ export default function WardSettings() {
                       type="button"
                       onClick={() => handleDeletePoint(idx)}
                       disabled={points.length <= 3}
-                      className={`p-2 rounded-xl border border-transparent transition cursor-pointer ${
-                        points.length <= 3
-                          ? 'text-muted/40 cursor-not-allowed'
-                          : 'text-danger hover:bg-danger/10 hover:border-danger/20'
-                      }`}
-                      title={points.length <= 3 ? 'Minimum 3 points required' : 'Delete point'}
+                      className="self-end mb-1 p-2 rounded-xl border border-line bg-surface text-muted hover:text-red-600 hover:border-red-300 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+                      title={points.length <= 3 ? 'Minimum 3 points required' : 'Delete this corner'}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -636,30 +730,44 @@ export default function WardSettings() {
                 ))}
               </div>
 
-              {/* Action Buttons: Add Point & Load GeoJSON */}
-              <div className="space-y-2.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleAddPoint()}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-line bg-surface hover:bg-sunken text-fluid-xs font-bold text-ink transition cursor-pointer"
-                >
-                  <Plus className="h-4 w-4 text-brand" /> Add point manually
-                </button>
+              {/* Add Point Row Actions */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-line">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleAddPoint()}
+                    className="btn btn-outline text-xs py-1.5 px-3 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Add point</span>
+                  </button>
 
-                <label className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-line bg-surface hover:bg-sunken text-fluid-xs font-bold text-ink transition cursor-pointer">
-                  <Upload className="h-4 w-4 text-muted" /> Load from a .geojson file
+                  <button
+                    type="button"
+                    onClick={handleSortPerimeter}
+                    className="btn btn-outline text-xs py-1.5 px-3 flex items-center gap-1 cursor-pointer"
+                    title="Uncross and fix boundary perimeter"
+                  >
+                    <RotateCw className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Fix Perimeter</span>
+                  </button>
+                </div>
+
+                <label
+                  htmlFor="geojson-upload"
+                  className="btn btn-outline text-xs py-1.5 px-3 flex items-center gap-1 cursor-pointer"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  <span>Import GeoJSON</span>
                   <input
+                    id="geojson-upload"
                     type="file"
-                    accept=".json,.geojson,application/geo+json"
-                    className="sr-only"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleGeoJsonUpload(file);
-                    }}
+                    accept=".json,.geojson"
+                    onChange={handleGeoJsonImport}
+                    className="hidden"
                   />
                 </label>
               </div>
-
             </div>
 
             {/* Modal Sticky Bottom Footer with Solid Green Save Button */}
@@ -712,8 +820,33 @@ export default function WardSettings() {
               </div>
             </div>
 
-            {/* Quick Actions & Minimize / Exit (ESC) */}
+            {/* Quick Actions & Undo/Redo & Minimize / Exit (ESC) */}
             <div className="pointer-events-auto flex items-center gap-2">
+              
+              {/* Undo & Redo Tool Buttons */}
+              <div className="flex items-center gap-1 bg-black/90 border border-slate-700 p-1 rounded-2xl shadow-xl">
+                <button
+                  type="button"
+                  onClick={handleUndo}
+                  disabled={history.length === 0}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Undo last action (Ctrl+Z)"
+                >
+                  <Undo2 className="h-4 w-4 text-emerald-400" />
+                  <span className="hidden sm:inline">Undo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRedo}
+                  disabled={future.length === 0}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+                  title="Redo action (Ctrl+Y)"
+                >
+                  <Redo2 className="h-4 w-4 text-emerald-400" />
+                  <span className="hidden sm:inline">Redo</span>
+                </button>
+              </div>
+
               <button
                 type="button"
                 onClick={handleSortPerimeter}
@@ -761,10 +894,11 @@ export default function WardSettings() {
                 maxZoom={19}
               />
 
-              {/* Fullscreen Polygon */}
+              {/* Fullscreen Polygon with non-blocking interactive=false */}
               {points.length >= 3 && (
                 <Polygon
                   positions={points.map((p) => [p.lat, p.lng])}
+                  interactive={false}
                   pathOptions={{
                     color: '#10b981',
                     fillColor: '#10b981',
@@ -781,6 +915,7 @@ export default function WardSettings() {
                   index={idx}
                   point={pt}
                   onPositionChange={handlePointDrag}
+                  onDragStart={recordHistorySnapshot}
                   isPermanentTooltip={true}
                 />
               ))}
