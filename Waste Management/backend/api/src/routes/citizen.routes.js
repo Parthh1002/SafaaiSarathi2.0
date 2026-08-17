@@ -8,6 +8,7 @@ import { prisma } from '../lib/prisma.js';
 import { PORTALS, WASTE_CATEGORIES, EMERGENCY_TYPES, CREDIT_RULES } from '../config/constants.js';
 import { createComplaint, serializeComplaint, findDuplicate, wardForPoint } from '../services/complaint.service.js';
 import { distanceMeters, boundsAround } from '../lib/geo.js';
+import { askGroqChatbot } from '../services/groq.service.js';
 
 const router = Router();
 router.use(requirePortal(PORTALS.CITIZEN), loadUser);
@@ -423,7 +424,7 @@ const maskName = (name) => {
   return parts.map((p, i) => (i === 0 ? p : `${p[0]}.`)).join(' ');
 };
 
-/** AI Safaai Sahayak Chatbot endpoint */
+/** AI Safaai Sahayak Chatbot endpoint powered by Groq Llama 3.3 */
 router.post(
   '/chatbot',
   asyncHandler(async (req, res) => {
@@ -434,6 +435,24 @@ router.post(
       })
       .parse(req.body);
 
+    const userContext = {
+      name: req.user.name,
+      credits: req.user.greenCredits,
+      ward: req.user.ward?.name,
+    };
+
+    // 1. Try Groq Cloud AI LLM (Llama 3.3 70B)
+    const aiReply = await askGroqChatbot({ message, lang, userContext });
+    if (aiReply) {
+      return res.json({
+        reply: aiReply,
+        answered: true,
+        aiPowered: true,
+        userContext,
+      });
+    }
+
+    // 2. Fallback rule-based responder if AI service is temporarily unavailable
     const query = message.toLowerCase();
     let reply = '';
     let answered = true;
@@ -475,10 +494,8 @@ router.post(
     res.json({
       reply,
       answered,
-      userContext: {
-        credits: req.user.greenCredits,
-        ward: req.user.ward?.name,
-      },
+      aiPowered: false,
+      userContext,
     });
   })
 );
