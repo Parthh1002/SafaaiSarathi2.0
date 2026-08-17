@@ -321,6 +321,22 @@ router.post(
       throw new HttpError(404, 'No active vehicle found for this driver or vehicle ID.');
     }
 
+    const { ids: allowedWardIds } = await scope(req);
+
+    // Validate that all complaints strictly belong to this officer's assigned ward
+    for (const id of targetComplaintIds) {
+      const c = await prisma.complaint.findUnique({ where: { id }, include: { ward: true } });
+      if (!c) throw new HttpError(404, `Complaint ${id} not found`);
+
+      const isAllowedWard = allowedWardIds === null || (c.wardId && allowedWardIds.includes(c.wardId));
+      if (!isAllowedWard || !c.wardId) {
+        throw new HttpError(
+          400,
+          `⚠️ This location does not fall within your ward. Assignment blocked for #${c.code}.`
+        );
+      }
+    }
+
     const assigned = [];
     for (const id of targetComplaintIds) {
       const payload = await transition({

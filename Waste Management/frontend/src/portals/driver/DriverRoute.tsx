@@ -19,11 +19,13 @@ import {
   Check,
   Radio,
   Gauge,
+  Wifi,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { Badge, Card, EmptyState, ErrorState, Loading, toast } from '../../components/ui';
 import RoadSnappedMap from '../../components/map/RoadSnappedMap';
 import { mockFleetEngine, SimulatedDriver } from '../../lib/mockFleetEngine';
+import { realGpsTracker, RealGpsLocation, GpsStatus } from '../../lib/realGpsTracker';
 import { useT } from '../../lib/i18n';
 
 export default function DriverRoute() {
@@ -31,14 +33,65 @@ export default function DriverRoute() {
   const [drivers, setDrivers] = useState<SimulatedDriver[]>([]);
   const [myDriverId, setMyDriverId] = useState<string>('drv-01');
   const [isCollected, setIsCollected] = useState(false);
+  const [realGpsStatus, setRealGpsStatus] = useState<GpsStatus>('CONNECTING');
+  const [realGpsFix, setRealGpsFix] = useState<RealGpsLocation | null>(null);
 
-  // Connect to the shared fleet engine (or WebSocket GPS feed)
+  // 1. Connect to Real Hardware GPS WatchPosition Stream
+  useEffect(() => {
+    realGpsTracker.startTracking(true);
+    const unsubscribeGps = realGpsTracker.subscribe((loc, status) => {
+      setRealGpsStatus(status);
+      if (loc) {
+        setRealGpsFix(loc);
+        // If this is the real test driver, update coordinates strictly from hardware GPS
+        setDrivers((prev) =>
+          prev.map((d) => {
+            if (d.id === myDriverId || d.id === 'drv-01') {
+              return {
+                ...d,
+                currentLat: loc.latitude,
+                currentLng: loc.longitude,
+                heading: loc.heading ?? d.heading,
+                speedKmh: loc.speed ?? d.speedKmh,
+                lastUpdated: new Date(loc.timestamp).toISOString(),
+              };
+            }
+            return d;
+          })
+        );
+      }
+    });
+
+    return () => {
+      unsubscribeGps();
+      realGpsTracker.stopTracking();
+    };
+  }, [myDriverId]);
+
+  // 2. Connect to Mock Fleet for other background vehicles
   useEffect(() => {
     const unsubscribe = mockFleetEngine.subscribe((updatedList) => {
-      setDrivers([...updatedList]);
+      setDrivers((prev) => {
+        // Keep real GPS fix for the active driver if available
+        if (realGpsFix) {
+          return updatedList.map((d) => {
+            if (d.id === myDriverId) {
+              return {
+                ...d,
+                currentLat: realGpsFix.latitude,
+                currentLng: realGpsFix.longitude,
+                speedKmh: realGpsFix.speed ?? 0,
+                heading: realGpsFix.heading ?? d.heading,
+              };
+            }
+            return d;
+          });
+        }
+        return [...updatedList];
+      });
     });
     return () => unsubscribe();
-  }, []);
+  }, [myDriverId, realGpsFix]);
 
   const currentDriver = drivers.find((d) => d.id === myDriverId) || drivers[0];
 
@@ -68,20 +121,36 @@ export default function DriverRoute() {
           </p>
         </div>
 
-        {/* Driver Selector for Testing Multiple Vehicle Routes */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-muted uppercase">Active Vehicle:</span>
-          <select
-            value={myDriverId}
-            onChange={(e) => setMyDriverId(e.target.value)}
-            className="field py-1.5 px-3 text-fluid-xs font-semibold rounded-xl border border-line bg-surface cursor-pointer"
-          >
-            {drivers.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name} ({d.vehicleNumber}) - {d.wardCode}
-              </option>
-            ))}
-          </select>
+        {/* GPS Hardware Telemetry Status & Vehicle Selector */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Real Hardware GPS Stream Indicator */}
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border border-emerald-500/30 bg-emerald-50/10 text-emerald-600 shadow-xs">
+            <span className={`h-2 w-2 rounded-full ${realGpsStatus === 'LIVE_GPS' ? 'bg-emerald-500 animate-ping' : 'bg-emerald-600'}`} />
+            <span>
+              {realGpsStatus === 'LIVE_GPS'
+                ? `Real GPS: Moving (±${realGpsFix?.accuracy || 4}m)`
+                : realGpsStatus === 'STATIONARY'
+                ? 'Real GPS: Stationary (0 km/h)'
+                : realGpsStatus === 'PERMISSION_DENIED'
+                ? 'GPS: Permission Denied'
+                : 'GPS: Connecting…'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-muted uppercase">Vehicle:</span>
+            <select
+              value={myDriverId}
+              onChange={(e) => setMyDriverId(e.target.value)}
+              className="field py-1 px-2.5 text-fluid-xs font-semibold rounded-xl border border-line bg-surface cursor-pointer"
+            >
+              {drivers.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name} ({d.vehicleNumber}) - {d.wardCode}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

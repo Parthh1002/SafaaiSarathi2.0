@@ -81,35 +81,48 @@ export async function createComplaint({
   const slaMinutes = emergency ? env.escalation.emergencyMinutes : meta.slaMinutes;
   const now = new Date();
 
-  const complaint = await prisma.complaint.create({
-    data: {
-      code: complaintCode(),
-      citizenId,
-      wardId: ward?.id ?? null,
-      category,
-      aiCategory: photo?.buffer ? aiCategory : null,
-      aiConfidence: confidence,
-      aiVerified: autoApproved && !ai.degraded,
-      reviewNeeded: !autoApproved || fraud.score >= env.ai.fraudReviewThreshold,
-      fraudScore: fraud.score,
-      fraudSignals: fraud.signals?.length ? { signals: fraud.signals, modelVersion: fraud.modelVersion } : undefined,
-      status: autoApproved && !duplicate ? 'VERIFIED' : 'PENDING',
-      severity: emergency ? 'CRITICAL' : meta.severity,
-      isEmergency: emergency,
-      channel,
-      description,
-      latitude,
-      longitude,
-      address,
-      photoUrl,
-      slaMinutes,
-      dueAt: new Date(now.getTime() + slaMinutes * 60_000),
-      duplicateOfId: duplicate?.complaint.id ?? null,
-    },
-    include: { ward: true, citizen: { select: { id: true, name: true } } },
-  });
+    const initialStatus = !ward ? 'REJECTED' : (autoApproved && !duplicate ? 'VERIFIED' : 'PENDING');
 
-  await addEvent(complaint.id, complaint.status, autoApproved ? `AI verified (${Math.round(confidence * 100)}% confidence)` : 'Awaiting verification', null);
+    const complaint = await prisma.complaint.create({
+      data: {
+        code: complaintCode(),
+        citizenId,
+        wardId: ward?.id ?? null,
+        category,
+        aiCategory: photo?.buffer ? aiCategory : null,
+        aiConfidence: confidence,
+        aiVerified: autoApproved && !ai.degraded,
+        reviewNeeded: !ward || !autoApproved || fraud.score >= env.ai.fraudReviewThreshold,
+        fraudScore: fraud.score,
+        fraudSignals: fraud.signals?.length ? { signals: fraud.signals, modelVersion: fraud.modelVersion } : undefined,
+        status: initialStatus,
+        severity: emergency ? 'CRITICAL' : meta.severity,
+        isEmergency: emergency,
+        channel,
+        description: !ward ? `[OUT OF WARD AREA] ${description || ''}`.trim() : description,
+        latitude,
+        longitude,
+        address,
+        photoUrl,
+        slaMinutes,
+        dueAt: new Date(now.getTime() + slaMinutes * 60_000),
+        duplicateOfId: duplicate?.complaint.id ?? null,
+      },
+      include: { ward: true, citizen: { select: { id: true, name: true } } },
+    });
+
+    if (!ward) {
+      await addEvent(complaint.id, 'REJECTED', 'Location out of municipal ward boundaries (Geofencing check failed)', null);
+      await notify({
+        userId: citizenId,
+        type: 'COMPLAINT_OUT_OF_WARD',
+        title: `${complaint.code} — Location Out of Service Area`,
+        body: 'Sorry, this location does not fall within our service ward area. Please contact your local ward office.',
+        payload: { complaintId: complaint.id },
+      });
+    } else {
+      await addEvent(complaint.id, complaint.status, autoApproved ? `AI verified (${Math.round(confidence * 100)}% confidence)` : 'Awaiting verification', null);
+    }
 
   // ---- Duplicate bookkeeping ---------------------------------------------
   if (duplicate) {
@@ -196,8 +209,9 @@ export async function createComplaint({
 }
 
 /**
- * Ward lookup: bounding-box pre-filter in SQL (indexed), exact ray-cast here.
- * This is the two-phase strategy PostGIS would run internally.
+ * Ward attribution: point-in-polygon check over candidate wards whose
+ * bounding box contains the point.
+ * Returns null if the point does not strictly fall inside any defined ward polygon.
  */
 export async function wardForPoint({ latitude, longitude }) {
   const candidates = await prisma.ward.findMany({
@@ -211,7 +225,7 @@ export async function wardForPoint({ latitude, longitude }) {
   for (const ward of candidates) {
     if (pointInPolygon({ latitude, longitude }, ward.boundary)) return ward;
   }
-  return candidates[0] ?? null;
+  return null;
 }
 
 /**
