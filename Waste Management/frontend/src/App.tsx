@@ -11,11 +11,32 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
-const Splash = lazy(() => import('./pages/Splash'));
-const CitizenPortal = lazy(() => import('./portals/citizen/CitizenPortal'));
-const DriverPortal = lazy(() => import('./portals/driver/DriverPortal'));
-const OfficerPortal = lazy(() => import('./portals/officer/OfficerPortal'));
-const AdminPortal = lazy(() => import('./portals/admin/AdminPortal'));
+/** Resilient lazy import that retries automatically on chunk load failure */
+function lazyRetry<T extends React.ComponentType<any>>(
+  factory: () => Promise<{ default: T }>
+) {
+  return lazy(async () => {
+    try {
+      return await factory();
+    } catch (error) {
+      console.warn('[App] Dynamic chunk import failed, retrying once...', error);
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      try {
+        return await factory();
+      } catch (retryError) {
+        console.error('[App] Retry failed, reloading window...', retryError);
+        window.location.reload();
+        throw retryError;
+      }
+    }
+  });
+}
+
+const Splash = lazyRetry(() => import('./pages/Splash'));
+const CitizenPortal = lazyRetry(() => import('./portals/citizen/CitizenPortal'));
+const DriverPortal = lazyRetry(() => import('./portals/driver/DriverPortal'));
+const OfficerPortal = lazyRetry(() => import('./portals/officer/OfficerPortal'));
+const AdminPortal = lazyRetry(() => import('./portals/admin/AdminPortal'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,24 +82,20 @@ const suspense = (node: React.ReactNode) => (
 );
 
 export default function App() {
-  // Check if this is a first-time landing visit or hard refresh
-  const [showSplash, setShowSplash] = useState(() => {
-    // Only show 3D intro if opening root URL '/' and hasn't been viewed in this browser session
-    const isRoot = window.location.pathname === '/' || window.location.pathname === '';
-    const hasSeenIntro = sessionStorage.getItem('ss_seen_intro');
-    return isRoot && !hasSeenIntro;
-  });
+  // STRICT: Every hard refresh / full page load forces Intro Splash first, then hands off to destination
+  const [showSplash, setShowSplash] = useState(true);
 
   const handleSplashDone = () => {
-    sessionStorage.setItem('ss_seen_intro', 'true');
     setShowSplash(false);
   };
 
   if (showSplash) {
     return (
-      <Suspense fallback={<div className="min-h-dvh bg-black" />}>
-        <Splash onDone={handleSplashDone} />
-      </Suspense>
+      <ErrorBoundary>
+        <Suspense fallback={<div className="min-h-dvh bg-black flex items-center justify-center text-emerald-500 font-mono text-xs">Loading Safaai Sarathi…</div>}>
+          <Splash onDone={handleSplashDone} />
+        </Suspense>
+      </ErrorBoundary>
     );
   }
 
