@@ -11,6 +11,7 @@ import { distanceMeters, boundsAround } from '../lib/geo.js';
 import { askGroqChatbot } from '../services/groq.service.js';
 import { classifyWaste } from '../services/ai.service.js';
 import { notify, notifyWardOfficers } from '../services/notification.service.js';
+import { emitTo, SOCKET_EVENTS } from '../sockets/realtime.js';
 
 const router = Router();
 router.use(requirePortal(PORTALS.CITIZEN), loadUser);
@@ -698,23 +699,32 @@ router.post(
       },
     });
 
-    // Notify citizen confirmation
-    await notify({
-      userId: req.user.id,
-      type: 'SYSTEM',
-      title: `Scheduled Pickup Requested (${code})`,
-      body: `Your request for "${body.eventReason}" on ${targetDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} has been submitted for ward officer review.`,
-      payload: { requestId: request.id, code },
-    });
+    // Multi-role real-time sync across Citizen, Officer, Driver, and Admin
+    try {
+      const rooms = [request.wardId ? `ward:${request.wardId}` : null, 'city', `user:${req.user.id}`].filter(Boolean);
+      emitTo(rooms, 'scheduled:new', request);
+      emitTo(rooms, SOCKET_EVENTS.COMPLAINT_NEW, { ...request, isScheduledPickup: true });
 
-    // Notify Ward Officers
-    if (request.wardId) {
-      await notifyWardOfficers(request.wardId, {
+      // Notify citizen confirmation
+      await notify({
+        userId: req.user.id,
         type: 'SYSTEM',
-        title: `New Scheduled Request: ${code}`,
-        body: `New event request in ${request.ward?.name || 'your ward'}: "${body.eventReason}" scheduled for ${targetDate.toLocaleDateString('en-IN')}.`,
+        title: `Scheduled Pickup Requested (${code})`,
+        body: `Your request for "${body.eventReason}" on ${targetDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })} has been submitted for ward officer review.`,
         payload: { requestId: request.id, code },
       });
+
+      // Notify Ward Officers
+      if (request.wardId) {
+        await notifyWardOfficers(request.wardId, {
+          type: 'SYSTEM',
+          title: `New Scheduled Request: ${code}`,
+          body: `New event request in ${request.ward?.name || 'your ward'}: "${body.eventReason}" scheduled for ${targetDate.toLocaleDateString('en-IN')}.`,
+          payload: { requestId: request.id, code },
+        });
+      }
+    } catch (notifErr) {
+      console.warn('Notification/broadcast error:', notifErr);
     }
 
     res.status(201).json(request);
