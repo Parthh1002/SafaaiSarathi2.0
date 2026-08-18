@@ -339,27 +339,35 @@ export function Chatbot() {
         </span>
       </button>
 
-      {/* Backdrop for Mobile / Tablet Focus */}
+      {/* Universal Luxury Backdrop with Frosted Blur across Desktop & Mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs transition-opacity duration-300 sm:bg-transparent sm:backdrop-blur-none sm:pointer-events-none"
+          className="fixed inset-0 z-50 bg-black/65 backdrop-blur-md transition-all duration-300 animate-in fade-in"
           onClick={() => setIsOpen(false)}
+          aria-hidden="true"
         />
       )}
 
-      {/* Floating Chat Window Modal (Bottom sheet on mobile, anchored card on desktop) */}
+      {/* Floating Chat Window Modal (Bottom sheet on mobile, luxury floating card on desktop) */}
       {isOpen && (
         <div
-          className="fixed inset-x-0 bottom-0 z-50 flex h-[90vh] max-h-[850px] w-full flex-col overflow-hidden rounded-t-[2rem] border border-line bg-surface shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:h-[600px] sm:w-[420px] sm:rounded-3xl animate-in slide-in-from-bottom-8 zoom-in-95 duration-300"
+          className="fixed inset-x-0 bottom-0 z-50 flex h-[92vh] max-h-[900px] w-full flex-col overflow-hidden rounded-t-[2.2rem] border-t sm:border border-line/80 bg-surface/98 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.6),0_0_45px_rgba(16,185,129,0.25)] backdrop-blur-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:h-[620px] sm:w-[430px] sm:rounded-[2rem] sm:ring-1 sm:ring-white/20 dark:sm:ring-emerald-500/20 animate-in slide-in-from-bottom-8 zoom-in-95 duration-300 ease-out"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
-          {/* Mobile Sheet Drag Pill Handle */}
-          <div className="flex justify-center pt-2.5 pb-1 sm:hidden">
-            <div className="h-1.5 w-12 rounded-full bg-line/80" />
+          {/* Top Indian Tricolor Ambient Strip */}
+          <div className="flex h-1 w-full shrink-0">
+            <div className="flex-1 bg-[#FF9933]" />
+            <div className="flex-1 bg-white dark:bg-white/80" />
+            <div className="flex-1 bg-[#138808]" />
+          </div>
+
+          {/* Mobile Sheet Drag Handle */}
+          <div className="flex justify-center pt-2 pb-1 sm:hidden cursor-pointer" onClick={() => setIsOpen(false)}>
+            <div className="h-1.5 w-12 rounded-full bg-muted/40 hover:bg-muted/60 transition" />
           </div>
 
           {/* Premium Chat Header */}
-          <div className="flex items-center justify-between border-b border-line bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-700 px-4 py-3 text-white shadow-md">
+          <div className="flex items-center justify-between border-b border-emerald-700/30 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 px-4 py-3 text-white shadow-md">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/15 backdrop-blur-md shadow-inner">
                 <Bot className="h-6 w-6 text-emerald-100" />
