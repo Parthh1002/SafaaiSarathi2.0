@@ -162,9 +162,10 @@ router.post(
 /**
  * Report filing (plan §2.1). Accepts multipart with a required photo or
  * JSON with a photoUrl already uploaded.
+ * Aliases: POST /api/citizen/report & POST /api/citizen/complaints
  */
 router.post(
-  '/report',
+  ['/report', '/complaints'],
   reportLimiter,
   upload.single('photo'),
   asyncHandler(async (req, res) => {
@@ -174,7 +175,7 @@ router.post(
       const persisted = await persist(file, 'complaints');
       photoUrl = persisted.url;
     }
-    if (!photoUrl) {
+    if (!photoUrl && !file) {
       throw new HttpError(400, 'A photo is required to file a report');
     }
 
@@ -183,23 +184,28 @@ router.post(
         latitude: z.coerce.number().min(-90).max(90),
         longitude: z.coerce.number().min(-180).max(180),
         address: z.string().max(300).optional(),
-        userCategory: z.enum(WASTE_CATEGORIES).optional(),
+        userCategory: z.string().optional(),
+        category: z.string().optional(),
         description: z.string().max(1000).optional(),
         channel: z.enum(['APP', 'WEB', 'WHATSAPP', 'IVR']).optional(),
         isEmergency: z.coerce.boolean().optional(),
       })
       .parse(req.body);
 
+    const declaredCat = body.userCategory || body.category || 'garbage_pile';
+
     const result = await createComplaint({
       citizenId: req.user.id,
+      photo: file ? { buffer: file.buffer, mimetype: file.mimetype, filename: file.originalname } : null,
+      photoUrl,
       latitude: body.latitude,
       longitude: body.longitude,
       address: body.address,
-      userCategory: body.userCategory,
+      declaredCategory: declaredCat,
       description: body.description,
-      photoUrl,
       channel: body.channel || 'APP',
       isEmergency: Boolean(body.isEmergency),
+      req,
     });
 
     res.status(201).json(result);
@@ -234,36 +240,60 @@ router.post(
       latitude: body.latitude,
       longitude: body.longitude,
       address: body.address,
-      userCategory: body.category,
+      declaredCategory: body.category,
       description: body.description,
       photoUrl: photoUrl || 'https://images.unsplash.com/photo-1584744982491-665216d95f8b?w=800',
       channel: 'APP',
       isEmergency: true,
+      req,
     });
 
     res.status(201).json(result);
   })
 );
 
-/** Duplicate pre-check: called as the user frames the photo. */
+/** Duplicate pre-check & nearby complaints list. */
 router.get(
-  '/duplicates/check',
+  ['/duplicates/check', '/complaints/nearby'],
   asyncHandler(async (req, res) => {
-    const { latitude, longitude } = coordinate.parse(req.query);
+    const lat = req.query.latitude || req.query.lat;
+    const lng = req.query.longitude || req.query.lng;
+    if (!lat || !lng) return res.json({ items: [], duplicate: null });
+
+    const latitude = Number(lat);
+    const longitude = Number(lng);
     const category = req.query.category ? String(req.query.category) : undefined;
     const ward = await wardForPoint({ latitude, longitude });
     const duplicate = await findDuplicate({ latitude, longitude, category, wardId: ward?.id });
-    if (!duplicate) return res.json({ duplicate: null });
-    res.json({
-      duplicate: {
-        id: duplicate.complaint.id,
-        code: duplicate.complaint.code,
-        category: duplicate.complaint.category,
-        status: duplicate.complaint.status,
-        photoUrl: duplicate.complaint.photoUrl,
-        distanceMeters: Math.round(duplicate.distanceMeters),
-        upvotes: duplicate.complaint.upvotes,
+
+    // Also fetch nearby active complaints in radius
+    const radius = Math.min(5000, Number(req.query.radiusMeters || req.query.radius) || 1500);
+    const bounds = boundsAround({ latitude, longitude }, radius);
+
+    const complaints = await prisma.complaint.findMany({
+      where: {
+        latitude: { gte: bounds.minLat, lte: bounds.maxLat },
+        longitude: { gte: bounds.minLng, lte: bounds.maxLng },
+        status: { in: ['SUBMITTED', 'VERIFIED', 'ASSIGNED', 'IN_PROGRESS'] },
       },
+      include: { ward: true },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    res.json({
+      items: complaints.map((c) => serializeComplaint(c)),
+      duplicate: duplicate
+        ? {
+            id: duplicate.complaint.id,
+            code: duplicate.complaint.code,
+            category: duplicate.complaint.category,
+            status: duplicate.complaint.status,
+            photoUrl: duplicate.complaint.photoUrl,
+            distanceMeters: Math.round(duplicate.distanceMeters),
+            upvotes: duplicate.complaint.upvotes,
+          }
+        : null,
     });
   })
 );
