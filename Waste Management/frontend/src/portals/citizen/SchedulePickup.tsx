@@ -29,20 +29,25 @@ import { BaseMap, LocationPicker } from '../../components/map/Map';
 import { useT } from '../../lib/i18n';
 
 const geocodeCache = new Map<string, string>();
+let geocodeReqId = 0;
 
 async function reverseGeocodeLocation(lat: number, lng: number): Promise<string> {
-  const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+  const cacheKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
   if (geocodeCache.has(cacheKey)) {
     return geocodeCache.get(cacheKey)!;
   }
 
+  // 1. Try OpenStreetMap Nominatim (High detail: building, street, society, sector)
   try {
-    const res = await fetch(
+    const osmRes = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-      { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(3500) }
+      {
+        headers: { 'Accept-Language': 'en', 'User-Agent': 'SafaaiSarathi-CivicPlatform/2.0' },
+        signal: AbortSignal.timeout(2500),
+      }
     );
-    if (res.ok) {
-      const data = await res.json();
+    if (osmRes.ok) {
+      const data = await osmRes.json();
       if (data && data.address) {
         const addr = data.address;
         const place =
@@ -55,51 +60,54 @@ async function reverseGeocodeLocation(lat: number, lng: number): Promise<string>
           addr.hamlet ||
           addr.village ||
           '';
-        const area = addr.suburb || addr.city_district || addr.county || addr.town || addr.city || '';
-        const city = addr.city || addr.town || addr.state_district || 'Gandhinagar';
+        const locality = addr.suburb || addr.neighbourhood || addr.city_district || addr.county || addr.town || addr.city || '';
+        const city = addr.city || addr.town || addr.state_district || addr.county || 'Gandhinagar';
         const state = addr.state || 'Gujarat';
         const postcode = addr.postcode ? ` ${addr.postcode}` : '';
 
-        const components = [place, area && area !== place ? area : null, city, state + postcode].filter(Boolean);
-        if (components.length > 0) {
-          const formatted = `${components.join(', ')} (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
-          geocodeCache.set(cacheKey, formatted);
-          return formatted;
+        const parts = [
+          place,
+          locality && locality !== place ? locality : null,
+          city && city !== locality && city !== place ? city : null,
+          state + postcode,
+        ].filter(Boolean);
+
+        if (parts.length > 0) {
+          const result = `${parts.join(', ')} (Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)})`;
+          geocodeCache.set(cacheKey, result);
+          return result;
         }
       }
     }
   } catch {
-    // Network or timeout fallback
+    // Fallback to secondary provider
   }
 
-  const fallback = estimateGandhinagarSector(lat, lng);
-  const fallbackFormatted = `${fallback} (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
-  geocodeCache.set(cacheKey, fallbackFormatted);
-  return fallbackFormatted;
-}
+  // 2. Secondary Provider: BigDataCloud Reverse Geocoding API
+  try {
+    const bdcRes = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
+      { signal: AbortSignal.timeout(2500) }
+    );
+    if (bdcRes.ok) {
+      const bdc = await bdcRes.json();
+      const loc = bdc.locality || bdc.city || bdc.principalSubdivision || '';
+      const state = bdc.principalSubdivision || 'Gujarat';
+      const postcode = bdc.postcode ? ` ${bdc.postcode}` : '';
+      if (loc) {
+        const result = `${loc}, ${state}${postcode} (Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)})`;
+        geocodeCache.set(cacheKey, result);
+        return result;
+      }
+    }
+  } catch {
+    // Fallback to coordinates
+  }
 
-function estimateGandhinagarSector(lat: number, lng: number): string {
-  if (lat >= 23.20 && lat <= 23.27 && lng >= 72.60 && lng <= 72.68) {
-    if (lat > 23.23 && lng < 72.63) return 'Sector 1 / Infocity, Gandhinagar, Gujarat 382007';
-    if (lat > 23.23 && lng >= 72.63 && lng < 72.65) return 'Sector 2 / Sector 3, Gandhinagar, Gujarat 382006';
-    if (lat > 23.22 && lng < 72.64) return 'Sector 4 / Sector 5, Gandhinagar, Gujarat 382006';
-    if (lat > 23.21 && lng < 72.64) return 'Sector 6 / GH-Road, Gandhinagar, Gujarat 382006';
-    if (lat > 23.21 && lng >= 72.64) return 'Sector 7 / Sector 8 Market, Gandhinagar, Gujarat 382007';
-    if (lat > 23.20 && lng < 72.64) return 'Sector 11 / Sachivalaya, Gandhinagar, Gujarat 382010';
-    if (lat > 23.20 && lng >= 72.64) return 'Sector 12 / Sector 13, Gandhinagar, Gujarat 382016';
-    if (lat > 23.19 && lng >= 72.64) return 'Sector 21 / Shopping Center, Gandhinagar, Gujarat 382021';
-    return 'Sector 6 / GH-Circle, Gandhinagar, Gujarat 382006';
-  }
-  if (lat >= 23.16 && lat < 23.20 && lng >= 72.63 && lng <= 72.68) {
-    return 'Kudasan / Bhaijipura Area, Gandhinagar, Gujarat 382421';
-  }
-  if (lng > 72.75) {
-    return 'Dehgam Kapadvanj Road, Gandhinagar District, Gujarat 382305';
-  }
-  if (lat < 23.15) {
-    return 'Chandkheda / SG Highway Corridor, Gujarat 382424';
-  }
-  return 'Gandhinagar Municipal Area, Gujarat 382006';
+  // 3. Fallback: Dynamic GPS pin coordinates
+  const result = `Pinned Location on Map (Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)})`;
+  geocodeCache.set(cacheKey, result);
+  return result;
 }
 
 type Step = 'where' | 'what' | 'when' | 'review';
@@ -151,15 +159,21 @@ export default function SchedulePickup() {
   async function updateCoordinates(lat: number, lng: number) {
     setPosition({ lat, lng });
     setGeocoding(true);
-    // Instant responsive feedback
-    const fastSector = estimateGandhinagarSector(lat, lng);
-    setAddress(`${fastSector} (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`);
 
+    const currentReq = ++geocodeReqId;
     try {
       const realAddress = await reverseGeocodeLocation(lat, lng);
-      setAddress(realAddress);
+      if (currentReq === geocodeReqId) {
+        setAddress(realAddress);
+      }
+    } catch {
+      if (currentReq === geocodeReqId) {
+        setAddress(`Pinned Location (Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)})`);
+      }
     } finally {
-      setGeocoding(false);
+      if (currentReq === geocodeReqId) {
+        setGeocoding(false);
+      }
     }
   }
 
