@@ -589,17 +589,13 @@ export default function Splash({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      {/* Bottom Bar: Skip Button & Tech Version */}
-      <div className="relative z-20 flex w-full max-w-5xl items-center justify-between px-4 pb-2">
-        <span className="text-[0.7rem] font-semibold tracking-widest uppercase text-white/50">
-          Autonomous Fleet v2.0
-        </span>
-
+      {/* Bottom Bar: Skip Button */}
+      <div className="relative z-20 flex w-full max-w-5xl items-center justify-end px-4 pb-2">
         {/* Skip intro button */}
         <button
           type="button"
           onClick={skip}
-          className="group flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white/80 backdrop-blur-md transition-all hover:border-emerald-400/60 hover:bg-emerald-500/20 hover:text-white active:scale-95 shadow-lg shadow-black/30"
+          className="group flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white/80 backdrop-blur-md transition-all hover:border-emerald-400/60 hover:bg-emerald-500/20 hover:text-white active:scale-95 shadow-lg shadow-black/30 cursor-pointer"
         >
           <span>Skip</span>
           <svg className="h-3 w-3 transition-transform group-hover:translate-x-0.5" viewBox="0 0 12 12" fill="currentColor">
