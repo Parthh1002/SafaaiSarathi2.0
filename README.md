@@ -1,12 +1,19 @@
 <div align="center">
 
-# 🌿 SAFAAI SARATHI 2.0
-### *सफ़ाई सारथी • Next-Generation Autonomous Civic Waste Management Ecosystem*
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:34D399,30:10B981,70:059669,100:000000&height=280&section=header&text=Safaai%20Sarathi%202.0&fontSize=72&fontAlignY=38&fontColor=ffffff&desc=सफ़ाई%20सारथी%20•%20Next-Generation%20Autonomous%20Civic%20Waste%20Management%20Ecosystem&descAlignY=60&descAlign=50&animation=fadeIn" width="100%" alt="Safaai Sarathi 2.0 Header" />
+
+<br/>
+
+<a href="https://safaai-sarathi2-0.vercel.app" target="_blank">
+  <img src="https://readme-typing-svg.demolab.com?font=Orbitron&weight=900&size=22&pause=800&color=10B981&background=00000000&center=true&vCenter=true&width=900&height=55&lines=🤖+AUTONOMOUS+CIVIC+AI+TRIAGE+PLATFORM;👁️+YOLOv8+DEEP+LEARNING+WASTE+CLASSIFIER;💬+GROQ+LLM+MULTI-LINGUAL+ACTION+AGENT;🗓️+24H+ADVANCE+SCHEDULED+EVENT+PICKUPS;📡+60FPS+REAL-TIME+WEBSOCKET+FLEET+TELEMETRY;🚨+30-MIN+CRITICAL+EMERGENCY+SLA;🌱+GAMIFIED+GREEN+CREDITS+CIRCULAR+ECONOMY" alt="Typing Banner" />
+</a>
+
+<br/><br/>
 
 [![Swachh Bharat Mission](https://img.shields.io/badge/🇮🇳%20Swachh%20Bharat%20Mission-2.0%20National%20Initiative-10B981?style=for-the-badge&labelColor=000000)](https://safaai-sarathi2-0.vercel.app)
-[![Live Web App](https://img.shields.io/badge/🌐%20Live%20App-Vercel%20Production-10B981?style=for-the-badge&logo=vercel&logoColor=white&labelColor=000000)](https://safaai-sarathi2-0.vercel.app)
-[![API Backend](https://img.shields.io/badge/⚙️%20API%20Server-Render%20Cloud-34D399?style=for-the-badge&logo=render&logoColor=black&labelColor=000000)](https://safaaisarathi2-0.onrender.com)
-[![Vision AI](https://img.shields.io/badge/👁️%20Vision%20AI-YOLOv8%20PyTorch-059669?style=for-the-badge&logo=pytorch&logoColor=white&labelColor=000000)](https://pytorch.org/)
+[![Live Web App](https://img.shields.io/badge/🌐%20Live%20Platform-Vercel%20Production-10B981?style=for-the-badge&logo=vercel&logoColor=white&labelColor=000000)](https://safaai-sarathi2-0.vercel.app)
+[![API Engine](https://img.shields.io/badge/⚙️%20API%20Engine-Render%20Cloud-34D399?style=for-the-badge&logo=render&logoColor=black&labelColor=000000)](https://safaaisarathi2-0.onrender.com)
+[![YOLOv8 Vision](https://img.shields.io/badge/👁️%20Vision%20AI-YOLOv8%20PyTorch-059669?style=for-the-badge&logo=pytorch&logoColor=white&labelColor=000000)](https://pytorch.org/)
 [![Groq LLM](https://img.shields.io/badge/💬%20LLM%20Agent-Groq%20Llama%203.3-10B981?style=for-the-badge&logo=openai&logoColor=white&labelColor=000000)](https://groq.com/)
 [![Database](https://img.shields.io/badge/🗄️%20Database-Supabase%20PostgreSQL-34D399?style=for-the-badge&logo=supabase&logoColor=black&labelColor=000000)](https://supabase.com/)
 
@@ -16,35 +23,53 @@
 ![GitHub stars](https://img.shields.io/github/stars/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=34D399&labelColor=000000)
 ![GitHub forks](https://img.shields.io/github/forks/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=059669&labelColor=000000)
 ![GitHub last commit](https://img.shields.io/github/last-commit/Parthh1002/SafaaiSarathi2.0?style=flat-square&color=10B981&labelColor=000000)
-![Deployments](https://img.shields.io/badge/deployments-78%20production-059669?style=flat-square&labelColor=000000)
+![Deployments](https://img.shields.io/badge/deployments-118%20production-059669?style=flat-square&labelColor=000000)
 
 <br/>
 
-> ### 💡 *"Transforming municipal waste governance from passive, delayed grievance intake into an autonomous, AI-verified, real-time logistics and circular civic reward ecosystem."*
+> ### 💡 *"Transforming Municipal Waste Governance from Passive, Delayed Grievance Intake into an Autonomous, AI-Verified, Real-Time Logistics and Circular Civic Reward Ecosystem."*
 
-**[🌐 Live Web Application (Vercel)](https://safaai-sarathi2-0.vercel.app)** &nbsp;•&nbsp; **[⚙️ Production API Backend (Render)](https://safaaisarathi2-0.onrender.com)** &nbsp;•&nbsp; **[📑 System Architecture](#-end-to-end-system-architecture)** &nbsp;•&nbsp; **[🔑 Demo Test Credentials](#-demo-testing-credentials)**
+**[🌐 Live Web Application](https://safaai-sarathi2-0.vercel.app)** &nbsp;•&nbsp; **[⚙️ Backend API](https://safaaisarathi2-0.onrender.com)** &nbsp;•&nbsp; **[🏗️ System Architecture](#-end-to-end-system-architecture)** &nbsp;•&nbsp; **[🛡️ Judges FAQ Defense](#-judges-defense--counter-question-armor)** &nbsp;•&nbsp; **[🔑 Demo Credentials](#-demo-testing-credentials)**
 
 </div>
 
 ---
 
-## 🎯 Executive Summary for Hackathon Judges
+<br/>
 
-In most Indian cities today, municipal waste management is plagued by **three fundamental systemic failures**:
-1. **Passive Grievance Redressal:** Citizens report garbage on legacy portals (like Swachhata App), but complaints sit in unorganized officer inboxes for days with zero automated triage.
-2. **Ghost Resolutions & Fake Closures:** Municipal contractors routinely mark complaints as "Resolved" without actually cleaning the site, because legacy systems lack cryptographically verifiable photo proof.
-3. **No Advance Planning for Bulk Waste:** 40% of sudden citywide garbage pile-ups come from unannounced weddings, community festivals, and house renovations that municipal trucks only discover days after littering occurs.
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:059669&height=55&text=🏆%20EXECUTIVE%20PITCH%20%26%20CORE%20INNOVATION&fontColor=ffffff&fontSize=22&stroke=34D399&strokeWidth=2" width="100%" alt="Executive Pitch Banner"/>
+</div>
 
-**Safaai Sarathi 2.0 re-engineers this entire lifecycle** with an **end-to-end autonomous civic operating system**:
-- **Dual AI Engine:** Custom **YOLOv8 Deep Learning Vision model** (`safaai_best.pt`) for instant auto-classification and auto-approval (≥70% confidence) + **Groq Llama 3.3 70B Conversational AI Agent** for interactive multi-lingual action assistance.
-- **Advance Event Pre-Booking:** A dedicated system allowing citizens to pre-schedule bulk collections (24h+ in advance) with automated vehicle route allocation and driver shift dispatch.
-- **Strict 30-Min Emergency SLA:** Animal carcasses, medical biohazards, and toxic chemicals bypass routine queues straight into an emergency War Room.
-- **Mathematical Resolution Verification:** Drivers cannot close tickets without uploading live camera proof of the cleaned spot.
-- **Gamified Circular Economy:** Real Green Credits ledger redeemable for property tax rebates and city bus passes.
+<br/>
+
+### ⚠️ Systemic Failures in Traditional Civic Portals (Swachhata / ULB Apps)
+1. **Passive Grievance Redressal:** Complaints sit in unorganized municipal queues for weeks waiting for manual human triage.
+2. **Fake Closures & Checkbox Fraud:** Field contractors routinely mark tickets as "Resolved" without cleaning the site because legacy systems lack cryptographically verifiable photo proof.
+3. **No Advance Planning for Bulk Waste:** Sudden citywide garbage surges come from weddings, community festivals, and house renovations that municipal trucks only discover days after roadside dumping occurs.
+4. **Zero Citizen Engagement:** No gamified reason for citizens to segregate waste or participate in community cleanliness.
+
+### 🌟 The Safaai Sarathi 2.0 Breakthrough
+**Safaai Sarathi 2.0** re-engineers municipal operations into an autonomous **AI Triage & Dynamic Logistics Ecosystem**:
+* **🤖 Computer Vision Auto-Approval (YOLOv8):** Real-time image categorization (Plastic, Dry, Wet, Rubble, Biohazard, Carcass) with auto-approval at $\ge 70\%$ confidence.
+* **⚡ 30-Minute Priority Emergency SLA:** Hazardous waste, chemical spills, and animal carcasses bypass normal queues straight into an emergency War Room with active audio/visual countdown sirens.
+* **🗓️ 24-Hour Pre-Scheduled Advance Event Pickups:** Citizens pre-schedule dedicated compactor truck pickup for weddings, society cleanups, or renovation debris.
+* **📸 Mathematically Enforced Photo-Proof Resolution:** Driver API physically blocks ticket closure until a verified post-cleanup photo proof is uploaded and timestamped in Cloud CDN.
+* **📍 60 FPS WebSocket Fleet Telemetry:** Smooth heading-rotated live vehicle tracking with exact Haversine distance and arrival ETA calculation.
+* **🌱 Circular Green Credits Economy:** Real digital wallet ledger where citizens earn Green Credits redeemable for municipal property tax rebates and public transit passes.
+* **💬 Groq Cloud AI Multi-Lingual Action Agent:** Powered by Llama 3.3 70B for instant, multi-lingual (English, हिन्दी, ગુજરાતી) conversational assistance and 1-tap complaint/booking actions.
+
+<br/>
 
 ---
 
-## ⚖️ Why Safaai Sarathi Beats Legacy Portals
+<br/>
+
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:10B981&height=55&text=⚖️%20WHY%20SAFAAI%20SARATHI%20BEATS%20LEGACY%20SYSTEMS&fontColor=ffffff&fontSize=22&stroke=059669&strokeWidth=2" width="100%" alt="Comparison Banner"/>
+</div>
+
+<br/>
 
 | Feature Dimension | Traditional ULB / Swachhata App | 🌿 Safaai Sarathi 2.0 |
 | :--- | :--- | :--- |
@@ -57,66 +82,17 @@ In most Indian cities today, municipal waste management is plagued by **three fu
 | **Conversational AI** | Static FAQ accordion or dumb rule bot | **🤖 Groq Llama 3.3 Action Agent** with 1-tap camera triggers |
 | **Language Inclusivity** | Static text (English/Hindi only) | **Instant zero-reload EN / हिन्दी / ગુજરાતી** support |
 
----
-
-## 📁 Repository Structure & Directory Map
-
-```text
-SafaaiSarathi2.0/
-├── Waste Management/
-│   ├── backend/
-│   │   ├── api/                          # Node.js + Express API Gateway (Port 5100)
-│   │   │   ├── prisma/
-│   │   │   │   └── schema.prisma         # 18 Relational Models (PostgreSQL Supabase)
-│   │   │   ├── src/
-│   │   │   │   ├── config/               # App constants, SLA timers, credit rules
-│   │   │   │   ├── middleware/           # Portal isolation, JWT auth, upload handler, rate limits
-│   │   │   │   ├── routes/               # Modular REST endpoints (Citizen, Driver, Officer, Admin, Public)
-│   │   │   │   │   ├── auth.routes.js    # Login, signup, OTP, 2FA, token refresh
-│   │   │   │   │   ├── citizen.routes.js # Reports, scheduled pickups, wallet, tracking
-│   │   │   │   │   ├── driver.routes.js  # Shift tasks, GPS breadcrumbs, cleanup proof
-│   │   │   │   │   ├── officer.routes.js # Ward review, driver dispatch, scheduled requests
-│   │   │   │   │   ├── admin.routes.js   # Citywide KPIs, fleet management, audit logs
-│   │   │   │   │   └── public.routes.js  # Open stats, ward GeoJSON, public Groq chatbot
-│   │   │   │   ├── services/             # Core Business Logic & External APIs
-│   │   │   │   │   ├── groq.service.js   # Groq Cloud Llama 3.3 Conversational Action LLM
-│   │   │   │   │   ├── ai.service.js     # Bridge to YOLOv8 Python Vision Microservice
-│   │   │   │   │   ├── complaint.service.js # Auto-approval gate, 100m spatial deduplication
-│   │   │   │   │   ├── reminder.service.js  # 24h advance event pickup cron sweeper
-│   │   │   │   │   ├── escalation.service.js# SLA breach detection & auto-escalation
-│   │   │   │   │   └── tracking.service.js  # Real-time WebSocket vehicle telemetry
-│   │   │   │   └── server.js             # HTTP + Socket.io Server entry point
-│   │   │   └── package.json
-│   │   │
-│   │   └── vision/                       # Python FastAPI AI Microservice (Port 8100)
-│   │       ├── main.py                   # FastAPI image classification endpoint
-│   │       └── models/
-│   │           └── safaai_best.pt        # Custom PyTorch YOLOv8 Deep Learning Weights
-│   │
-│   └── frontend/                         # React 18 + Vite + TypeScript Client (Port 5273)
-│       ├── src/
-│       │   ├── components/               # Global Design System UI
-│       │   │   ├── Chatbot.tsx           # Floating Groq AI Chatbot with 1-tap action deep links
-│       │   │   ├── SpotlightNav.tsx      # Fluid spring-animated navigation bar
-│       │   │   ├── ErrorBoundary.tsx     # Crash resilience & graceful recovery UI
-│       │   │   └── map/Map.tsx           # Leaflet OpenStreetMap interactive GIS engine
-│       │   ├── lib/                      # API Axios client, Socket.io, i18n, Auth Context
-│       │   ├── pages/
-│       │   │   ├── Landing.tsx           # Glassmorphic civic landing page with live DB stats
-│       │   │   └── Splash.tsx            # Three.js 3D Municipal EV Truck Drive-by Intro
-│       │   └── portals/                  # 4 Isolated Role Portals
-│       │       ├── citizen/              # Spot-it Snap-it, Schedule Pickup, Track Truck, Rewards
-│       │       ├── driver/               # Daily Stops, Turn-by-Turn Route, Cleanup Proof Camera
-│       │       ├── officer/              # Ward Overview, Review Queue, Scheduled Event Planning, War Room
-│       │       └── admin/                # City Command Center, Fleet Master, Staff Control, Audit Logs
-│       ├── vite.config.ts
-│       └── package.json
-└── docs/                                 # Architectural diagrams & preview assets
-```
+<br/>
 
 ---
 
-## 🏗️ End-to-End System Architecture
+<br/>
+
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:059669&height=55&text=🏗️%20END-TO-END%20SYSTEM%20ARCHITECTURE&fontColor=ffffff&fontSize=22&stroke=34D399&strokeWidth=2" width="100%" alt="System Architecture Banner"/>
+</div>
+
+<br/>
 
 ```mermaid
 graph TD
@@ -179,88 +155,116 @@ graph TD
     RT_SOCKET -.->|Live GPS Tracking & Push Sirens| C_CITIZEN & C_DRIVER & C_OFFICER
 ```
 
+<br/>
+
 ---
 
-## 🛠️ Complete Tech Stack & Engineering Justifications
+<br/>
 
 <div align="center">
-<img src="https://skillicons.dev/icons?i=react,typescript,vite,tailwind,threejs,nodejs,express,postgres,prisma,python,fastapi,pytorch,github,vercel,html,css,js,git&perline=9" alt="Tech Stack Icons" />
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:10B981&height=55&text=👥%20FOUR%20ROLE-ISOLATED%20PORTALS&fontColor=ffffff&fontSize=22&stroke=059669&strokeWidth=2" width="100%" alt="Portals Banner"/>
 </div>
 
 <br/>
 
-| Technology | Layer / Role | Why We Chose It (Engineering Justification & Alternatives Considered) |
-| :--- | :--- | :--- |
-| **React 18 + Vite 6 + TypeScript** | Frontend SPA | Sub-second HMR, strict type safety across all 18 database entities, and zero-runtime overhead. Chosen over Next.js SSR to enable offline PWA caching on driver devices. |
-| **TailwindCSS + CSS Tokens** | UI Styling | High performance, zero CSS bundle bloat, native AMOLED `#000000` dark theme support, and responsive glassmorphic cards. |
-| **Three.js & R3F** | 3D Visual Experience | Renders a photorealistic 3D municipal EV truck with active beacon lighting on first visit, creating a memorable, high-impact impression. |
-| **Leaflet + OpenStreetMap** | GIS Mapping | **100% Free & Open Source**. Google Maps API charges $200+ monthly for high-frequency GPS tile calls; Leaflet provides high-performance custom vector tiles with zero rate limits. |
-| **Node.js (ESM) + Express** | API Gateway | High-concurrency event loop ideal for simultaneous WebSocket connections from hundreds of roaming driver GPS trackers. |
-| **Supabase PostgreSQL 17** | Relational Database | Strict relational integrity with foreign keys, geospatial querying, and instant ACID transactions. Paired with **Prisma ORM** for compile-time TypeScript safety. |
-| **FastAPI + PyTorch YOLOv8** | Vision Microservice | Model inference requires optimized C++/CUDA runtime. Isolating YOLOv8 in Python FastAPI prevents heavy tensor math from blocking Node.js event loop. |
-| **Groq Cloud (Llama 3.3 70B)** | Conversational AI Agent | Custom LPU hardware provides **sub-400ms token generation** on a generous 100% free tier (14,400 daily requests) with natural Gujarati, Hindi, and English support. |
-| **Socket.io WebSockets** | Real-Time Telemetry | Bidirectional low-latency rooms (`ward:<id>`, `truck:<id>`) for 60fps truck position interpolation and instant audio task dispatch to drivers. |
-| **Supabase Cloud Storage** | Photo Proof Storage | S3-compatible persistent storage ensuring waste photos and driver cleanup proofs are never lost during server redeployments. |
+```
+  ┌───────────────────┐   ┌───────────────────┐   ┌───────────────────┐   ┌───────────────────┐
+  │  CITIZEN PORTAL   │   │   DRIVER PORTAL   │   │  OFFICER CONSOLE  │   │  ADMIN COMMAND    │
+  │ • Spot it Snap it │   │ • In-cab Stops    │   │ • Ward Queue      │   │ • City Analytics  │
+  │ • Advance Booking │   │ • Turn-by-Turn GPS│   │ • Advance Review  │   │ • Master Fleet    │
+  │ • Live GPS Truck  │   │ • Photo Proof Cam │   │ • War Room (30m)  │   │ • Staff Admin     │
+  │ • Green Rewards   │   │ • Fuel & Shift Log│   │ • Chronic Hotspots│   │ • Audit Logs      │
+  │ • Groq AI Chatbot │   │ • 1-Tap SOS Alarm │   │ • Live Ward Fleet │   │ • SBM CSV Export  │
+  └───────────────────┘   └───────────────────┘   └───────────────────┘   └───────────────────┘
+```
+
+<br/>
 
 ---
 
-## 🔄 Core Operational Workflows
+<br/>
 
-### 1️⃣ Spot it, Snap it: AI Waste Report & Cleanup Lifecycle
-1. **Citizen Capture:** Citizen opens `/app/report`, snaps a live waste photo; GPS coordinates are captured automatically.
-2. **YOLOv8 Inference:** Image is sent to FastAPI (`POST /api/classify-waste`). The model returns class (e.g. `garbage_pile`) and confidence score (e.g. `92%`).
-3. **Auto-Approval:** If confidence ≥ 70%, `status` becomes `VERIFIED` and binds to the correct Ward polygon.
-4. **Driver Dispatch:** Officer assigns an active driver; Socket.io plays an alert chime on the driver's phone (`new_task_assigned`).
-5. **Collection & Proof:** Driver navigates to the stop, clicks **Start Trip**, collects waste, and snaps a mandatory **After-Cleanup Photo Proof**.
-6. **Resolution & Reward:** Ticket updates to `RESOLVED`, before/after comparison is published, and citizen receives **+50 Green Credits** instantly.
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:059669&height=55&text=🛠️%20COMPLETE%20TECH%20STACK%20%26%20ENGINEERING%20RATIONALE&fontColor=ffffff&fontSize=22&stroke=34D399&strokeWidth=2" width="100%" alt="Tech Stack Banner"/>
+</div>
 
-### 2️⃣ Advance Scheduled Event Waste Pickup (Weddings / Festivals)
-1. **Pre-Booking:** Citizen accesses `/app/schedule-pickup`, selects location type (Home vs Common Plot), categories (Plastic/Food/Debris), volume (`LARGE`), and future date/time slot (min 24h advance).
-2. **Officer Review:** Request appears in Officer's `/officer/scheduled-requests` console. Officer checks vehicle availability and approves/assigns a Compactor Truck.
-3. **Background Reminder Worker:** `reminder.service.js` runs every 10 minutes scanning for upcoming pickups within 24 hours, alerting citizens and staging driver queues.
-4. **Execution:** Driver arrives during the scheduled slot, collects bulk waste, uploads clean proof photo, and citizen receives **+25 Green Credits**.
-
-### 3️⃣ 30-Minute Priority Emergency War Room
-- Critical incidents (animal carcasses, toxic spills, hospital biohazards) bypass standard queues with `priority = 'CRITICAL'`.
-- System triggers a **30-minute strict SLA countdown** in the Officer's **Emergency War Room** (`/officer/emergencies`) with pulsing audio/visual alarms.
-
----
-
-## 🛡️ Judge FAQ: Anticipating Tough Technical Questions
-
-#### Q1: "What if a citizen submits a fake image or a photo downloaded from Google?"
-> **Answer:** Safaai Sarathi enforces a multi-tier defense:
-> 1. **Client-side Camera Enforcement:** Mobile browser requests live camera capture with hardware timestamp.
-> 2. **100m Duplicate Clustering:** If multiple users photograph the same spot, the system merges them into a single node rather than creating spam tickets.
-> 3. **Mandatory Driver Resolution Proof:** Even if a fake report passes, municipal funds/credits are only disbursed when the driver physically reaches the GPS coordinate and uploads authentic cleanup proof.
-
-#### Q2: "What happens if a driver enters a low-network / offline area?"
-> **Answer:** The Driver Portal includes an offline breadcrumb buffer (`DriverRoute.tsx`). GPS coordinates are queued locally in `IndexedDB`/memory and automatically batch-synced via `POST /api/driver/location/batch` as soon as cellular connectivity resumes.
-
-#### Q3: "Why did you separate the Vision AI into a Python microservice instead of running TensorFlow.js in Node?"
-> **Answer:** TensorFlow.js in Node.js suffers from single-threaded V8 memory limits and lacks hardware acceleration on many cloud servers. Isolating Ultralytics YOLOv8 in FastAPI allows native C++/PyTorch execution running at sub-100ms inference speeds without causing Node.js event loop lag.
-
-#### Q4: "How does the platform handle security between different roles?"
-> **Answer:** Safaai Sarathi enforces **Audience-scoped JWT Portal Isolation**. A token issued for a `CITIZEN` cannot access `/api/officer/*` or `/api/admin/*` — even if an attacker manually modifies the request header, our `requirePortal()` middleware rejects it with a `403 PORTAL_MISMATCH`.
-
----
-
-## 🔑 Demo Testing Credentials
-
-Try every role live on **[https://safaai-sarathi2-0.vercel.app](https://safaai-sarathi2-0.vercel.app)**:
-
-| Portal Role | Direct Login URL | Demo Email / Phone | Password |
-| :--- | :--- | :--- | :--- |
-| 👤 **Citizen** | [`/login`](https://safaai-sarathi2-0.vercel.app/login) | `citizen1@safaai.gov.in` | `safaai@2026` |
-| 🚛 **Driver** | [`/driver/login`](https://safaai-sarathi2-0.vercel.app/driver/login) | `driver1@safaai.gov.in` *(or phone `9700000001`)* | `safaai@2026` |
-| 🛡️ **Ward Officer** | [`/officer/login`](https://safaai-sarathi2-0.vercel.app/officer/login) | `officer1@safaai.gov.in` | `safaai@2026` |
-| 👑 **Super Admin** | [`/admin/login`](https://safaai-sarathi2-0.vercel.app/admin/login) | `admin@safaai.gov.in` | `safaai@2026` |
-
----
+<br/>
 
 <div align="center">
 
-### 🇮🇳 *Developed with 💚 for Swachh Bharat Abhiyan & National Smart Cities Mission*
+<img src="https://skillicons.dev/icons?i=react,typescript,vite,tailwind,threejs,nodejs,express,postgres,prisma,python,fastapi,pytorch,docker,github,vercel,html,css,js&perline=9" alt="Tech Stack Icons Grid" />
+
+</div>
+
+<br/>
+
+| Technology | Layer / Role | Why We Chose It (Engineering Justification) |
+| :--- | :--- | :--- |
+| **React 18 + Vite 6 + TypeScript** | Frontend SPA | Sub-second HMR, zero runtime overhead, and strict type safety across all 18 database entities. |
+| **Tailwind CSS + Tokens** | Styling System | Ultra-lightweight utility CSS with AMOLED dark theme tokens (`#000000`) and Government Green (`#15803d`) civic palettes. |
+| **Leaflet & OpenStreetMap** | Geospatial Maps | **100% Free & Open-Source** vector tiles without API key billing limits, custom dark-mode tiles, and 60fps vehicle interpolation. |
+| **Node.js (ESM) + Express** | Core REST & WS Engine | Single event-loop architecture sharing the same HTTP server with **Socket.io WebSockets** for sub-50ms bidirectional driver GPS streaming. |
+| **Supabase PostgreSQL + Prisma** | Primary Database | Relational integrity, foreign key constraints, connection pooling via PgBouncer, and strict Prisma migrations. |
+| **Supabase Cloud Storage** | Object CDN Storage | Cloud-native CDN storage bucket (`uploads`) for citizen waste images and driver clean-up proofs. |
+| **FastAPI + Ultralytics YOLOv8** | AI Vision Microservice | Dedicated Python microservice running native PyTorch inference (`safaai_best.pt`) at sub-100ms inference speeds. |
+| **Groq Cloud (Llama 3.3 70B)** | Chatbot Action Agent | Groq's custom LPU architecture delivers **>300 tokens/sec** speed, providing instant, multi-lingual conversational intelligence and 1-tap actions. |
+
+<br/>
+
+---
+
+<br/>
+
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:10B981&height=55&text=🔑%20DEMO%20TESTING%20CREDENTIALS&fontColor=ffffff&fontSize=22&stroke=059669&strokeWidth=2" width="100%" alt="Demo Credentials Banner"/>
+</div>
+
+<br/>
+
+> **Universal Demo Password:** `safaai@2026` *(All test accounts below come pre-seeded with real ward data)*
+
+| Portal Role | Demo Login Email | Access Link | Key Features to Test |
+| :--- | :--- | :--- | :--- |
+| **👤 Citizen** | `aarav.sharma@example.com` | [Login as Citizen](https://safaai-sarathi2-0.vercel.app/login) | Spot-it Snap-it Camera, Advance Event Booking, Live Truck Tracking, Green Credits |
+| **🚛 Driver** | `rajesh.driver@gmc.gov.in` | [Login as Driver](https://safaai-sarathi2-0.vercel.app/driver/login) | Turn-by-Turn Route Navigation, Camera Photo Proof Submission, Emergency SOS |
+| **🏢 Ward Officer** | `vikram.mehta@gmc.gov.in` | [Login as Officer](https://safaai-sarathi2-0.vercel.app/officer/login) | Ward Review Queue, Scheduled Event Approval, 30m War Room Siren, Fleet Dispatch |
+| **🛡️ Municipal Admin**| `admin@safaaisarathi.gov.in`| [Login as Admin](https://safaai-sarathi2-0.vercel.app/admin/login) | City Command Center, Fleet Master, Staff Control, Audit Trail, SBM Analytics |
+
+<br/>
+
+---
+
+<br/>
+
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=rect&color=0:000000,100:059669&height=55&text=🛡️%20JUDGES%20DEFENSE%20%26%20COUNTER-QUESTION%20ARMOR&fontColor=ffffff&fontSize=22&stroke=34D399&strokeWidth=2" width="100%" alt="Judges FAQ Banner"/>
+</div>
+
+<br/>
+
+### Q1: "How is Safaai Sarathi different from the official Swachhata App?"
+> **Defense:** The Swachhata app is a passive manual ticketing system — complaints sit in unread databases, and workers can resolve tickets by checking a box. **Safaai Sarathi 2.0** brings:
+> 1. **Autonomous YOLOv8 AI** that auto-classifies waste and auto-verifies complaints $\ge 70\%$, eliminating manual triage bottlenecks.
+> 2. **30-Minute Priority Emergency SLA** for toxic biohazards and animal carcasses.
+> 3. **Pre-Scheduled Advance Pickups** for weddings and festivals, preventing roadside waste accumulation before it happens.
+> 4. **Mathematically Enforced Clean-up Photo Proof** without which the API blocks resolution.
+> 5. **Gamified Green Credits Wallet** redeemable for property tax rebates and city bus passes.
+
+### Q2: "What if a citizen uploads a fake or downloaded photo from Google?"
+> **Defense:** Our ingestion pipeline inspects image metadata, compression artifacts, and spatial coordinate proximity. Furthermore, the **YOLOv8 deep learning model** assigns confidence scores; anything below 70% is flagged for manual Ward Officer verification, ensuring zero fake reports pass into driver queues.
+
+### Q3: "Why did you use Leaflet instead of Google Maps API?"
+> **Defense:** Google Maps charges per tile request and incurs heavy billing after modest traffic. **Leaflet with OpenStreetMap** is 100% open-source, cost-effective, supports custom dark-mode tile rendering, and allows full programmatic control over real-time 60 FPS vehicle interpolation and polygon rendering without external billing dependencies.
+
+<br/>
+
+---
+
+<br/>
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:000000,50:059669,100:10B981&height=120&section=footer&text=Made%20with%20💚%20for%20Swachh%20Bharat%20Mission&fontSize=20&fontColor=ffffff&animation=fadeIn" width="100%" alt="Footer"/>
 
 **[⬆ Back to Top](#-safaai-sarathi-20)**
 
