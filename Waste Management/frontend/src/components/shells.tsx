@@ -45,23 +45,23 @@ export function MobileShell({
     <div className="min-h-dvh bg-surface pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-10">
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 border-b border-line bg-surface/95 pt-[env(safe-area-inset-top)] shadow-xs backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4 px-4 py-2.5 sm:px-6 lg:px-8 xl:px-10">
+        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2.5">
           {/* Logo & Portal Title */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <Link
               to={user?.role === 'DRIVER' ? '/driver' : '/app'}
-              className="flex items-center gap-3 group transition"
+              className="flex items-center gap-2.5 sm:gap-3 group transition shrink-0"
             >
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10 p-1.5 transition group-hover:scale-105 shadow-xs">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand/10 p-1.5 transition group-hover:scale-105 shadow-xs">
                 <img src="/icon.svg" alt="Safaai Sarathi" className="h-full w-full object-contain" />
               </div>
-              <div className="flex flex-col">
-                <span className="text-fluid-sm font-extrabold tracking-tight text-ink leading-tight">
+              <div className="flex flex-col text-left shrink-0">
+                <span className="text-[14.5px] sm:text-[15px] font-black tracking-tight text-ink leading-tight whitespace-nowrap">
                   Safaai Sarathi
                 </span>
                 <span
-                  className={`inline-block text-[11px] font-bold uppercase tracking-wider ${
-                    accent === 'orange' ? 'text-orange-600 dark:text-orange-400' : 'text-brand'
+                  className={`text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider whitespace-nowrap mt-0.5 ${
+                    accent === 'orange' ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'
                   }`}
                 >
                   {title}
@@ -71,19 +71,19 @@ export function MobileShell({
           </div>
 
           {/* Desktop Interactive Spotlight Navigation Bar */}
-          <div className="hidden md:flex items-center justify-center">
+          <div className="hidden md:flex items-center justify-center flex-1 min-w-0 max-w-fit mx-2">
             <SpotlightNav items={nav} accent={accent} />
           </div>
 
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             {headerRight}
             <LanguageSwitcher compact />
             <ThemeToggle />
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
-              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-3 transition hover:bg-sunken shadow-xs cursor-pointer"
+              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-2.5 sm:pr-3 transition hover:bg-sunken shadow-xs cursor-pointer shrink-0"
               aria-label="Account menu"
             >
               <span
@@ -92,7 +92,7 @@ export function MobileShell({
               >
                 {initials(user?.name)}
               </span>
-              <span className="hidden lg:block text-fluid-xs font-semibold text-ink max-w-[110px] truncate">
+              <span className="hidden md:block text-xs font-semibold text-ink max-w-[110px] truncate whitespace-nowrap">
                 {user?.name?.split(' ')[0]}
               </span>
             </button>
@@ -101,7 +101,7 @@ export function MobileShell({
       </header>
 
       {/* Main Content Area */}
-      <main className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">{children}</main>
+      <main className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">{children}</main>
 
       {/* Bottom tabs — Mobile & Tablet only */}
       <nav className="tabbar md:hidden" aria-label="Primary">
@@ -173,13 +173,13 @@ export function ConsoleShell({
     <div className="min-h-dvh bg-surface pb-12">
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 border-b border-line bg-surface/95 pt-[env(safe-area-inset-top)] shadow-xs backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-4 px-4 py-2.5 sm:px-6 lg:px-8 xl:px-10">
+        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2.5">
           {/* Logo & Console Title */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
             <button
               type="button"
               onClick={() => setMobileNavOpen(true)}
-              className="grid h-9 w-9 place-items-center rounded-xl border border-line xl:hidden text-ink cursor-pointer"
+              className="grid h-9 w-9 place-items-center rounded-xl border border-line xl:hidden text-ink cursor-pointer shrink-0"
               aria-label="Open Navigation"
             >
               <Menu className="h-5 w-5" />
@@ -187,18 +187,18 @@ export function ConsoleShell({
 
             <Link
               to={accent === 'orange' ? '/admin' : '/officer'}
-              className="flex items-center gap-3 group transition"
+              className="flex items-center gap-2.5 sm:gap-3 group transition shrink-0"
             >
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand/10 p-1.5 transition group-hover:scale-105 shadow-xs">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand/10 p-1.5 transition group-hover:scale-105 shadow-xs">
                 <img src="/icon.svg" alt="Safaai Sarathi" className="h-full w-full object-contain" />
               </div>
-              <div className="flex flex-col">
-                <span className="text-fluid-sm font-extrabold tracking-tight text-ink leading-tight">
+              <div className="flex flex-col text-left shrink-0">
+                <span className="text-[14.5px] sm:text-[15px] font-black tracking-tight text-ink leading-tight whitespace-nowrap">
                   Safaai Sarathi
                 </span>
                 <span
-                  className={`inline-block text-[11px] font-bold uppercase tracking-wider ${
-                    accent === 'orange' ? 'text-orange-600 dark:text-orange-400' : 'text-brand'
+                  className={`text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider whitespace-nowrap mt-0.5 ${
+                    accent === 'orange' ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'
                   }`}
                 >
                   {title}
@@ -208,15 +208,15 @@ export function ConsoleShell({
           </div>
 
           {/* Desktop Interactive Spotlight Navigation Bar */}
-          <div className="hidden xl:flex items-center justify-center">
+          <div className="hidden xl:flex items-center justify-center flex-1 min-w-0 max-w-fit mx-2">
             <SpotlightNav items={nav} accent={accent} />
           </div>
 
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             {headerRight}
             {alertCount > 0 && (
-              <span className="chip border-danger/30 bg-danger/10 text-danger text-fluid-xs font-bold">
+              <span className="chip border-danger/30 bg-danger/10 text-danger text-fluid-xs font-bold shrink-0">
                 <Bell className="h-3.5 w-3.5" />
                 {alertCount}
               </span>
@@ -226,7 +226,7 @@ export function ConsoleShell({
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
-              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-3 transition hover:bg-sunken shadow-xs cursor-pointer"
+              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-2.5 sm:pr-3 transition hover:bg-sunken shadow-xs cursor-pointer shrink-0"
               aria-label="Account menu"
             >
               <span
@@ -235,7 +235,7 @@ export function ConsoleShell({
               >
                 {initials(user?.name)}
               </span>
-              <span className="hidden lg:block text-fluid-xs font-semibold text-ink max-w-[110px] truncate">
+              <span className="hidden md:block text-xs font-semibold text-ink max-w-[120px] truncate whitespace-nowrap">
                 {user?.name?.split(' ')[0]}
               </span>
             </button>

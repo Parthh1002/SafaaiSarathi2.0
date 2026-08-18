@@ -172,18 +172,18 @@ export function SpotlightNav({
       />
 
       {/* Nav Items List */}
-      <ul className="relative flex items-center h-full px-1 gap-1 z-[10] list-none m-0">
+      <ul className="relative flex items-center h-full px-1 gap-0.5 sm:gap-1 z-[10] list-none m-0 p-0 flex-nowrap whitespace-nowrap">
         {items.map((item, idx) => {
           const isActive = idx === activeIndex;
           const Icon = item.icon;
           return (
-            <li key={item.to} className="relative h-full flex items-center justify-center">
+            <li key={item.to} className="relative h-full flex items-center justify-center shrink-0">
               <NavLink
                 to={item.to}
                 end={item.end}
                 data-nav-index={idx}
                 className={({ isActive: matchActive }) =>
-                  `relative flex items-center gap-2 rounded-full px-3.5 sm:px-4 py-1.5 text-fluid-xs font-semibold transition-colors duration-200 ${
+                  `relative flex items-center gap-1.5 sm:gap-2 rounded-full px-2.5 lg:px-3 xl:px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors duration-200 ${
                     matchActive || isActive
                       ? isOrange
                         ? 'text-orange-700 dark:text-orange-300 font-bold'
@@ -193,9 +193,9 @@ export function SpotlightNav({
                 }
               >
                 {Icon && <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />}
-                <span className="whitespace-nowrap">{item.label}</span>
+                <span className="whitespace-nowrap font-medium text-fluid-xs">{item.label}</span>
                 {item.badge ? (
-                  <span className="ml-1 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[0.6rem] font-bold text-white shadow-xs">
+                  <span className="ml-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[0.6rem] font-bold text-white shadow-xs">
                     {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 ) : null}
