@@ -81,30 +81,30 @@ export default function OfficerDashboard() {
       {/* KPI row — 2-up on phones, 4-up on desktop. */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
-          label="Open complaints"
+          label={t('officer.kpi.open')}
           value={openComplaints}
-          hint={`${complaintsToday} reported today`}
+          hint={t('officer.kpi.openHint', { count: complaintsToday })}
           icon={<Clock className="h-4 w-4" />}
         />
         <Stat
-          label="Emergencies"
+          label={t('officer.kpi.emergencies')}
           value={emergenciesOpen}
           tone={emergenciesOpen > 0 ? 'danger' : 'ok'}
-          hint={emergenciesOpen > 0 ? 'Needs acknowledgement' : 'All clear'}
+          hint={emergenciesOpen > 0 ? t('officer.kpi.needsAck') : t('officer.kpi.allClear')}
           icon={<Siren className="h-4 w-4" />}
         />
         <Stat
-          label="Needs review"
+          label={t('officer.kpi.review')}
           value={reviewNeeded}
           tone="warn"
-          hint="AI confidence below threshold"
-          icon={<Eye className="h-4 w-4" />}
+          hint={t('officer.kpi.reviewHint')}
+          icon={<AlertTriangle className="h-4 w-4" />}
         />
         <Stat
-          label="SLA compliance"
+          label={t('officer.kpi.sla')}
           value={pct(slaCompliancePct)}
-          tone={slaCompliancePct >= 80 ? 'ok' : 'warn'}
-          hint={`${overdue} overdue now`}
+          tone={slaCompliancePct >= 90 ? 'ok' : slaCompliancePct >= 75 ? 'warn' : 'danger'}
+          hint={t('officer.kpi.slaHint', { count: overdue })}
           icon={<CheckCircle2 className="h-4 w-4" />}
         />
       </div>

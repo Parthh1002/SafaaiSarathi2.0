@@ -107,24 +107,16 @@ export default function Splash({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      {/* ================= CENTER: PURE ANIMATED TYPOGRAPHY (LOGO REMOVED) ================= */}
+      {/* ================= CENTER: PURE ANIMATED TYPOGRAPHY (NO WATERMARKS / NO EXTRA BADGES) ================= */}
       <div
         className={`relative z-20 my-auto flex flex-col items-center justify-center text-center px-4 transition-all duration-1000 ${
           mounted ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-6 scale-95'
         }`}
       >
-        {/* Sub-label */}
-        <div className="mb-2.5 inline-flex items-center gap-2 rounded-lg bg-emerald-500/15 border border-emerald-400/30 px-3 py-1 backdrop-blur-md">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[11px] font-extrabold uppercase tracking-widest text-emerald-300">
-            Smart City Capital Mission
-          </span>
-        </div>
-
         {/* Grand Title with Traveling Light Shimmer */}
-        <div className="relative overflow-hidden px-2 py-1">
+        <div className="relative overflow-hidden px-4 py-2">
           <h1 className="text-4xl sm:text-7xl font-black tracking-tight leading-none text-white drop-shadow-[0_15px_35px_rgba(0,0,0,0.95)]">
-            <span className="inline-block transition-transform duration-700 hover:scale-105">
+            <span className="inline-block transition-transform duration-700">
               SAFAAI
             </span>{' '}
             <span className="inline-block bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent font-black filter drop-shadow-[0_0_25px_rgba(16,185,129,0.8)]">
@@ -136,9 +128,9 @@ export default function Splash({ onDone }: { onDone: () => void }) {
           <div className="absolute inset-0 -translate-x-full animate-[shimmer_2.2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg] pointer-events-none" />
         </div>
 
-        {/* Dynamic Tagline */}
+        {/* Clean Tagline */}
         <p className="mt-3.5 max-w-md text-xs sm:text-base font-semibold text-emerald-100/80 tracking-wide drop-shadow-md">
-          AI-Powered Civic Waste Governance & Route Optimization Platform
+          Autonomous Waste Management & Route Optimization
         </p>
 
         {/* Glowing Indian Tricolor Precision Progress Line */}
@@ -154,16 +146,12 @@ export default function Splash({ onDone }: { onDone: () => void }) {
         </div>
       </div>
 
-      {/* ================= BOTTOM: EDITION TAG & SKIP BUTTON ================= */}
+      {/* ================= BOTTOM: CLEAN SKIP BUTTON ================= */}
       <div
-        className={`relative z-20 flex w-full max-w-5xl items-center justify-between px-6 pb-6 text-xs text-white/60 transition-all duration-700 ${
+        className={`relative z-20 flex w-full max-w-5xl items-center justify-end px-6 pb-6 text-xs text-white/60 transition-all duration-700 ${
           mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}
       >
-        <span className="text-[11px] font-bold tracking-wider uppercase text-white/50">
-          GMC v2.0 · Capital Fleet Intelligence
-        </span>
-
         {/* Fast Skip Button */}
         <button
           type="button"

@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import { env } from '../config/env.js';
 import { CATEGORY_MAP, WASTE_CATEGORIES } from '../config/constants.js';
 
-const client = axios.create({ baseURL: env.aiServiceUrl, timeout: 15000 });
+const client = axios.create({ baseURL: env.aiServiceUrl, timeout: 2000 });
 
 export async function classifyWaste({ buffer, mimetype = 'image/jpeg', filename = 'photo.jpg', hint }) {
   const started = Date.now();
@@ -12,14 +12,14 @@ export async function classifyWaste({ buffer, mimetype = 'image/jpeg', filename 
     form.append('file', new Blob([buffer], { type: mimetype }), filename);
     if (hint) form.append('hint', hint);
 
-    const { data } = await client.post('/api/classify-waste', form);
+    const { data } = await client.post('/api/classify-waste', form, { timeout: 2000 });
     return { ...data, latencyMs: data.latencyMs ?? Date.now() - started, degraded: false };
   } catch (err) {
     return {
       ...localClassify(buffer, hint),
       latencyMs: Date.now() - started,
       degraded: true,
-      degradedReason: `Vision service unreachable at ${env.aiServiceUrl} (${err.code || err.message}) — deterministic fallback engaged`,
+      degradedReason: `Vision service unreachable at ${env.aiServiceUrl} (${err.code || err.message}) — fast fallback engaged`,
     };
   }
 }
@@ -27,7 +27,7 @@ export async function classifyWaste({ buffer, mimetype = 'image/jpeg', filename 
 /** Fraud/troll scoring. Features are computed from data we actually hold. */
 export async function scoreFraud(features) {
   try {
-    const { data } = await client.post('/fraud/score', features, { timeout: 6000 });
+    const { data } = await client.post('/fraud/score', features, { timeout: 1200 });
     return { ...data, degraded: false };
   } catch {
     return { ...localFraudScore(features), degraded: true };
