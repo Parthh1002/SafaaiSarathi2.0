@@ -172,8 +172,7 @@ router.post(
     const file = fileFromRequest(req);
     let photoUrl = req.body?.photoUrl;
     if (file) {
-      const persisted = await persist(file, 'complaints');
-      photoUrl = persisted.url;
+      photoUrl = await persist(file, 'complaints');
     }
     if (!photoUrl && !file) {
       throw new HttpError(400, 'A photo is required to file a report');
@@ -221,8 +220,7 @@ router.post(
     const file = fileFromRequest(req);
     let photoUrl = req.body?.photoUrl;
     if (file) {
-      const persisted = await persist(file, 'emergencies');
-      photoUrl = persisted.url;
+      photoUrl = await persist(file, 'emergencies');
     }
 
     const body = z
@@ -274,7 +272,7 @@ router.get(
       where: {
         latitude: { gte: bounds.minLat, lte: bounds.maxLat },
         longitude: { gte: bounds.minLng, lte: bounds.maxLng },
-        status: { in: ['SUBMITTED', 'VERIFIED', 'ASSIGNED', 'IN_PROGRESS'] },
+        status: { in: ['PENDING', 'VERIFIED', 'ASSIGNED', 'IN_PROGRESS'] },
       },
       include: { ward: true },
       orderBy: { createdAt: 'desc' },

@@ -35,37 +35,53 @@ export function ensureUploadDir() {
   return env.uploadDir;
 }
 
-export async function persist(buffer, mimetype = 'image/jpeg', prefix = 'complaint') {
+export async function persist(input, mimetypeOrPrefix = 'image/jpeg', maybePrefix = 'complaint') {
+  let buf;
+  let mimetype = 'image/jpeg';
+  let prefix = 'complaint';
+
+  if (input && typeof input === 'object' && input.buffer) {
+    // Called as persist(fileObject, 'complaints')
+    buf = input.buffer;
+    mimetype = input.mimetype || 'image/jpeg';
+    prefix = typeof mimetypeOrPrefix === 'string' && mimetypeOrPrefix.indexOf('/') === -1 ? mimetypeOrPrefix : 'complaint';
+  } else {
+    // Called as persist(buffer, mimetype, prefix)
+    buf = input;
+    mimetype = mimetypeOrPrefix && mimetypeOrPrefix.indexOf('/') !== -1 ? mimetypeOrPrefix : 'image/jpeg';
+    prefix = maybePrefix || 'complaint';
+  }
+
   const ext = (mimetype.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
   const name = `${prefix}-${Date.now().toString(36)}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
 
+  let url = `/uploads/${name}`;
+
   if (env.storageDriver === 'supabase' && supabaseClient) {
-    const { data, error } = await supabaseClient
-      .storage
-      .from(env.supabase.bucket)
-      .upload(name, buffer, {
-        contentType: mimetype,
-        cacheControl: '3600',
-        upsert: false
-      });
+    try {
+      const { error } = await supabaseClient.storage
+        .from(env.supabase.bucket)
+        .upload(name, buf, {
+          contentType: mimetype,
+          cacheControl: '3600',
+          upsert: false,
+        });
 
-    if (error) {
-      console.error('Supabase upload error:', error);
-      throw new Error('Failed to upload image to Supabase');
+      if (!error) {
+        const { data: publicUrlData } = supabaseClient.storage.from(env.supabase.bucket).getPublicUrl(name);
+        if (publicUrlData?.publicUrl) url = publicUrlData.publicUrl;
+      }
+    } catch (e) {
+      console.warn('Supabase storage fallback to local:', e);
     }
-
-    const { data: publicUrlData } = supabaseClient
-      .storage
-      .from(env.supabase.bucket)
-      .getPublicUrl(name);
-
-    return publicUrlData.publicUrl;
   }
 
-  // Fallback to local
-  ensureUploadDir();
-  fs.writeFileSync(path.join(env.uploadDir, name), buffer);
-  return `/uploads/${name}`;
+  if (url.startsWith('/uploads/')) {
+    ensureUploadDir();
+    fs.writeFileSync(path.join(env.uploadDir, name), buf);
+  }
+
+  return url;
 }
 
 /** Accepts a multipart file or a base64 data URL (in-browser camera capture). */
