@@ -249,6 +249,12 @@ export const hi: Record<string, string> = {
   'citizen.home.loading': 'आपका डैशबोर्ड लोड हो रहा है…',
 
   'citizen.report.title': 'शिकायत दर्ज करें',
+  'citizen.report.select_photo': 'फोटो स्रोत चुनें',
+  'citizen.report.photo_desc': 'लाइव फोटो लें या डिवाइस से अपलोड करें। हमारा YOLOv8 Vision AI कचरे की श्रेणी और तत्परता खुद पहचानता है।',
+  'citizen.report.live_camera': 'लाइव कैमरा',
+  'citizen.report.live_camera_sub': 'डायरेक्ट लाइव व्यूफाइंडर खोलें',
+  'citizen.report.from_storage': 'डिवाइस स्टोरेज',
+  'citizen.report.from_storage_sub': 'गैलरी, फ़ोटो या फ़ाइलों से चुनें',
   'citizen.report.step1': 'फ़ोटो से शुरू करें — श्रेणी अपने आप भर जाएगी।',
   'citizen.report.step2': 'AI ने क्या पहचाना, देखें और ज़रूरत हो तो सुधारें।',
   'citizen.report.step3': 'सही स्थान की पुष्टि करें।',

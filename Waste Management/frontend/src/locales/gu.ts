@@ -248,6 +248,12 @@ export const gu: Record<string, string> = {
   'citizen.home.loading': 'તમારું ડૅશબોર્ડ લોડ થઈ રહ્યું છે…',
 
   'citizen.report.title': 'ફરિયાદ નોંધાવો',
+  'citizen.report.select_photo': 'ફોટો સ્ત્રોત પસંદ કરો',
+  'citizen.report.photo_desc': 'લાઈવ ફોટો લો અથવા ડિવાઇસમાંથી અપલોડ કરો. અમારું YOLOv8 વિઝન AI કચરાની શ્રેણી આપમેળે ઓળખશે.',
+  'citizen.report.live_camera': 'લાઈવ કૅમેરો',
+  'citizen.report.live_camera_sub': 'સીધું લાઈવ વ્યુફાઈન્ડર ખોલો',
+  'citizen.report.from_storage': 'ડિવાઇસ સ્ટોરેજ',
+  'citizen.report.from_storage_sub': 'ગૅલેરી, ફોટા કે ફાઇલ્સમાંથી અપલોડ',
   'citizen.report.step1': 'ફોટોથી શરૂ કરો — શ્રેણી આપમેળે ભરાશે.',
   'citizen.report.step2': 'AI એ શું ઓળખ્યું તે જુઓ, જરૂર પડે તો સુધારો.',
   'citizen.report.step3': 'સાચા સ્થાનની ખાતરી કરો.',

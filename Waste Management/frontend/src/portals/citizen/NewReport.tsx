@@ -75,9 +75,116 @@ export default function NewReport() {
   const [duplicate, setDuplicate] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // In-Place Live Camera Stream State (No separate popups)
+  const [isLiveCameraActive, setIsLiveCameraActive] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState<'environment' | 'user'>('environment');
+  const [isCameraStarting, setIsCameraStarting] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const stopLiveCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsLiveCameraActive(false);
+    setIsCameraStarting(false);
+  };
+
+  const startLiveCamera = async (facing: 'environment' | 'user' = cameraFacing) => {
+    stopLiveCamera();
+    setIsLiveCameraActive(true);
+    setIsCameraStarting(true);
+    setCameraFacing(facing);
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      toast.warn('Direct stream not supported. Opening device camera app.');
+      stopLiveCamera();
+      if (cameraInput.current) {
+        cameraInput.current.value = '';
+        cameraInput.current.click();
+      }
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: facing,
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      });
+
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setIsCameraStarting(false);
+    } catch (err: any) {
+      console.warn('getUserMedia environment error, trying fallback:', err);
+      try {
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        streamRef.current = fallbackStream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = fallbackStream;
+          await videoRef.current.play();
+        }
+        setIsCameraStarting(false);
+      } catch (fallbackErr) {
+        toast.warn('Camera access denied or unavailable. Opening native camera.');
+        stopLiveCamera();
+        if (cameraInput.current) {
+          cameraInput.current.value = '';
+          cameraInput.current.click();
+        }
+      }
+    }
+  };
+
+  const toggleCameraFacing = () => {
+    const nextFacing = cameraFacing === 'environment' ? 'user' : 'environment';
+    void startLiveCamera(nextFacing);
+  };
+
+  const snapLivePhotoFromViewfinder = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video.videoWidth || !video.videoHeight) {
+      toast.warn('Camera feed is still initializing…');
+      return;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Draw video frame onto off-screen canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        const snappedFile = new File([blob], `waste_spot_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        stopLiveCamera();
+        void onPhoto(snappedFile);
+      },
+      'image/jpeg',
+      0.92
+    );
+  };
+
   useEffect(() => {
     locate();
     return () => {
+      stopLiveCamera();
       if (preview) URL.revokeObjectURL(preview);
       if (abortControllerRef.current) abortControllerRef.current.abort();
     };
@@ -370,69 +477,153 @@ export default function NewReport() {
         <div className="grid gap-6 lg:grid-cols-12">
           {/* Main Upload Box */}
           <div className="lg:col-span-8">
-            <Card className="p-6 sm:p-8 border border-line bg-surface shadow-xs space-y-6">
-              <div className="text-center space-y-2">
-                <h3 className="text-fluid-lg font-bold text-ink">
-                  {t('citizen.report.select_photo') || 'Add Waste Spot Photo'}
-                </h3>
-                <p className="text-fluid-xs text-muted max-w-md mx-auto">
-                  {t('citizen.report.photo_desc') || 'Choose how you want to upload. Our YOLOv8 Vision AI automatically classifies waste category and urgency.'}
-                </p>
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-1 text-[11px] font-bold text-brand shadow-xs">
-                  <Sparkles className="h-3.5 w-3.5" /> YOLOv8 Deep Learning Recognition Active
+            <Card className="p-4 sm:p-6 border border-line bg-surface shadow-xs space-y-4 overflow-hidden">
+              {!isLiveCameraActive ? (
+                <>
+                  <div className="text-center space-y-2 py-2">
+                    <h3 className="text-fluid-lg font-bold text-ink">
+                      {t('citizen.report.select_photo')}
+                    </h3>
+                    <p className="text-fluid-xs text-muted max-w-md mx-auto">
+                      {t('citizen.report.photo_desc')}
+                    </p>
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-1 text-[11px] font-bold text-brand shadow-xs">
+                      <Sparkles className="h-3.5 w-3.5" /> YOLOv8 Deep Learning Recognition Active
+                    </div>
+                  </div>
+
+                  {/* Two Action Options: Live Camera vs Storage */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    {/* Option 1: Live Camera (Direct In-place Viewfinder) */}
+                    <button
+                      type="button"
+                      onClick={() => void startLiveCamera('environment')}
+                      className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed border-emerald-500/40 bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08] hover:border-emerald-500 transition group cursor-pointer text-center"
+                    >
+                      <div className="grid h-16 w-16 place-items-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 group-hover:scale-105 transition">
+                        <Camera className="h-8 w-8" />
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-ink text-fluid-sm">
+                          {t('citizen.report.live_camera')}
+                        </p>
+                        <p className="text-[11px] text-muted mt-0.5">
+                          {t('citizen.report.live_camera_sub')}
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* Option 2: Device Storage / Gallery */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (galleryInput.current) {
+                          galleryInput.current.value = '';
+                          galleryInput.current.click();
+                        }
+                      }}
+                      className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed border-line hover:border-brand/70 bg-sunken/40 hover:bg-sunken transition group cursor-pointer text-center"
+                    >
+                      <div className="grid h-16 w-16 place-items-center rounded-2xl bg-brand/15 text-brand shadow-md shadow-brand/10 group-hover:scale-105 transition">
+                        <FolderUp className="h-8 w-8" />
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-ink text-fluid-sm">
+                          {t('citizen.report.from_storage')}
+                        </p>
+                        <p className="text-[11px] text-muted mt-0.5">
+                          {t('citizen.report.from_storage_sub')}
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                /* In-Place Real-Time Live Viewfinder (No popup, directly embedded in the card) */
+                <div className="relative w-full rounded-2xl overflow-hidden bg-black flex flex-col items-center justify-center min-h-[380px] sm:min-h-[460px] shadow-2xl border border-emerald-500/40">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-[380px] sm:h-[460px] object-cover bg-black"
+                  />
+
+                  {/* Viewfinder Reticle & HUD Overlay */}
+                  <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4">
+                    {/* Top HUD */}
+                    <div className="flex items-center justify-between pointer-events-auto">
+                      <div className="flex items-center gap-2 rounded-full bg-black/60 backdrop-blur-md px-3 py-1 text-[11px] font-bold text-emerald-400 border border-emerald-500/30 shadow-md">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                        <span>LIVE AI SENSOR · YOLOv8 READY</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={stopLiveCamera}
+                        title="Close Camera"
+                        className="grid h-9 w-9 place-items-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black/80 transition cursor-pointer border border-white/20 shadow-md"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+
+                    {/* Target Reticle Frame */}
+                    <div className="my-auto mx-auto w-56 h-56 sm:w-72 sm:h-72 border-2 border-dashed border-emerald-400/70 rounded-3xl relative flex items-center justify-center">
+                      <span className="absolute -top-1 -left-1 h-5 w-5 border-t-3 border-l-3 border-emerald-400 rounded-tl-lg" />
+                      <span className="absolute -top-1 -right-1 h-5 w-5 border-t-3 border-r-3 border-emerald-400 rounded-tr-lg" />
+                      <span className="absolute -bottom-1 -left-1 h-5 w-5 border-b-3 border-l-3 border-emerald-400 rounded-bl-lg" />
+                      <span className="absolute -bottom-1 -right-1 h-5 w-5 border-b-3 border-r-3 border-emerald-400 rounded-br-lg" />
+                      {isCameraStarting && (
+                        <div className="flex items-center gap-2 rounded-xl bg-black/70 px-3 py-1.5 text-xs text-white">
+                          <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+                          <span>Starting Camera…</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bottom HUD: Flip camera & Shutter button */}
+                    <div className="flex items-center justify-between w-full max-w-xs mx-auto pointer-events-auto pb-2">
+                      {/* Flip Front/Rear Camera */}
+                      <button
+                        type="button"
+                        onClick={toggleCameraFacing}
+                        title="Switch Front/Rear Camera"
+                        className="grid h-12 w-12 place-items-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black/80 transition cursor-pointer border border-white/20 shadow-md active:scale-95"
+                      >
+                        <RefreshCw className="h-5 w-5" />
+                      </button>
+
+                      {/* Primary Shutter Button */}
+                      <button
+                        type="button"
+                        onClick={snapLivePhotoFromViewfinder}
+                        title="Capture Waste Spot Photo"
+                        className="relative grid h-18 w-18 place-items-center rounded-full bg-white text-emerald-700 shadow-[0_0_30px_rgba(16,185,129,0.7)] transition active:scale-90 cursor-pointer ring-4 ring-emerald-500/50 hover:scale-105"
+                      >
+                        <div className="h-14 w-14 rounded-full border-2 border-emerald-700 grid place-items-center bg-emerald-50">
+                          <Camera className="h-7 w-7 text-emerald-700" />
+                        </div>
+                      </button>
+
+                      {/* Switch to File Storage */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          stopLiveCamera();
+                          if (galleryInput.current) {
+                            galleryInput.current.value = '';
+                            galleryInput.current.click();
+                          }
+                        }}
+                        title="Upload from Storage"
+                        className="grid h-12 w-12 place-items-center rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-black/80 transition cursor-pointer border border-white/20 shadow-md active:scale-95"
+                      >
+                        <FolderUp className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              {/* Two Prominent Action Options: Camera vs Storage */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Option 1: Live Camera */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (cameraInput.current) {
-                      cameraInput.current.value = '';
-                      cameraInput.current.click();
-                    }
-                  }}
-                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed border-emerald-500/40 bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08] hover:border-emerald-500 transition group cursor-pointer text-center"
-                >
-                  <div className="grid h-16 w-16 place-items-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 group-hover:scale-105 transition">
-                    <Camera className="h-8 w-8" />
-                  </div>
-                  <div>
-                    <p className="font-extrabold text-ink text-fluid-sm">
-                      {t('citizen.report.live_camera') || 'Take Live Photo'}
-                    </p>
-                    <p className="text-[11px] text-muted mt-0.5">
-                      {t('citizen.report.live_camera_sub') || 'Open rear device camera directly'}
-                    </p>
-                  </div>
-                </button>
-
-                {/* Option 2: Device Storage / Gallery */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (galleryInput.current) {
-                      galleryInput.current.value = '';
-                      galleryInput.current.click();
-                    }
-                  }}
-                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed border-line hover:border-brand/70 bg-sunken/40 hover:bg-sunken transition group cursor-pointer text-center"
-                >
-                  <div className="grid h-16 w-16 place-items-center rounded-2xl bg-brand/15 text-brand shadow-md shadow-brand/10 group-hover:scale-105 transition">
-                    <FolderUp className="h-8 w-8" />
-                  </div>
-                  <div>
-                    <p className="font-extrabold text-ink text-fluid-sm">
-                      {t('citizen.report.from_storage') || 'Upload from Storage'}
-                    </p>
-                    <p className="text-[11px] text-muted mt-0.5">
-                      {t('citizen.report.from_storage_sub') || 'Select from Gallery, Photos, or Files'}
-                    </p>
-                  </div>
-                </button>
-              </div>
+              )}
             </Card>
           </div>
 

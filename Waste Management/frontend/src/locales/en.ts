@@ -257,6 +257,12 @@ export const en: Record<string, string> = {
   'citizen.home.loading': 'Loading your dashboard…',
 
   'citizen.report.title': 'Report an issue',
+  'citizen.report.select_photo': 'Select Photo Source',
+  'citizen.report.photo_desc': 'Capture a live photo or upload from device. Our YOLOv8 Vision AI automatically detects the waste type and urgency.',
+  'citizen.report.live_camera': 'Live Camera',
+  'citizen.report.live_camera_sub': 'Direct in-place live viewfinder',
+  'citizen.report.from_storage': 'Device Storage',
+  'citizen.report.from_storage_sub': 'Upload from gallery, photos or files',
   'citizen.report.step1': 'Start with a photo — the category fills itself in.',
   'citizen.report.step2': 'Check what the AI found, then correct it if needed.',
   'citizen.report.step3': 'Confirm exactly where this is.',
