@@ -173,7 +173,7 @@ export function ConsoleShell({
     <div className="min-h-dvh bg-surface pb-12">
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 border-b border-line bg-surface/95 pt-[env(safe-area-inset-top)] shadow-xs backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2.5">
+        <div className="mx-auto flex w-full max-w-[1720px] items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 lg:px-8 py-2">
           {/* Logo & Console Title */}
           <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
             <button
@@ -193,11 +193,11 @@ export function ConsoleShell({
                 <img src="/icon.svg" alt="Safaai Sarathi" className="h-full w-full object-contain" />
               </div>
               <div className="flex flex-col text-left shrink-0">
-                <span className="text-[14.5px] sm:text-[15px] font-black tracking-tight text-ink leading-tight whitespace-nowrap">
+                <span className="text-[14px] sm:text-[15px] font-black tracking-tight text-ink leading-tight whitespace-nowrap">
                   Safaai Sarathi
                 </span>
                 <span
-                  className={`text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider whitespace-nowrap mt-0.5 ${
+                  className={`text-[9.5px] sm:text-[10px] font-black uppercase tracking-wider whitespace-nowrap mt-0.5 ${
                     accent === 'orange' ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'
                   }`}
                 >
@@ -208,7 +208,7 @@ export function ConsoleShell({
           </div>
 
           {/* Desktop Interactive Spotlight Navigation Bar */}
-          <div className="hidden xl:flex items-center justify-center flex-1 min-w-0 max-w-fit mx-2">
+          <div className="hidden xl:flex items-center justify-center shrink-0 mx-auto px-1">
             <SpotlightNav items={nav} accent={accent} />
           </div>
 

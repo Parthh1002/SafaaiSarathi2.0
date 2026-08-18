@@ -132,7 +132,7 @@ export function SpotlightNav({
   return (
     <nav
       ref={navRef}
-      className={`spotlight-nav relative flex items-center h-10 sm:h-11 rounded-full border border-line bg-surface/90 px-1.5 shadow-xs backdrop-blur-xl transition-all duration-300 overflow-hidden ${className}`}
+      className={`spotlight-nav relative flex items-center h-9 sm:h-10 rounded-full border border-line bg-surface/90 px-1 shadow-xs backdrop-blur-xl transition-all duration-300 shrink-0 ${className}`}
       style={
         {
           '--spotlight-color': spotlightColor,
@@ -142,7 +142,7 @@ export function SpotlightNav({
     >
       {/* Sliding Active Pill Background Animation */}
       <div
-        className={`pointer-events-none absolute h-[calc(100%-8px)] top-1 rounded-full transition-all duration-300 ease-out z-[2] ${
+        className={`pointer-events-none absolute h-[calc(100%-6px)] top-[3px] rounded-full transition-all duration-300 ease-out z-[2] ${
           isOrange
             ? 'bg-orange-600/15 border border-orange-500/30 shadow-xs shadow-orange-500/10'
             : 'bg-brand/15 border border-brand/30 shadow-xs shadow-brand/10'
@@ -156,7 +156,7 @@ export function SpotlightNav({
 
       {/* Moving Mouse Spotlight */}
       <div
-        className="pointer-events-none absolute bottom-0 left-0 w-full h-full z-[1] transition-opacity duration-300"
+        className="pointer-events-none absolute bottom-0 left-0 w-full h-full rounded-full z-[1] transition-opacity duration-300 overflow-hidden"
         style={{
           opacity: hoverX !== null ? 1 : 0,
           background: `radial-gradient(130px circle at var(--spotlight-x, 50%) 100%, var(--spotlight-color), transparent 65%)`,
@@ -165,14 +165,14 @@ export function SpotlightNav({
 
       {/* Active State Ambient Glow & Bottom Light Beam */}
       <div
-        className="pointer-events-none absolute bottom-0 left-0 w-full h-[2.5px] z-[3]"
+        className="pointer-events-none absolute bottom-0 left-0 w-full h-[2.5px] z-[3] rounded-full overflow-hidden"
         style={{
           background: `radial-gradient(80px circle at var(--ambience-x, 50%) 0%, var(--ambience-color), transparent 100%)`,
         }}
       />
 
       {/* Nav Items List */}
-      <ul className="relative flex items-center h-full px-1 gap-0.5 sm:gap-1 z-[10] list-none m-0 p-0 flex-nowrap whitespace-nowrap">
+      <ul className="relative flex items-center h-full px-0.5 gap-0.5 z-[10] list-none m-0 p-0 flex-nowrap whitespace-nowrap">
         {items.map((item, idx) => {
           const isActive = idx === activeIndex;
           const Icon = item.icon;
@@ -183,7 +183,7 @@ export function SpotlightNav({
                 end={item.end}
                 data-nav-index={idx}
                 className={({ isActive: matchActive }) =>
-                  `relative flex items-center gap-1.5 sm:gap-2 rounded-full px-2.5 lg:px-3 xl:px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors duration-200 ${
+                  `relative flex items-center gap-1.5 rounded-full px-2 sm:px-2.5 xl:px-3 py-1 text-[11.5px] xl:text-[12px] font-semibold whitespace-nowrap transition-colors duration-200 ${
                     matchActive || isActive
                       ? isOrange
                         ? 'text-orange-700 dark:text-orange-300 font-bold'
@@ -192,8 +192,8 @@ export function SpotlightNav({
                   }`
                 }
               >
-                {Icon && <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />}
-                <span className="whitespace-nowrap font-medium text-fluid-xs">{item.label}</span>
+                {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
+                <span className="whitespace-nowrap font-medium">{item.label}</span>
                 {item.badge ? (
                   <span className="ml-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[0.6rem] font-bold text-white shadow-xs">
                     {item.badge > 99 ? '99+' : item.badge}
