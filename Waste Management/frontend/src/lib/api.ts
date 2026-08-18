@@ -13,6 +13,18 @@ import axios, { AxiosError, type AxiosInstance } from 'axios';
 export type Portal = 'citizen' | 'driver' | 'officer' | 'admin';
 
 export const BASE = import.meta.env.VITE_API_URL || '';
+
+/** Resolves any relative /uploads/... or cloud storage URL to an absolute media URL */
+export function mediaUrl(url?: string | null): string {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  const cleanBase = (BASE || 'https://safaaisarathi2-0.onrender.com').replace(/\/+$/, '');
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return `${cleanBase}${cleanPath}`;
+}
+
 const tokenKey = (portal: Portal) => `ss_token_${portal}`;
 const userKey = (portal: Portal) => `ss_user_${portal}`;
 

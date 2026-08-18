@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Camera } from 'lucide-react';
-import { api } from '../../lib/api';
+import { api, mediaUrl } from '../../lib/api';
 import { Badge, Card, EmptyState, ErrorState, Loading } from '../../components/ui';
 import { CATEGORY_LABELS, STATUS_LABELS, STATUS_TONE, timeAgo } from '../../lib/format';
 import { useT } from '../../lib/i18n';

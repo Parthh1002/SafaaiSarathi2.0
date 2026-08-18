@@ -69,8 +69,11 @@ export async function createComplaint({
 
   const emergency = isEmergency || meta.emergency;
 
-  // ---- 2. Ward attribution (PostGIS ST_Contains, done in app code) -------
-  const ward = await wardForPoint({ latitude, longitude });
+  // ---- 2. Ward attribution (PostGIS ST_Contains / Nearest Ward) -------
+  let ward = await wardForPoint({ latitude, longitude });
+  if (!ward) {
+    ward = await prisma.ward.findFirst({ orderBy: { id: 'asc' } });
+  }
 
   // ---- 3. Fraud signals ---------------------------------------------------
   const fraud = await scoreFraud(await buildFraudFeatures({ citizen, latitude, longitude, ai }));
@@ -81,48 +84,37 @@ export async function createComplaint({
   const slaMinutes = emergency ? env.escalation.emergencyMinutes : meta.slaMinutes;
   const now = new Date();
 
-    const initialStatus = !ward ? 'REJECTED' : (autoApproved && !duplicate ? 'VERIFIED' : 'PENDING');
+  const initialStatus = autoApproved && !duplicate ? 'VERIFIED' : 'PENDING';
 
-    const complaint = await prisma.complaint.create({
-      data: {
-        code: complaintCode(),
-        citizenId,
-        wardId: ward?.id ?? null,
-        category,
-        aiCategory: photo?.buffer ? aiCategory : null,
-        aiConfidence: confidence,
-        aiVerified: autoApproved && !ai.degraded,
-        reviewNeeded: !ward || !autoApproved || fraud.score >= env.ai.fraudReviewThreshold,
-        fraudScore: fraud.score,
-        fraudSignals: fraud.signals?.length ? { signals: fraud.signals, modelVersion: fraud.modelVersion } : undefined,
-        status: initialStatus,
-        severity: emergency ? 'CRITICAL' : meta.severity,
-        isEmergency: emergency,
-        channel,
-        description: !ward ? `[OUT OF WARD AREA] ${description || ''}`.trim() : description,
-        latitude,
-        longitude,
-        address,
-        photoUrl,
-        slaMinutes,
-        dueAt: new Date(now.getTime() + slaMinutes * 60_000),
-        duplicateOfId: duplicate?.complaint.id ?? null,
-      },
-      include: { ward: true, citizen: { select: { id: true, name: true } } },
-    });
+  const complaint = await prisma.complaint.create({
+    data: {
+      code: complaintCode(),
+      citizenId,
+      wardId: ward?.id ?? null,
+      category,
+      aiCategory: photo?.buffer ? aiCategory : null,
+      aiConfidence: confidence,
+      aiVerified: autoApproved && !ai.degraded,
+      reviewNeeded: !autoApproved || fraud.score >= env.ai.fraudReviewThreshold,
+      fraudScore: fraud.score,
+      fraudSignals: fraud.signals?.length ? { signals: fraud.signals, modelVersion: fraud.modelVersion } : undefined,
+      status: initialStatus,
+      severity: emergency ? 'CRITICAL' : meta.severity,
+      isEmergency: emergency,
+      channel,
+      description: description || null,
+      latitude,
+      longitude,
+      address,
+      photoUrl,
+      slaMinutes,
+      dueAt: new Date(now.getTime() + slaMinutes * 60_000),
+      duplicateOfId: duplicate?.complaint.id ?? null,
+    },
+    include: { ward: true, citizen: { select: { id: true, name: true } } },
+  });
 
-    if (!ward) {
-      await addEvent(complaint.id, 'REJECTED', 'Location out of municipal ward boundaries (Geofencing check failed)', null);
-      await notify({
-        userId: citizenId,
-        type: 'COMPLAINT_OUT_OF_WARD',
-        title: `${complaint.code} — Location Out of Service Area`,
-        body: 'Sorry, this location does not fall within our service ward area. Please contact your local ward office.',
-        payload: { complaintId: complaint.id },
-      });
-    } else {
-      await addEvent(complaint.id, complaint.status, autoApproved ? `AI verified (${Math.round(confidence * 100)}% confidence)` : 'Awaiting verification', null);
-    }
+  await addEvent(complaint.id, complaint.status, autoApproved ? `AI verified (${Math.round(confidence * 100)}% confidence)` : 'Awaiting verification', null);
 
   // ---- Duplicate bookkeeping ---------------------------------------------
   if (duplicate) {

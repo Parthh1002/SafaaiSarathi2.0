@@ -128,7 +128,19 @@ router.post(
       hint: req.body?.hint,
     });
 
-    const category = aiResult.predicted_category || aiResult.category || 'garbage_pile';
+    let categoryRaw = aiResult.predicted_category || aiResult.category || 'garbage_pile';
+    categoryRaw = categoryRaw.toLowerCase();
+    let category = 'other';
+    if (categoryRaw.includes('garbage')) category = 'garbage_pile';
+    else if (categoryRaw.includes('bin') || categoryRaw.includes('overflow')) category = 'overflowing_bin';
+    else if (categoryRaw.includes('animal') || categoryRaw.includes('dead')) category = 'dead_animal';
+    else if (categoryRaw.includes('debris') || categoryRaw.includes('construct')) category = 'construction_debris';
+    else if (categoryRaw.includes('medical') || categoryRaw.includes('biohazard')) category = 'medical_waste';
+    else if (categoryRaw.includes('dump') || categoryRaw.includes('illegal')) category = 'illegal_dumping';
+    else if (categoryRaw.includes('sewage') || categoryRaw.includes('drain')) category = 'sewage_overflow';
+    else if (categoryRaw.includes('burn') || categoryRaw.includes('fire')) category = 'burning_waste';
+    else category = 'other';
+
     let rawConf =
       aiResult.confidence !== undefined
         ? aiResult.confidence <= 1
