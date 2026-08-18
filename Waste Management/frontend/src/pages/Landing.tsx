@@ -299,15 +299,15 @@ export default function Landing() {
 
               {/* Main Headline */}
               <h1 className="text-fluid-3xl font-extrabold tracking-tight text-ink sm:text-5xl lg:text-6xl leading-[1.12]">
-                Civic complaints that{' '}
+                {t('landing.hero.title1')}{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-500 to-green-600 dark:from-emerald-400 dark:to-teal-300">
-                  verify themselves.
+                  {t('landing.hero.title2')}
                 </span>
               </h1>
 
               {/* Subtitle */}
               <p className="max-w-2xl text-fluid-base text-muted leading-relaxed">
-                Most civic systems collect a complaint and wait. Safaai Sarathi classifies it in real-time with YOLOv8 Deep Learning, merges duplicates, scores urgency, and routes emergencies straight to the ward officer — then tracks the truck until it is closed with proof.
+                {t('landing.hero.body')}
               </p>
 
               {/* Call-to-Action Buttons */}

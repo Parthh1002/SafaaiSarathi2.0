@@ -20,11 +20,27 @@ import {
   Biohazard,
   Cpu,
   AlertTriangle,
+  Crosshair,
+  Navigation,
 } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { Badge, Card, toast } from '../../components/ui';
 import { BaseMap, LocationPicker } from '../../components/map/Map';
 import { useT } from '../../lib/i18n';
+
+function estimateGandhinagarSector(lat: number, lng: number): string {
+  if (lat > 23.23 && lng < 72.63) return 'Sector 1 / Infocity Area';
+  if (lat > 23.23 && lng >= 72.63 && lng < 72.65) return 'Sector 2 / Sector 3';
+  if (lat > 23.22 && lng < 72.64) return 'Sector 4 / Sector 5';
+  if (lat > 23.21 && lng < 72.64) return 'Sector 6 / GH-Road Corridor';
+  if (lat > 23.21 && lng >= 72.64) return 'Sector 7 / Sector 8 Market';
+  if (lat > 23.20 && lng < 72.64) return 'Sector 11 / Sachivalaya Area';
+  if (lat > 23.20 && lng >= 72.64) return 'Sector 12 / Sector 13';
+  if (lat > 23.19 && lng >= 72.64) return 'Sector 21 / Shopping Center';
+  if (lat > 23.18 && lng >= 72.65) return 'Kudasan / Bhaijipura Area';
+  if (lat <= 23.18) return 'Koba / GIFT City Corridor';
+  return 'Sector 6 / GH-Circle Area';
+}
 
 type Step = 'where' | 'what' | 'when' | 'review';
 
@@ -71,22 +87,42 @@ export default function SchedulePickup() {
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  function updateCoordinates(lat: number, lng: number) {
+    setPosition({ lat, lng });
+    const sector = estimateGandhinagarSector(lat, lng);
+    setAddress(`${sector}, Gandhinagar, Gujarat 382006 (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`);
+  }
+
+  function handleLocateMe() {
+    if (!navigator.geolocation) {
+      toast.warn('Geolocation not supported on this browser.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        updateCoordinates(pos.coords.latitude, pos.coords.longitude);
+        toast.success('Location locked to your current GPS position!');
+      },
+      () => toast.error('Unable to fetch GPS position. Please tap manually on the map.'),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
   useEffect(() => {
     // Auto-fill GPS
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          if (!address) {
-            setAddress(`Sector 6, Gandhinagar, Gujarat 382006 (Lat: ${pos.coords.latitude.toFixed(4)}, Lng: ${pos.coords.longitude.toFixed(4)})`);
-          }
+          updateCoordinates(pos.coords.latitude, pos.coords.longitude);
         },
         () => {
-          if (!address) setAddress('Sector 6, Gandhinagar, Gujarat 382006');
+          if (!address) {
+            setAddress('Sector 6, Gandhinagar, Gujarat 382006 (Lat: 23.2156, Lng: 72.6369)');
+          }
         }
       );
     } else {
-      setAddress('Sector 6, Gandhinagar, Gujarat 382006');
+      setAddress('Sector 6, Gandhinagar, Gujarat 382006 (Lat: 23.2156, Lng: 72.6369)');
     }
   }, []);
 
@@ -140,25 +176,24 @@ export default function SchedulePickup() {
                   else if (step === 'when') setStep('what');
                   else if (step === 'what') setStep('where');
                 }}
-                className="p-1.5 rounded-xl border border-line bg-surface hover:bg-sunken text-muted hover:text-ink cursor-pointer"
-                title="Go to previous step"
+                className="inline-flex items-center gap-1 rounded-lg bg-elevated px-2 py-1 text-fluid-xs font-semibold text-muted hover:bg-sunken cursor-pointer"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" /> Back
               </button>
             )}
-            <h1 className="text-fluid-xl font-bold tracking-tight text-ink">Schedule Event Pickup</h1>
+            <h1 className="text-fluid-xl font-bold tracking-tight text-ink">Schedule Event Waste Pickup</h1>
           </div>
           <p className="text-fluid-xs text-muted">
-            Book advance municipal waste collection for upcoming weddings, festivals, or home renovations.
+            Book a dedicated municipal waste pickup for marriages, society cleanups, or renovation debris.
           </p>
         </div>
 
-        {/* Step Indicator Badges */}
-        <div className="flex items-center gap-1.5 bg-surface border border-line p-1.5 rounded-2xl">
+        {/* Step Indicator */}
+        <div className="flex items-center gap-2 bg-elevated/70 p-1.5 rounded-2xl border border-line shadow-xs">
           {[
-            { id: 'where', label: '1. Where' },
-            { id: 'what', label: '2. What' },
-            { id: 'when', label: '3. When' },
+            { id: 'where', label: '1. Location' },
+            { id: 'what', label: '2. Waste' },
+            { id: 'when', label: '3. Schedule' },
             { id: 'review', label: '4. Review' },
           ].map((s, i) => {
             const current = step === s.id;
@@ -176,7 +211,7 @@ export default function SchedulePickup() {
                     : 'text-muted'
                 }`}
               >
-                {done ? <Check className="h-3 w-3" /> : <span>{i + 1}</span>}
+                {done ? <Check className="h-3.5 w-3.5" /> : <span>{i + 1}</span>}
                 <span>{s.label.split('. ')[1]}</span>
               </div>
             );
@@ -235,31 +270,60 @@ export default function SchedulePickup() {
             </button>
           </div>
 
-          {/* Address Field */}
+          {/* Address Field with Auto-Update Status */}
           <div className="space-y-1.5">
-            <label className="block text-fluid-xs font-bold text-ink">
-              Specific Address / Landmark <span className="text-danger">*</span>
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="block text-fluid-xs font-bold text-ink">
+                Specific Address / Landmark <span className="text-danger">*</span>
+              </label>
+              <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <Sparkles className="h-3 w-3" /> Auto-syncs with map pin
+              </span>
+            </div>
             <input
               type="text"
-              className="field w-full"
+              className="field w-full font-medium"
               placeholder="e.g. Block C Common Garden, Shivalik Residency, Sector 7"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             />
           </div>
 
-          {/* Map Location Pin */}
-          <div className="space-y-1.5">
-            <label className="block text-fluid-xs font-bold text-ink">
-              Pin Exact Pickup Coordinates on Map
-            </label>
-            <div className="h-[280px] w-full overflow-hidden rounded-2xl border border-line">
+          {/* Map Location Pin Header & Actions */}
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <label className="block text-fluid-xs font-bold text-ink">
+                  Pin Exact Pickup Coordinates on Map
+                </label>
+                <p className="text-[11px] text-muted">
+                  Tap anywhere on the map or drag the pin to set the pickup spot.
+                </p>
+              </div>
+
+              {/* Locate Me GPS Button & Locked Coordinates Badge */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleLocateMe}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-brand/40 bg-brand/10 hover:bg-brand/20 px-3 py-1.5 text-[11px] font-bold text-brand shadow-xs transition cursor-pointer"
+                >
+                  <Navigation className="h-3.5 w-3.5" /> Use Current GPS
+                </button>
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-sunken border border-line px-3 py-1.5 text-[11px] font-mono text-muted">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  {position.lat.toFixed(4)}, {position.lng.toFixed(4)}
+                </span>
+              </div>
+            </div>
+
+            {/* Interactive Leaflet Map Container */}
+            <div className="h-[300px] w-full overflow-hidden rounded-2xl border border-line shadow-inner relative">
               <BaseMap center={[position.lat, position.lng]} zoom={15}>
                 <LocationPicker
                   latitude={position.lat}
                   longitude={position.lng}
-                  onChange={(lat, lng) => setPosition({ lat, lng })}
+                  onChange={(lat, lng) => updateCoordinates(lat, lng)}
                 />
               </BaseMap>
             </div>

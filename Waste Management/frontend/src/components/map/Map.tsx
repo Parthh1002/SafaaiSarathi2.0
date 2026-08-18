@@ -271,26 +271,71 @@ export function ComplaintLayer({
   );
 }
 
-/** A single pin — the complaint being reported or tracked. */
-export function PinMarker({ latitude, longitude, tone = 'brand', label }: { latitude: number; longitude: number; tone?: 'brand' | 'danger'; label?: string }) {
-  const icon = useMemo(
-    () =>
-      L.divIcon({
-        className: '',
-        iconSize: [26, 34],
-        iconAnchor: [13, 32],
-        html: `<svg viewBox="0 0 26 34" width="26" height="34" aria-hidden="true">
-                 <path d="M13 33C13 33 24 21.4 24 13A11 11 0 1 0 2 13c0 8.4 11 20 11 20Z"
-                       fill="${tone === 'danger' ? '#dc2626' : '#15803d'}" stroke="white" stroke-width="2"/>
-                 <circle cx="13" cy="13" r="4.2" fill="white"/>
-               </svg>`,
-      }),
-    [tone]
-  );
+/** A single pin — the complaint being reported or tracked with high-visibility radar pulse. */
+export function PinMarker({
+  latitude,
+  longitude,
+  tone = 'brand',
+  label,
+  draggable = false,
+  onDragEnd,
+}: {
+  latitude: number;
+  longitude: number;
+  tone?: 'brand' | 'danger' | 'amber';
+  label?: string;
+  draggable?: boolean;
+  onDragEnd?: (lat: number, lng: number) => void;
+}) {
+  const icon = useMemo(() => {
+    const color = tone === 'danger' ? '#ef4444' : tone === 'amber' ? '#f59e0b' : '#10b981';
+    const ringColor = tone === 'danger' ? 'rgba(239, 68, 68, 0.45)' : 'rgba(16, 185, 129, 0.45)';
+    return L.divIcon({
+      className: 'pin-marker-custom',
+      iconSize: [44, 52],
+      iconAnchor: [22, 48],
+      popupAnchor: [0, -48],
+      html: `
+        <div class="relative grid place-items-center cursor-pointer group select-none" style="width: 44px; height: 52px;">
+          <span class="absolute bottom-1 h-3 w-6 rounded-full bg-black/35 blur-[2px]"></span>
+          <span class="absolute top-1 h-9 w-9 rounded-full animate-ping opacity-80 pointer-events-none" style="background-color: ${ringColor}"></span>
+          <div class="relative z-10 flex flex-col items-center drop-shadow-xl transition-transform duration-200 transform group-hover:scale-110">
+            <svg viewBox="0 0 32 42" width="36" height="46" aria-hidden="true">
+              <defs>
+                <linearGradient id="pinGrad-${tone}" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="${tone === 'danger' ? '#f87171' : '#34d399'}" />
+                  <stop offset="100%" stop-color="${tone === 'danger' ? '#dc2626' : '#059669'}" />
+                </linearGradient>
+              </defs>
+              <path d="M16 41 C16 41 30 26 30 15 C30 6.7 23.7 0 16 0 C8.3 0 2 6.7 2 15 C2 26 16 41 16 41 Z"
+                    fill="url(#pinGrad-${tone})" stroke="#ffffff" stroke-width="2.2" />
+              <circle cx="16" cy="15" r="5.5" fill="#ffffff"/>
+              <circle cx="16" cy="15" r="3" fill="${color}"/>
+            </svg>
+          </div>
+        </div>
+      `,
+    });
+  }, [tone]);
 
   return (
-    <Marker position={[latitude, longitude]} icon={icon}>
-      {label && <Popup>{label}</Popup>}
+    <Marker
+      position={[latitude, longitude]}
+      icon={icon}
+      draggable={draggable}
+      eventHandlers={
+        onDragEnd
+          ? {
+              dragend: (e) => {
+                const marker = e.target;
+                const pos = marker.getLatLng();
+                onDragEnd(pos.lat, pos.lng);
+              },
+            }
+          : undefined
+      }
+    >
+      {label && <Popup autoPan={false}>{label}</Popup>}
     </Marker>
   );
 }
@@ -321,17 +366,21 @@ export function FitBounds({ points }: { points: Array<[number, number]> }) {
   return null;
 }
 
-/** Lets the citizen drag a pin to correct the reported location. */
+/** Lets the citizen tap anywhere or drag the pin to pinpoint the exact location. */
 export function LocationPicker({
   latitude,
   longitude,
   position,
   onChange,
+  tone = 'brand',
+  label,
 }: {
   latitude?: number;
   longitude?: number;
   position?: { lat: number; lng: number } | [number, number] | null;
-  onChange: (lat: number | { lat: number; lng: number }, lng?: number) => void;
+  onChange: (lat: number, lng: number) => void;
+  tone?: 'brand' | 'danger';
+  label?: string;
 }) {
   const map = useMap();
 
@@ -345,6 +394,7 @@ export function LocationPicker({
   useEffect(() => {
     const handler = (e: L.LeafletMouseEvent) => {
       onChange(e.latlng.lat, e.latlng.lng);
+      map.panTo([e.latlng.lat, e.latlng.lng], { animate: true, duration: 0.4 });
     };
     map.on('click', handler);
     return () => {
@@ -352,7 +402,19 @@ export function LocationPicker({
     };
   }, [map, onChange]);
 
-  return <PinMarker latitude={lat} longitude={lng} label="Drag or tap the map to adjust" />;
+  return (
+    <PinMarker
+      latitude={lat}
+      longitude={lng}
+      tone={tone}
+      draggable
+      onDragEnd={(newLat, newLng) => {
+        onChange(newLat, newLng);
+        map.panTo([newLat, newLng], { animate: true, duration: 0.4 });
+      }}
+      label={label || `📍 Selected: ${lat.toFixed(5)}, ${lng.toFixed(5)}`}
+    />
+  );
 }
 
 export { Polygon, Polyline, CircleMarker, Marker, Popup, useMap };

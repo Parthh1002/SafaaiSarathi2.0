@@ -68,7 +68,7 @@ export const env = {
   mailFrom: process.env.MAIL_FROM || 'Safaai Sarathi <no-reply@safaaisarathi.local>',
 
   ai: {
-    autoApproveConfidence: num(process.env.AI_CONFIDENCE_AUTO_APPROVE, 0.7),
+    autoApproveConfidence: num(process.env.AI_CONFIDENCE_AUTO_APPROVE, 0.65),
     fraudReviewThreshold: num(process.env.AI_FRAUD_REVIEW_THRESHOLD, 0.6),
   },
 

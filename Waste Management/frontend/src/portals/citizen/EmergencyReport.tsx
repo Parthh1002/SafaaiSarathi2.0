@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Camera, Loader2, Siren } from 'lucide-react';
+import { AlertTriangle, Camera, Loader2, Siren, FolderUp } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { Card, toast } from '../../components/ui';
 import { BackLink } from '../../components/shells';
@@ -21,7 +21,8 @@ const EMERGENCIES = [
 export default function EmergencyReport() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const fileInput = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
+  const galleryInput = useRef<HTMLInputElement>(null);
 
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
@@ -107,26 +108,98 @@ export default function EmergencyReport() {
       </div>
 
       <div>
-        <label className="label">Photo (strongly recommended)</label>
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          className="flex w-full items-center gap-3 rounded-xl border border-dashed border-line p-3.5 text-left transition hover:border-danger"
-        >
-          {preview ? (
-            <img src={preview} alt="" className="h-14 w-14 rounded-lg object-cover" />
-          ) : (
-            <span className="grid h-14 w-14 place-items-center rounded-lg bg-sunken text-faint">
-              <Camera className="h-5 w-5" />
-            </span>
-          )}
-          <span className="text-fluid-sm font-medium">{preview ? 'Change photo' : 'Add a photo'}</span>
-        </button>
+        <label className="label">Photo Proof (strongly recommended)</label>
+        
+        {preview ? (
+          <div className="relative rounded-2xl overflow-hidden border border-line aspect-video bg-slate-950">
+            <img src={preview} alt="Emergency Proof" className="h-full w-full object-cover" />
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (cameraInput.current) {
+                    cameraInput.current.value = '';
+                    cameraInput.current.click();
+                  }
+                }}
+                className="btn-ghost btn-sm bg-black/75 text-white hover:bg-black font-bold flex items-center gap-1 cursor-pointer"
+              >
+                <Camera className="h-3.5 w-3.5" /> Camera
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (galleryInput.current) {
+                    galleryInput.current.value = '';
+                    galleryInput.current.click();
+                  }
+                }}
+                className="btn-ghost btn-sm bg-black/75 text-white hover:bg-black font-bold flex items-center gap-1 cursor-pointer"
+              >
+                <FolderUp className="h-3.5 w-3.5" /> Storage
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (cameraInput.current) {
+                  cameraInput.current.value = '';
+                  cameraInput.current.click();
+                }
+              }}
+              className="flex items-center gap-3 rounded-2xl border-2 border-dashed border-red-500/30 bg-red-500/[0.03] hover:bg-red-500/[0.08] hover:border-red-500 p-3.5 text-left transition cursor-pointer"
+            >
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-danger text-white shadow-md shadow-red-500/20">
+                <Camera className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-bold text-ink text-fluid-xs">Live Camera</p>
+                <p className="text-[11px] text-muted">Capture instant photo</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (galleryInput.current) {
+                  galleryInput.current.value = '';
+                  galleryInput.current.click();
+                }
+              }}
+              className="flex items-center gap-3 rounded-2xl border-2 border-dashed border-line hover:border-brand/70 bg-sunken/40 hover:bg-sunken p-3.5 text-left transition cursor-pointer"
+            >
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand/15 text-brand shadow-xs">
+                <FolderUp className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-bold text-ink text-fluid-xs">Device Storage</p>
+                <p className="text-[11px] text-muted">Pick from gallery/files</p>
+              </div>
+            </button>
+          </div>
+        )}
+
         <input
-          ref={fileInput}
+          ref={cameraInput}
           type="file"
           accept="image/*"
           capture="environment"
+          className="sr-only"
+          onChange={(e) => {
+            const selected = e.target.files?.[0];
+            if (selected) {
+              setFile(selected);
+              setPreview(URL.createObjectURL(selected));
+            }
+          }}
+        />
+        <input
+          ref={galleryInput}
+          type="file"
+          accept="image/*"
           className="sr-only"
           onChange={(e) => {
             const selected = e.target.files?.[0];

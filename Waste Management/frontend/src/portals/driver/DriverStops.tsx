@@ -16,6 +16,7 @@ import {
   Upload,
   Sparkles,
   Phone,
+  FolderUp,
 } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { Badge, Card, EmptyState, ErrorState, Loading, Modal, toast } from '../../components/ui';
@@ -91,6 +92,9 @@ export default function DriverStops() {
   const [note, setNote] = useState('');
   const [localCompletedIds, setLocalCompletedIds] = useState<string[]>([]);
   const [localInProgressIds, setLocalInProgressIds] = useState<string[]>(['tsk-01']);
+
+  const cameraInput = useRef<HTMLInputElement>(null);
+  const galleryInput = useRef<HTMLInputElement>(null);
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['driver', 'tasks', filter],
@@ -371,7 +375,21 @@ export default function DriverStops() {
             </p>
 
             <input
-              ref={fileInput}
+              ref={cameraInput}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="sr-only"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setPhoto(file);
+                  setPreview(URL.createObjectURL(file));
+                }
+              }}
+            />
+            <input
+              ref={galleryInput}
               type="file"
               accept="image/*"
               className="sr-only"
@@ -387,28 +405,73 @@ export default function DriverStops() {
             {preview ? (
               <div className="relative rounded-2xl overflow-hidden border border-line aspect-video bg-slate-950">
                 <img src={preview} alt="Resolution proof" className="h-full w-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => fileInput.current?.click()}
-                  className="absolute bottom-3 right-3 btn-ghost btn-sm bg-black/70 text-white hover:bg-black/90 font-bold"
-                >
-                  Change Photo
-                </button>
+                <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (cameraInput.current) {
+                        cameraInput.current.value = '';
+                        cameraInput.current.click();
+                      }
+                    }}
+                    className="btn-ghost btn-sm bg-black/75 text-white hover:bg-black font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Camera className="h-3.5 w-3.5" /> Camera
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (galleryInput.current) {
+                        galleryInput.current.value = '';
+                        galleryInput.current.click();
+                      }
+                    }}
+                    className="btn-ghost btn-sm bg-black/75 text-white hover:bg-black font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <FolderUp className="h-3.5 w-3.5" /> Storage
+                  </button>
+                </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => fileInput.current?.click()}
-                className="w-full border-2 border-dashed border-line hover:border-emerald-500/60 rounded-2xl p-8 flex flex-col items-center justify-center gap-2.5 transition cursor-pointer bg-surface hover:bg-emerald-50/5"
-              >
-                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-500/10 text-emerald-600">
-                  <Camera className="h-6 w-6" />
-                </div>
-                <div className="text-center">
-                  <p className="text-fluid-sm font-bold text-ink">Take or Upload Clean Photo</p>
-                  <p className="text-fluid-xs text-muted">JPG, PNG up to 10MB</p>
-                </div>
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (cameraInput.current) {
+                      cameraInput.current.value = '';
+                      cameraInput.current.click();
+                    }
+                  }}
+                  className="flex items-center gap-3 rounded-2xl border-2 border-dashed border-emerald-500/40 bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08] hover:border-emerald-500 p-4 text-left transition cursor-pointer"
+                >
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-600 text-white shadow-xs">
+                    <Camera className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-ink text-fluid-xs">Live Camera</p>
+                    <p className="text-[11px] text-muted">Take cleaned site photo</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (galleryInput.current) {
+                      galleryInput.current.value = '';
+                      galleryInput.current.click();
+                    }
+                  }}
+                  className="flex items-center gap-3 rounded-2xl border-2 border-dashed border-line hover:border-brand/70 bg-sunken/40 hover:bg-sunken p-4 text-left transition cursor-pointer"
+                >
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand/15 text-brand shadow-xs">
+                    <FolderUp className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-ink text-fluid-xs">Device Storage</p>
+                    <p className="text-[11px] text-muted">Choose from files/photos</p>
+                  </div>
+                </button>
+              </div>
             )}
 
             <div>

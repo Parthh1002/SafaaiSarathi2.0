@@ -23,6 +23,7 @@ import {
   Layers,
   FileText,
   ChevronLeft,
+  FolderUp,
 } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
 import { Badge, Card, Meter, toast } from '../../components/ui';
@@ -56,7 +57,8 @@ export default function NewReport() {
   const t = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const fileInput = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
+  const galleryInput = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const [step, setStep] = useState<Step>('capture');
@@ -285,12 +287,22 @@ export default function NewReport() {
 
   return (
     <div className="space-y-6">
-      {/* Hidden File Input — Always mounted in DOM across all steps so Retake Photo works reliably */}
+      {/* Hidden File Inputs — Live Camera vs Gallery */}
       <input
-        ref={fileInput}
+        ref={cameraInput}
         type="file"
         accept="image/*"
         capture="environment"
+        className="sr-only"
+        onChange={(e) => {
+          const selected = e.target.files?.[0];
+          if (selected) void onPhoto(selected);
+        }}
+      />
+      <input
+        ref={galleryInput}
+        type="file"
+        accept="image/*"
         className="sr-only"
         onChange={(e) => {
           const selected = e.target.files?.[0];
@@ -306,13 +318,13 @@ export default function NewReport() {
               <button
                 type="button"
                 onClick={() => setStep(step === 'location' ? 'review' : 'capture')}
-                className="inline-flex items-center gap-1 rounded-lg bg-elevated px-2 py-1 text-fluid-xs font-semibold text-muted hover:bg-sunken"
+                className="inline-flex items-center gap-1 rounded-lg bg-elevated px-2 py-1 text-fluid-xs font-semibold text-muted hover:bg-sunken cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" /> Back
               </button>
             )}
             <h1 className="text-fluid-xl font-bold tracking-tight text-ink">
-              {step === 'capture' && 'Report Civic Waste'}
+              {step === 'capture' && (t('citizen.report.title') || 'Report Civic Waste')}
               {step === 'review' && 'AI Waste Verification'}
               {step === 'location' && 'Confirm Coordinates & Submit'}
             </h1>
@@ -358,25 +370,69 @@ export default function NewReport() {
         <div className="grid gap-6 lg:grid-cols-12">
           {/* Main Upload Box */}
           <div className="lg:col-span-8">
-            <Card className="p-6 sm:p-10 border-2 border-dashed border-brand/30 hover:border-brand bg-brand/[0.02] transition">
-              <button
-                type="button"
-                onClick={triggerPhotoCapture}
-                className="flex w-full flex-col items-center gap-4 py-8 text-center group cursor-pointer"
-              >
-                <div className="grid h-24 w-24 place-items-center rounded-3xl bg-brand text-brand-ink shadow-xl shadow-brand/20 transition group-hover:scale-105">
-                  <Camera className="h-12 w-12" />
+            <Card className="p-6 sm:p-8 border border-line bg-surface shadow-xs space-y-6">
+              <div className="text-center space-y-2">
+                <h3 className="text-fluid-lg font-bold text-ink">
+                  {t('citizen.report.select_photo') || 'Add Waste Spot Photo'}
+                </h3>
+                <p className="text-fluid-xs text-muted max-w-md mx-auto">
+                  {t('citizen.report.photo_desc') || 'Choose how you want to upload. Our YOLOv8 Vision AI automatically classifies waste category and urgency.'}
+                </p>
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-1 text-[11px] font-bold text-brand shadow-xs">
+                  <Sparkles className="h-3.5 w-3.5" /> YOLOv8 Deep Learning Recognition Active
                 </div>
-                <div className="space-y-1">
-                  <h3 className="text-fluid-lg font-bold text-ink">Take Live Photo / Upload</h3>
-                  <p className="text-fluid-xs text-muted max-w-md">
-                    Point camera at the waste spot. Our YOLOv8 Deep Learning model automatically detects waste type.
-                  </p>
-                </div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1.5 text-fluid-xs font-bold text-brand shadow-xs">
-                  <Sparkles className="h-4 w-4" /> AI Auto-Classification Active
-                </div>
-              </button>
+              </div>
+
+              {/* Two Prominent Action Options: Camera vs Storage */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Option 1: Live Camera */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (cameraInput.current) {
+                      cameraInput.current.value = '';
+                      cameraInput.current.click();
+                    }
+                  }}
+                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed border-emerald-500/40 bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08] hover:border-emerald-500 transition group cursor-pointer text-center"
+                >
+                  <div className="grid h-16 w-16 place-items-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 group-hover:scale-105 transition">
+                    <Camera className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-ink text-fluid-sm">
+                      {t('citizen.report.live_camera') || 'Take Live Photo'}
+                    </p>
+                    <p className="text-[11px] text-muted mt-0.5">
+                      {t('citizen.report.live_camera_sub') || 'Open rear device camera directly'}
+                    </p>
+                  </div>
+                </button>
+
+                {/* Option 2: Device Storage / Gallery */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (galleryInput.current) {
+                      galleryInput.current.value = '';
+                      galleryInput.current.click();
+                    }
+                  }}
+                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-dashed border-line hover:border-brand/70 bg-sunken/40 hover:bg-sunken transition group cursor-pointer text-center"
+                >
+                  <div className="grid h-16 w-16 place-items-center rounded-2xl bg-brand/15 text-brand shadow-md shadow-brand/10 group-hover:scale-105 transition">
+                    <FolderUp className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <p className="font-extrabold text-ink text-fluid-sm">
+                      {t('citizen.report.from_storage') || 'Upload from Storage'}
+                    </p>
+                    <p className="text-[11px] text-muted mt-0.5">
+                      {t('citizen.report.from_storage_sub') || 'Select from Gallery, Photos, or Files'}
+                    </p>
+                  </div>
+                </button>
+              </div>
             </Card>
           </div>
 
@@ -443,14 +499,33 @@ export default function NewReport() {
                   </div>
                 )}
 
-                {/* Retake Photo Button — Triggers File Picker directly */}
-                <button
-                  type="button"
-                  onClick={triggerPhotoCapture}
-                  className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-black/75 px-3 py-1.5 text-fluid-xs font-semibold text-white backdrop-blur shadow-md hover:bg-black/95 transition cursor-pointer"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" /> Retake Photo
-                </button>
+                {/* Retake Photo Buttons — Camera or Gallery */}
+                <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (cameraInput.current) {
+                        cameraInput.current.value = '';
+                        cameraInput.current.click();
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-black/80 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur shadow-md hover:bg-black transition cursor-pointer"
+                  >
+                    <Camera className="h-3.5 w-3.5" /> Camera
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (galleryInput.current) {
+                        galleryInput.current.value = '';
+                        galleryInput.current.click();
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-black/80 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur shadow-md hover:bg-black transition cursor-pointer"
+                  >
+                    <FolderUp className="h-3.5 w-3.5" /> Storage
+                  </button>
+                </div>
               </div>
 
               {/* AI Inference Telemetry Box */}
@@ -462,12 +537,12 @@ export default function NewReport() {
                         <Sparkles className="h-4 w-4 text-brand animate-pulse" /> AI Detected:{' '}
                         {CATEGORY_META[visionAi.predicted_category]?.label || visionAi.predicted_category.replace(/_/g, ' ')} ({visionAi.confidence}%)
                       </span>
-                      <Badge tone={visionAi.confidence >= 70 ? 'ok' : 'warn'}>
-                        {visionAi.confidence >= 70 ? '✓ Auto-Selected' : 'Needs Review'}
+                      <Badge tone={visionAi.confidence >= 65 ? 'ok' : 'warn'}>
+                        {visionAi.confidence >= 65 ? '✓ AI Auto-Verified' : 'Needs Review'}
                       </Badge>
                     </div>
                     <p className="text-fluid-xs text-muted italic leading-relaxed">
-                      "{visionAi.remark || 'Multi-class visual cues verified by YOLOv8.'}"
+                      "{visionAi.remark || 'Multi-class visual features classified by YOLOv8 deep learning model.'}"
                     </p>
                   </div>
                 ) : (
