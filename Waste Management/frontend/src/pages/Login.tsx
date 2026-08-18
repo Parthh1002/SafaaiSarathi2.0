@@ -26,6 +26,13 @@ const PORTAL_COPY: Record<Portal, PortalCopy> = {
   admin: { icon: Shield, accent: 'text-danger', hasNote: true },
 };
 
+const PORTAL_TABS = [
+  { id: 'citizen' as const, label: 'Citizen', icon: User, path: '/login', badge: 'Hub' },
+  { id: 'driver' as const, label: 'Driver', icon: Truck, path: '/driver/login', badge: 'Fleet' },
+  { id: 'officer' as const, label: 'Ward Officer', icon: Building2, path: '/officer/login', badge: 'Ward' },
+  { id: 'admin' as const, label: 'Municipal Admin', icon: Shield, path: '/admin/login', badge: 'HQ' },
+];
+
 interface DemoAccount {
   name: string;
   email: string;
@@ -167,10 +174,8 @@ export default function Login({ portal }: { portal: Portal }) {
         aria-hidden
         className="absolute inset-0 bg-gradient-to-r from-surface/90 via-surface/45 to-surface/60 lg:via-surface/30 lg:to-surface/70"
       />
-
-      {/* Top bar floats over the photo. No chip on the logo, so the icon starts
-          on exactly the same left edge as the headline below it. */}
-      <header className="relative z-10 flex shrink-0 items-center justify-between gap-3 px-4 py-4 sm:px-8">
+      {/* Top bar floats over the photo with dedicated Role-Based Access Navbar */}
+      <header className="relative z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-8 border-b border-line/30 bg-surface/40 backdrop-blur-md">
         <Link to="/" className="flex items-center gap-2.5">
           <img src="/icon.svg" alt="" className="h-8 w-8 drop-shadow" />
           <span className="text-fluid-base font-bold tracking-tight">
@@ -178,7 +183,39 @@ export default function Login({ portal }: { portal: Portal }) {
           </span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        {/* Central Role-Based Access Selector Navbar */}
+        <nav
+          aria-label="Role Portals"
+          className="order-3 w-full sm:order-2 sm:w-auto flex items-center justify-center p-1 rounded-2xl bg-elevated/70 border border-line/60 backdrop-blur-xl shadow-xs overflow-x-auto scrollbar-none"
+        >
+          {PORTAL_TABS.map((tab) => {
+            const TabIcon = tab.icon;
+            const active = portal === tab.id;
+            return (
+              <Link
+                key={tab.id}
+                to={tab.path}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-fluid-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                  active
+                    ? 'bg-brand text-brand-ink shadow-xs scale-100 ring-1 ring-brand/30'
+                    : 'text-muted hover:text-ink hover:bg-sunken'
+                }`}
+              >
+                <TabIcon className="h-3.5 w-3.5" />
+                <span>{tab.label}</span>
+                <span
+                  className={`text-[9px] px-1.5 py-0.5 rounded-md uppercase tracking-wider font-black ${
+                    active ? 'bg-black/15 text-brand-ink' : 'bg-sunken text-muted'
+                  }`}
+                >
+                  {tab.badge}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="order-2 sm:order-3 flex items-center gap-2">
           <Link to="/" className="btn-ghost btn-sm bg-elevated/80 backdrop-blur">
             <ArrowLeft className="h-4 w-4" /> {t('common.home')}
           </Link>
