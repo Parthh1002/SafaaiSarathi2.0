@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
- * Safaai Sarathi 2.0 - Elegant Minimalist Tech Intro
- * ===================================================
- * Clean, professional, and aesthetic entry sequence:
- * 1. Deep midnight obsidian canvas with subtle ambient emerald aura
- * 2. Glassmorphic emblem with soft breathing ring
- * 3. Modern high-precision typography & civic intelligence badge
- * 4. Micro-particle atmospheric mist (calm and refined)
- * 5. Smooth 2.6-second progress flow with seamless transition
+ * Safaai Sarathi 2.0 - Gandhinagar Civic Edition Intro
+ * ====================================================
+ * Cinematic entrance featuring:
+ * 1. Realistic Mahatma Mandir & GMC EV Compactor Fleet background with subtle Ken Burns zoom
+ * 2. Pure animated typography (logo removed as requested) with metallic emerald shimmer
+ * 3. Official Gandhinagar Municipal Corporation (GMC) & Swachh Bharat mission badges
+ * 4. Crisp glowing Indian tricolor progress indicator
+ * 5. Instant Skip action & smooth transition into the application
  */
 
 function playSoftChime() {
@@ -22,8 +22,8 @@ function playSoftChime() {
 
     const now = ctx.currentTime;
 
-    // Soothing ambient sine chord
-    const frequencies = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+    // Harmonious crystal chord (C5, E5, G5, C6)
+    const frequencies = [523.25, 659.25, 783.99, 1046.5];
     frequencies.forEach((freq, idx) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -32,102 +32,18 @@ function playSoftChime() {
 
       gain.gain.setValueAtTime(0.0001, now + idx * 0.05);
       gain.gain.linearRampToValueAtTime(0.04, now + 0.15 + idx * 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.0);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(now + idx * 0.05);
-      osc.stop(now + 2.0);
+      osc.stop(now + 2.2);
     });
   } catch {
     // Gracefully ignore audio block
   }
 }
 
-// ------------------------------------------------ Subtle Background Particle Canvas
-function AmbientParticleCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animId: number;
-    let width = (canvas.width = window.innerWidth);
-    let height = (canvas.height = window.innerHeight);
-
-    const handleResize = () => {
-      if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', handleResize);
-
-    const particles = Array.from({ length: 45 }, () => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      radius: Math.random() * 1.5 + 0.5,
-      speedX: (Math.random() - 0.5) * 0.4,
-      speedY: (Math.random() - 0.5) * 0.4,
-      alpha: Math.random() * 0.5 + 0.2,
-      pulseSpeed: Math.random() * 0.02 + 0.01,
-      phase: Math.random() * Math.PI * 2,
-    }));
-
-    let frame = 0;
-
-    const render = () => {
-      frame++;
-      ctx.clearRect(0, 0, width, height);
-
-      // Subtle ambient center radial glow
-      const cx = width / 2;
-      const cy = height / 2;
-      const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.min(width, height) * 0.7);
-      gradient.addColorStop(0, 'rgba(16, 185, 129, 0.12)');
-      gradient.addColorStop(0.4, 'rgba(6, 78, 59, 0.06)');
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-
-      // Draw elegant particles
-      particles.forEach((p) => {
-        p.x += p.speedX;
-        p.y += p.speedY;
-
-        if (p.x < 0) p.x = width;
-        if (p.x > width) p.x = 0;
-        if (p.y < 0) p.y = height;
-        if (p.y > height) p.y = 0;
-
-        const currentAlpha = p.alpha * (0.6 + 0.4 * Math.sin(frame * p.pulseSpeed + p.phase));
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(52, 211, 153, ${currentAlpha})`;
-        ctx.shadowColor = '#10b981';
-        ctx.shadowBlur = 6;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      });
-
-      animId = requestAnimationFrame(render);
-    };
-
-    animId = requestAnimationFrame(render);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      cancelAnimationFrame(animId);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="absolute inset-0 h-full w-full pointer-events-none" />;
-}
-
-// ------------------------------------------------ Main Splash Screen Component
 export default function Splash({ onDone }: { onDone: () => void }) {
   const [progress, setProgress] = useState(0);
   const [mounted, setMounted] = useState(false);
@@ -138,7 +54,7 @@ export default function Splash({ onDone }: { onDone: () => void }) {
     playSoftChime();
 
     const startTime = Date.now();
-    const duration = 2400; // Fast 2.4s professional sequence
+    const duration = 2800; // Smooth 2.8s entrance
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
@@ -157,91 +73,118 @@ export default function Splash({ onDone }: { onDone: () => void }) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-between overflow-hidden bg-[#0a0f0d] text-white select-none transition-opacity duration-500 ${
-        exiting ? 'opacity-0 scale-95 pointer-events-none' : 'opacity-100 scale-100'
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-between overflow-hidden bg-black text-white select-none transition-all duration-500 ${
+        exiting ? 'opacity-0 scale-98 pointer-events-none' : 'opacity-100 scale-100'
       }`}
     >
-      {/* Background Ambient Particles & Light */}
-      <AmbientParticleCanvas />
+      {/* ================= BACKGROUND: REALISTIC MAHATMA MANDIR & GMC TRUCK ================= */}
+      <div className="absolute inset-0 overflow-hidden">
+        <img
+          src="/gmc-gandhinagar-splash.jpg"
+          alt="GMC Gandhinagar Mahatma Mandir"
+          className="h-full w-full object-cover object-center scale-105 animate-[kenburns_16s_ease-out_infinite_alternate]"
+        />
 
-      {/* Top Header Badge */}
+        {/* Sophisticated Dark Gradient Scrim for crisp text contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 to-black/80 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 bg-radial from-transparent via-black/40 to-black/90" />
+      </div>
+
+      {/* ================= TOP BADGE: GMC & CIVIC MISSION ================= */}
       <div
         className={`relative z-20 pt-8 sm:pt-12 transition-all duration-700 ${
           mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
         }`}
       >
-        <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-950/40 px-4 py-1.5 backdrop-blur-md shadow-xs">
+        <div className="flex items-center gap-2.5 rounded-full border border-white/20 bg-black/60 px-4 py-1.5 backdrop-blur-xl shadow-lg shadow-black/40">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
           </span>
-          <span className="text-[11px] font-semibold tracking-wider text-emerald-300/90 uppercase">
-            Civic Intelligence Platform · Swachh Bharat
+          <span className="text-[11px] font-bold tracking-[0.2em] text-emerald-300 uppercase">
+            Gandhinagar Municipal Corporation · Swachh Bharat
           </span>
         </div>
       </div>
 
-      {/* Centerpiece: Clean Logo & Professional Branding */}
+      {/* ================= CENTER: PURE ANIMATED TYPOGRAPHY (LOGO REMOVED) ================= */}
       <div
-        className={`relative z-20 my-auto flex flex-col items-center justify-center text-center px-4 transition-all duration-700 ${
-          mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        className={`relative z-20 my-auto flex flex-col items-center justify-center text-center px-4 transition-all duration-1000 ${
+          mounted ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-6 scale-95'
         }`}
       >
-        {/* Emblem Badge with Breathing Ring */}
-        <div className="relative mb-6 flex items-center justify-center">
-          {/* Subtle Glow Ring */}
-          <div className="absolute h-28 w-28 rounded-full bg-emerald-500/20 blur-xl animate-pulse" />
-          <div
-            className="absolute h-24 w-24 rounded-full border border-emerald-400/30 animate-spin"
-            style={{ animationDuration: '20s' }}
-          />
-
-          {/* Central Logo Box */}
-          <div className="relative grid h-18 w-18 place-items-center rounded-2xl border border-emerald-400/30 bg-gradient-to-b from-emerald-900/60 to-[#0c1a14] p-3.5 shadow-[0_8px_30px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-            <img
-              src="/icon.svg"
-              alt="Safaai Sarathi"
-              className="h-full w-full object-contain filter drop-shadow-[0_2px_8px_rgba(16,185,129,0.5)]"
-            />
-          </div>
+        {/* Sub-label */}
+        <div className="mb-2.5 inline-flex items-center gap-2 rounded-lg bg-emerald-500/15 border border-emerald-400/30 px-3 py-1 backdrop-blur-md">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-[11px] font-extrabold uppercase tracking-widest text-emerald-300">
+            Smart City Capital Mission
+          </span>
         </div>
 
-        {/* Brand Name */}
-        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-          SAFAAI <span className="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">SARATHI</span>
-        </h1>
+        {/* Grand Title with Traveling Light Shimmer */}
+        <div className="relative overflow-hidden px-2 py-1">
+          <h1 className="text-4xl sm:text-7xl font-black tracking-tight leading-none text-white drop-shadow-[0_15px_35px_rgba(0,0,0,0.95)]">
+            <span className="inline-block transition-transform duration-700 hover:scale-105">
+              SAFAAI
+            </span>{' '}
+            <span className="inline-block bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent font-black filter drop-shadow-[0_0_25px_rgba(16,185,129,0.8)]">
+              SARATHI
+            </span>
+          </h1>
 
-        {/* Tagline */}
-        <p className="mt-2 text-xs sm:text-sm font-medium text-emerald-200/70 tracking-wide max-w-sm">
-          Autonomous Waste Management & Route Optimization
+          {/* Traveling Shimmer Overlay */}
+          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2.2s_infinite] bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg] pointer-events-none" />
+        </div>
+
+        {/* Dynamic Tagline */}
+        <p className="mt-3.5 max-w-md text-xs sm:text-base font-semibold text-emerald-100/80 tracking-wide drop-shadow-md">
+          AI-Powered Civic Waste Governance & Route Optimization Platform
         </p>
 
-        {/* Minimalist Linear Progress Bar */}
-        <div className="mt-7 w-48 sm:w-56 overflow-hidden rounded-full bg-white/10 h-1 backdrop-blur-xs">
+        {/* Glowing Indian Tricolor Precision Progress Line */}
+        <div className="mt-8 h-1 w-52 sm:w-72 overflow-hidden rounded-full bg-white/15 ring-1 ring-white/20 backdrop-blur-md shadow-lg">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-300 transition-all duration-150 ease-out shadow-[0_0_8px_rgba(52,211,153,0.8)]"
-            style={{ width: `${progress}%` }}
+            className="h-full rounded-full transition-all duration-150 ease-out"
+            style={{
+              width: `${progress}%`,
+              background: 'linear-gradient(90deg, #FF9933 0%, #FFFFFF 50%, #138808 100%)',
+              boxShadow: '0 0 12px rgba(255, 255, 255, 0.9)',
+            }}
           />
         </div>
       </div>
 
-      {/* Bottom Bar: Version & Skip Button */}
+      {/* ================= BOTTOM: EDITION TAG & SKIP BUTTON ================= */}
       <div
-        className={`relative z-20 flex w-full max-w-4xl items-center justify-between px-6 pb-6 text-xs text-white/50 transition-all duration-700 ${
+        className={`relative z-20 flex w-full max-w-5xl items-center justify-between px-6 pb-6 text-xs text-white/60 transition-all duration-700 ${
           mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}
       >
-        <span className="text-[11px] font-medium tracking-wide">v2.0 · Enterprise Edition</span>
+        <span className="text-[11px] font-bold tracking-wider uppercase text-white/50">
+          GMC v2.0 · Capital Fleet Intelligence
+        </span>
 
+        {/* Fast Skip Button */}
         <button
           type="button"
           onClick={onDone}
-          className="group flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1 text-[11px] font-semibold text-white/80 backdrop-blur-md transition hover:border-emerald-400/50 hover:bg-emerald-500/10 hover:text-white cursor-pointer active:scale-95"
+          className="group flex items-center gap-2 rounded-full border border-white/20 bg-black/50 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-xl transition hover:border-emerald-400 hover:bg-emerald-500/20 active:scale-95 shadow-lg cursor-pointer"
         >
           <span>Skip</span>
-          <span className="transition-transform group-hover:translate-x-0.5">→</span>
+          <span className="transition-transform group-hover:translate-x-1">→</span>
         </button>
       </div>
+
+      <style>{`
+        @keyframes kenburns {
+          0% { transform: scale(1.04) translateY(0px); }
+          100% { transform: scale(1.12) translateY(-12px); }
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-150%) skewX(-20deg); }
+          100% { transform: translateX(200%) skewX(-20deg); }
+        }
+      `}</style>
     </div>
   );
 }
