@@ -28,18 +28,78 @@ import { Badge, Card, toast } from '../../components/ui';
 import { BaseMap, LocationPicker } from '../../components/map/Map';
 import { useT } from '../../lib/i18n';
 
+const geocodeCache = new Map<string, string>();
+
+async function reverseGeocodeLocation(lat: number, lng: number): Promise<string> {
+  const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+  if (geocodeCache.has(cacheKey)) {
+    return geocodeCache.get(cacheKey)!;
+  }
+
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+      { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(3500) }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.address) {
+        const addr = data.address;
+        const place =
+          addr.amenity ||
+          addr.building ||
+          addr.residential ||
+          addr.neighbourhood ||
+          addr.suburb ||
+          addr.road ||
+          addr.hamlet ||
+          addr.village ||
+          '';
+        const area = addr.suburb || addr.city_district || addr.county || addr.town || addr.city || '';
+        const city = addr.city || addr.town || addr.state_district || 'Gandhinagar';
+        const state = addr.state || 'Gujarat';
+        const postcode = addr.postcode ? ` ${addr.postcode}` : '';
+
+        const components = [place, area && area !== place ? area : null, city, state + postcode].filter(Boolean);
+        if (components.length > 0) {
+          const formatted = `${components.join(', ')} (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
+          geocodeCache.set(cacheKey, formatted);
+          return formatted;
+        }
+      }
+    }
+  } catch {
+    // Network or timeout fallback
+  }
+
+  const fallback = estimateGandhinagarSector(lat, lng);
+  const fallbackFormatted = `${fallback} (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`;
+  geocodeCache.set(cacheKey, fallbackFormatted);
+  return fallbackFormatted;
+}
+
 function estimateGandhinagarSector(lat: number, lng: number): string {
-  if (lat > 23.23 && lng < 72.63) return 'Sector 1 / Infocity Area';
-  if (lat > 23.23 && lng >= 72.63 && lng < 72.65) return 'Sector 2 / Sector 3';
-  if (lat > 23.22 && lng < 72.64) return 'Sector 4 / Sector 5';
-  if (lat > 23.21 && lng < 72.64) return 'Sector 6 / GH-Road Corridor';
-  if (lat > 23.21 && lng >= 72.64) return 'Sector 7 / Sector 8 Market';
-  if (lat > 23.20 && lng < 72.64) return 'Sector 11 / Sachivalaya Area';
-  if (lat > 23.20 && lng >= 72.64) return 'Sector 12 / Sector 13';
-  if (lat > 23.19 && lng >= 72.64) return 'Sector 21 / Shopping Center';
-  if (lat > 23.18 && lng >= 72.65) return 'Kudasan / Bhaijipura Area';
-  if (lat <= 23.18) return 'Koba / GIFT City Corridor';
-  return 'Sector 6 / GH-Circle Area';
+  if (lat >= 23.20 && lat <= 23.27 && lng >= 72.60 && lng <= 72.68) {
+    if (lat > 23.23 && lng < 72.63) return 'Sector 1 / Infocity, Gandhinagar, Gujarat 382007';
+    if (lat > 23.23 && lng >= 72.63 && lng < 72.65) return 'Sector 2 / Sector 3, Gandhinagar, Gujarat 382006';
+    if (lat > 23.22 && lng < 72.64) return 'Sector 4 / Sector 5, Gandhinagar, Gujarat 382006';
+    if (lat > 23.21 && lng < 72.64) return 'Sector 6 / GH-Road, Gandhinagar, Gujarat 382006';
+    if (lat > 23.21 && lng >= 72.64) return 'Sector 7 / Sector 8 Market, Gandhinagar, Gujarat 382007';
+    if (lat > 23.20 && lng < 72.64) return 'Sector 11 / Sachivalaya, Gandhinagar, Gujarat 382010';
+    if (lat > 23.20 && lng >= 72.64) return 'Sector 12 / Sector 13, Gandhinagar, Gujarat 382016';
+    if (lat > 23.19 && lng >= 72.64) return 'Sector 21 / Shopping Center, Gandhinagar, Gujarat 382021';
+    return 'Sector 6 / GH-Circle, Gandhinagar, Gujarat 382006';
+  }
+  if (lat >= 23.16 && lat < 23.20 && lng >= 72.63 && lng <= 72.68) {
+    return 'Kudasan / Bhaijipura Area, Gandhinagar, Gujarat 382421';
+  }
+  if (lng > 72.75) {
+    return 'Dehgam Kapadvanj Road, Gandhinagar District, Gujarat 382305';
+  }
+  if (lat < 23.15) {
+    return 'Chandkheda / SG Highway Corridor, Gujarat 382424';
+  }
+  return 'Gandhinagar Municipal Area, Gujarat 382006';
 }
 
 type Step = 'where' | 'what' | 'when' | 'review';
@@ -74,6 +134,7 @@ export default function SchedulePickup() {
   const [locationType, setLocationType] = useState<'MY_HOME' | 'COMMON_PLOT_SOCIETY'>('MY_HOME');
   const [address, setAddress] = useState('');
   const [position, setPosition] = useState<{ lat: number; lng: number }>({ lat: 23.2156, lng: 72.6369 });
+  const [geocoding, setGeocoding] = useState(false);
   const [eventReason, setEventReason] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['Organic', 'Plastic/Recyclable']);
   const [expectedQuantity, setExpectedQuantity] = useState<'SMALL' | 'MEDIUM' | 'LARGE'>('MEDIUM');
@@ -87,10 +148,19 @@ export default function SchedulePickup() {
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  function updateCoordinates(lat: number, lng: number) {
+  async function updateCoordinates(lat: number, lng: number) {
     setPosition({ lat, lng });
-    const sector = estimateGandhinagarSector(lat, lng);
-    setAddress(`${sector}, Gandhinagar, Gujarat 382006 (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`);
+    setGeocoding(true);
+    // Instant responsive feedback
+    const fastSector = estimateGandhinagarSector(lat, lng);
+    setAddress(`${fastSector} (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`);
+
+    try {
+      const realAddress = await reverseGeocodeLocation(lat, lng);
+      setAddress(realAddress);
+    } finally {
+      setGeocoding(false);
+    }
   }
 
   function handleLocateMe() {
@@ -100,7 +170,7 @@ export default function SchedulePickup() {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        updateCoordinates(pos.coords.latitude, pos.coords.longitude);
+        void updateCoordinates(pos.coords.latitude, pos.coords.longitude);
         toast.success('Location locked to your current GPS position!');
       },
       () => toast.error('Unable to fetch GPS position. Please tap manually on the map.'),
@@ -113,16 +183,16 @@ export default function SchedulePickup() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          updateCoordinates(pos.coords.latitude, pos.coords.longitude);
+          void updateCoordinates(pos.coords.latitude, pos.coords.longitude);
         },
         () => {
           if (!address) {
-            setAddress('Sector 6, Gandhinagar, Gujarat 382006 (Lat: 23.2156, Lng: 72.6369)');
+            void updateCoordinates(23.2156, 72.6369);
           }
         }
       );
     } else {
-      setAddress('Sector 6, Gandhinagar, Gujarat 382006 (Lat: 23.2156, Lng: 72.6369)');
+      void updateCoordinates(23.2156, 72.6369);
     }
   }, []);
 
@@ -163,7 +233,7 @@ export default function SchedulePickup() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
         <div>
@@ -219,126 +289,157 @@ export default function SchedulePickup() {
         </div>
       </div>
 
-      {/* ================= STEP 1: WHERE ================= */}
+      {/* ================= STEP 1: WHERE (50-50 Split Layout) ================= */}
       {step === 'where' && (
-        <Card className="p-6 border border-line shadow-xs space-y-6">
-          <div>
-            <h2 className="text-fluid-base font-bold text-ink mb-1">Select Pickup Location</h2>
-            <p className="text-fluid-xs text-muted">Choose whether waste will be collected from your home or a common plot.</p>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          {/* LEFT SIDE (50% on lg): Big Interactive Map */}
+          <div className="lg:col-span-6 flex flex-col">
+            <Card className="p-4 sm:p-5 border border-line shadow-xs space-y-3 bg-surface flex-1 flex flex-col justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-fluid-sm font-bold text-ink flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-brand" /> Interactive Pickup Map
+                  </h3>
+                  <p className="text-[11px] text-muted">
+                    Tap anywhere on the map or drag pin to lock the spot.
+                  </p>
+                </div>
 
-          {/* Location Type Switcher */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setLocationType('MY_HOME')}
-              className={`flex items-center gap-3.5 p-4 rounded-2xl border transition text-left cursor-pointer ${
-                locationType === 'MY_HOME'
-                  ? 'border-brand bg-brand/10 text-brand ring-2 ring-brand/20 shadow-xs'
-                  : 'border-line bg-surface hover:bg-sunken'
-              }`}
-            >
-              <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
-                locationType === 'MY_HOME' ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'
-              }`}>
-                <Home className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-bold text-fluid-sm text-ink">My Home / Residential</p>
-                <p className="text-[11px] text-muted">Individual household address</p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setLocationType('COMMON_PLOT_SOCIETY')}
-              className={`flex items-center gap-3.5 p-4 rounded-2xl border transition text-left cursor-pointer ${
-                locationType === 'COMMON_PLOT_SOCIETY'
-                  ? 'border-brand bg-brand/10 text-brand ring-2 ring-brand/20 shadow-xs'
-                  : 'border-line bg-surface hover:bg-sunken'
-              }`}
-            >
-              <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
-                locationType === 'COMMON_PLOT_SOCIETY' ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'
-              }`}>
-                <Building2 className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-bold text-fluid-sm text-ink">Common Plot / Society Area</p>
-                <p className="text-[11px] text-muted">Clubhouse, party plot, or society gate</p>
-              </div>
-            </button>
-          </div>
-
-          {/* Address Field with Auto-Update Status */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="block text-fluid-xs font-bold text-ink">
-                Specific Address / Landmark <span className="text-danger">*</span>
-              </label>
-              <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <Sparkles className="h-3 w-3" /> Auto-syncs with map pin
-              </span>
-            </div>
-            <input
-              type="text"
-              className="field w-full font-medium"
-              placeholder="e.g. Block C Common Garden, Shivalik Residency, Sector 7"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-            />
-          </div>
-
-          {/* Map Location Pin Header & Actions */}
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <label className="block text-fluid-xs font-bold text-ink">
-                  Pin Exact Pickup Coordinates on Map
-                </label>
-                <p className="text-[11px] text-muted">
-                  Tap anywhere on the map or drag the pin to set the pickup spot.
-                </p>
-              </div>
-
-              {/* Locate Me GPS Button & Locked Coordinates Badge */}
-              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleLocateMe}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-brand/40 bg-brand/10 hover:bg-brand/20 px-3 py-1.5 text-[11px] font-bold text-brand shadow-xs transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-brand/40 bg-brand/10 hover:bg-brand/20 px-3 py-1.5 text-[11px] font-bold text-brand shadow-xs transition cursor-pointer shrink-0"
                 >
                   <Navigation className="h-3.5 w-3.5" /> Use Current GPS
                 </button>
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-sunken border border-line px-3 py-1.5 text-[11px] font-mono text-muted">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  {position.lat.toFixed(4)}, {position.lng.toFixed(4)}
+              </div>
+
+              {/* Leaflet Map Frame */}
+              <div className="h-[340px] sm:h-[420px] w-full overflow-hidden rounded-2xl border border-line shadow-inner relative">
+                <BaseMap center={[position.lat, position.lng]} zoom={15}>
+                  <LocationPicker
+                    latitude={position.lat}
+                    longitude={position.lng}
+                    onChange={(lat, lng) => void updateCoordinates(lat, lng)}
+                  />
+                </BaseMap>
+              </div>
+
+              {/* Coordinates HUD Banner */}
+              <div className="flex items-center justify-between rounded-xl bg-sunken/80 border border-line p-2.5 text-[11px]">
+                <span className="font-semibold text-ink flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Locked GPS Coordinates
+                </span>
+                <span className="font-mono text-muted">
+                  {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
                 </span>
               </div>
-            </div>
-
-            {/* Interactive Leaflet Map Container */}
-            <div className="h-[300px] w-full overflow-hidden rounded-2xl border border-line shadow-inner relative">
-              <BaseMap center={[position.lat, position.lng]} zoom={15}>
-                <LocationPicker
-                  latitude={position.lat}
-                  longitude={position.lng}
-                  onChange={(lat, lng) => updateCoordinates(lat, lng)}
-                />
-              </BaseMap>
-            </div>
+            </Card>
           </div>
 
-          <button
-            type="button"
-            disabled={!address.trim()}
-            onClick={() => setStep('what')}
-            className="btn-primary w-full py-3 font-bold shadow-md shadow-brand/20 flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <span>Next: What Waste to Collect</span>
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        </Card>
+          {/* RIGHT SIDE (50% on lg): Address & Location Type Details */}
+          <div className="lg:col-span-6 flex flex-col">
+            <Card className="p-5 sm:p-6 border border-line shadow-xs space-y-5 bg-surface flex-1 flex flex-col justify-between">
+              <div className="space-y-5">
+                <div>
+                  <h2 className="text-fluid-base font-bold text-ink mb-1">Select Pickup Location</h2>
+                  <p className="text-fluid-xs text-muted">
+                    Choose location type and verify specific address for municipal pickup truck.
+                  </p>
+                </div>
+
+                {/* Location Type Switcher */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setLocationType('MY_HOME')}
+                    className={`flex items-center gap-3 p-3.5 rounded-2xl border transition text-left cursor-pointer ${
+                      locationType === 'MY_HOME'
+                        ? 'border-brand bg-brand/10 text-brand ring-2 ring-brand/20 shadow-xs'
+                        : 'border-line bg-surface hover:bg-sunken'
+                    }`}
+                  >
+                    <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
+                      locationType === 'MY_HOME' ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'
+                    }`}>
+                      <Home className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-fluid-sm text-ink">My Home</p>
+                      <p className="text-[11px] text-muted">Residential household</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setLocationType('COMMON_PLOT_SOCIETY')}
+                    className={`flex items-center gap-3 p-3.5 rounded-2xl border transition text-left cursor-pointer ${
+                      locationType === 'COMMON_PLOT_SOCIETY'
+                        ? 'border-brand bg-brand/10 text-brand ring-2 ring-brand/20 shadow-xs'
+                        : 'border-line bg-surface hover:bg-sunken'
+                    }`}
+                  >
+                    <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
+                      locationType === 'COMMON_PLOT_SOCIETY' ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'
+                    }`}>
+                      <Building2 className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-fluid-sm text-ink">Common Plot</p>
+                      <p className="text-[11px] text-muted">Society / Club gate</p>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Address Input Field */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-fluid-xs font-bold text-ink">
+                      Specific Address / Landmark <span className="text-danger">*</span>
+                    </label>
+                    {geocoding ? (
+                      <span className="text-[11px] font-medium text-brand flex items-center gap-1">
+                        <Loader2 className="h-3 w-3 animate-spin" /> Resolving place...
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" /> Auto-syncs with map pin
+                      </span>
+                    )}
+                  </div>
+                  <textarea
+                    className="field w-full min-h-[90px] font-medium text-fluid-xs resize-y"
+                    placeholder="e.g. Block C Common Garden, Shivalik Residency, Sector 7"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                  />
+                </div>
+
+                {/* Visual Tip */}
+                <div className="rounded-xl border border-line/70 bg-sunken/40 p-3 text-fluid-xs text-muted space-y-1">
+                  <p className="font-semibold text-ink flex items-center gap-1.5">
+                    <Check className="h-3.5 w-3.5 text-brand" /> Smart Collection Route Dispatch
+                  </p>
+                  <p className="text-[11px]">
+                    Our route optimization engine assigns the nearest municipal truck based on these exact coordinates.
+                  </p>
+                </div>
+              </div>
+
+              {/* Continue Button */}
+              <button
+                type="button"
+                disabled={!address.trim()}
+                onClick={() => setStep('what')}
+                className="btn-primary w-full py-3.5 font-bold shadow-md shadow-brand/20 flex items-center justify-center gap-2 cursor-pointer transition mt-4"
+              >
+                <span>Next: What Waste to Collect</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </Card>
+          </div>
+        </div>
       )}
 
       {/* ================= STEP 2: WHAT ================= */}
