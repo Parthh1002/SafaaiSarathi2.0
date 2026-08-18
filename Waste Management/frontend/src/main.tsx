@@ -9,12 +9,20 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>
 );
 
-// Installable PWA for the citizen and driver builds. Registered only in
-// production so the dev server is never served from a stale cache.
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      /* offline support is a progressive enhancement, never a hard requirement */
-    });
-  });
+// Self-Healing: Unregister any legacy caching service workers & purge CacheStorage
+// so users always instantly receive the latest deployed build without needing hard-refresh.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      registration.unregister().catch(() => {});
+    }
+  }).catch(() => {});
+
+  if ('caches' in window) {
+    caches.keys().then((keys) => {
+      for (const key of keys) {
+        caches.delete(key).catch(() => {});
+      }
+    }).catch(() => {});
+  }
 }
