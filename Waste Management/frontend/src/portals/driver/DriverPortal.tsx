@@ -96,14 +96,20 @@ export default function DriverPortal() {
           type="button"
           onClick={() => setBroadcasting((v) => !v)}
           title={broadcasting ? 'GPS sharing on' : 'GPS sharing paused'}
+          className="shrink-0"
         >
-          <Badge tone={!online ? 'warn' : broadcasting ? 'ok' : 'neutral'}>
+          <Badge tone={!online ? 'warn' : broadcasting ? 'ok' : 'neutral'} className="text-[10px] sm:text-fluid-xs px-2 py-0.5 sm:px-2.5 sm:py-1">
             <span
-              className={`h-1.5 w-1.5 rounded-full ${
+              className={`h-1.5 w-1.5 rounded-full shrink-0 ${
                 !online ? 'bg-warn' : broadcasting ? 'animate-pulse bg-ok' : 'bg-faint'
               }`}
             />
-            {!online ? t('driver.offline') : broadcasting ? t('driver.gpsLive') : t('driver.gpsOff')}
+            <span className="hidden sm:inline">
+              {!online ? t('driver.offline') : broadcasting ? t('driver.gpsLive') : t('driver.gpsOff')}
+            </span>
+            <span className="sm:hidden font-bold">
+              {!online ? 'Off' : broadcasting ? 'GPS' : 'Paused'}
+            </span>
           </Badge>
         </button>
       }

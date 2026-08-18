@@ -37,64 +37,65 @@ import {
 } from '../../lib/tspRouteOptimizer';
 import { useT } from '../../lib/i18n';
 
-// Realistic 5 Mock Assigned Collection Complaints within 3km in Ward 6
-const INITIAL_ASSIGNED_STOPS: AssignedStop[] = [
-  {
-    id: 'stop-01',
-    code: 'SS-4081',
-    name: 'Sector 6 Vegetable Market',
-    address: 'Near GH-6 Circle, Sector 6 Market, Gandhinagar',
-    category: 'Garbage Pile',
-    latitude: 23.2185,
-    longitude: 72.6395,
-    urgency: 'HIGH',
-    notes: 'Commercial vegetable waste accumulation outside main entrance.',
-  },
-  {
-    id: 'stop-02',
-    code: 'SS-4082',
-    name: 'Sector 6 Community Bin A',
-    address: 'Block A, Residential Complex 4, Sector 6',
-    category: 'Overflowing Bin',
-    latitude: 23.2142,
-    longitude: 72.6341,
-    urgency: 'NORMAL',
-    notes: 'Green biodegradable community bin overflowing onto sidewalk.',
-  },
-  {
-    id: 'stop-03',
-    code: 'SS-4083',
-    name: 'Sector 12 Hospital Gate 4',
-    address: 'Gate 4, Civil Hospital Corridor, Sector 12',
-    category: 'Medical Waste',
-    latitude: 23.2248,
-    longitude: 72.6482,
-    urgency: 'EMERGENCY',
-    notes: 'Biohazard syringe and disposable medical container found in open.',
-  },
-  {
-    id: 'stop-04',
-    code: 'SS-4084',
-    name: 'Sector 6 School Crossing',
-    address: 'Opposite Primary School No. 2, Sector 6',
-    category: 'Plastic Waste',
-    latitude: 23.2201,
-    longitude: 72.6420,
-    urgency: 'NORMAL',
-    notes: 'Single-use plastic packets scattered on pedestrian path.',
-  },
-  {
-    id: 'stop-05',
-    code: 'SS-4085',
-    name: 'Sector 11 Commercial Complex',
-    address: 'Behind Shopping Plaza, Sector 11',
-    category: 'Cardboard & Dry Waste',
-    latitude: 23.2280,
-    longitude: 72.6415,
-    urgency: 'NORMAL',
-    notes: 'Packaging boxes piled near back delivery alley.',
-  },
-];
+function generateAdaptiveStops(baseLat: number, baseLng: number): AssignedStop[] {
+  return [
+    {
+      id: 'stop-01',
+      code: 'SS-4081',
+      name: 'Primary Waste Collection Point',
+      address: 'Main Market & Commercial Area',
+      category: 'Garbage Pile',
+      latitude: Number((baseLat + 0.0035).toFixed(5)),
+      longitude: Number((baseLng + 0.0042).toFixed(5)),
+      urgency: 'HIGH',
+      notes: 'High-density commercial collection spot.',
+    },
+    {
+      id: 'stop-02',
+      code: 'SS-4082',
+      name: 'Residential Community Bin',
+      address: 'Society Main Gate & Plot Corridor',
+      category: 'Overflowing Bin',
+      latitude: Number((baseLat - 0.0028).toFixed(5)),
+      longitude: Number((baseLng + 0.0055).toFixed(5)),
+      urgency: 'NORMAL',
+      notes: 'Biodegradable community container.',
+    },
+    {
+      id: 'stop-03',
+      code: 'SS-4083',
+      name: 'Civil Clinic & Emergency Sector',
+      address: 'Hospital Corridor & Public Access',
+      category: 'Medical Waste',
+      latitude: Number((baseLat + 0.0062).toFixed(5)),
+      longitude: Number((baseLng - 0.0038).toFixed(5)),
+      urgency: 'EMERGENCY',
+      notes: 'Urgent biohazard response required.',
+    },
+    {
+      id: 'stop-04',
+      code: 'SS-4084',
+      name: 'School Zone Crossing',
+      address: 'Opposite Secondary School Ground',
+      category: 'Plastic Waste',
+      latitude: Number((baseLat + 0.0048).toFixed(5)),
+      longitude: Number((baseLng + 0.0075).toFixed(5)),
+      urgency: 'NORMAL',
+      notes: 'Dry recyclable packaging pickup.',
+    },
+    {
+      id: 'stop-05',
+      code: 'SS-4085',
+      name: 'Commercial Complex & Plaza',
+      address: 'Behind Shopping Complex Back Alley',
+      category: 'Cardboard & Dry Waste',
+      latitude: Number((baseLat - 0.0045).toFixed(5)),
+      longitude: Number((baseLng - 0.0052).toFixed(5)),
+      urgency: 'NORMAL',
+      notes: 'Bulk corrugated cartons collection.',
+    },
+  ];
+}
 
 export default function DriverRoute() {
   const t = useT();
@@ -106,15 +107,58 @@ export default function DriverRoute() {
   const [driverHeading, setDriverHeading] = useState<number>(0);
   const [gpsStatus, setGpsStatus] = useState<GpsStatus>('CONNECTING');
   const [gpsFix, setGpsFix] = useState<RealGpsLocation | null>(null);
+  const [hasRealGpsFix, setHasRealGpsFix] = useState(false);
 
   // Multi-Stop Route State
-  const [assignedStops, setAssignedStops] = useState<AssignedStop[]>(INITIAL_ASSIGNED_STOPS);
+  const [assignedStops, setAssignedStops] = useState<AssignedStop[]>(() =>
+    generateAdaptiveStops(23.2156, 72.6369)
+  );
   const [tour, setTour] = useState<OptimizedTour | null>(null);
   const [isListExpanded, setIsListExpanded] = useState(false);
   const [isCollecting, setIsCollecting] = useState(false);
 
-  // 1. Connect Real Hardware GPS watchPosition stream
+  // Function to explicitly prompt and lock onto device physical GPS
+  const requestDeviceGps = () => {
+    if (!navigator.geolocation) {
+      toast.warn('Geolocation not supported on this device.');
+      return;
+    }
+    setGpsStatus('CONNECTING');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setDriverPos([lat, lng]);
+        setGpsStatus('LIVE_GPS');
+        setHasRealGpsFix(true);
+        setGpsFix({
+          latitude: lat,
+          longitude: lng,
+          accuracy: Math.round(pos.coords.accuracy || 5),
+          heading: pos.coords.heading || 0,
+          speed: Math.round((pos.coords.speed || 0) * 3.6),
+          timestamp: Date.now(),
+          isRealGps: true,
+        });
+        setAssignedStops(generateAdaptiveStops(lat, lng));
+        toast.success(`📍 Live GPS Locked: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+      },
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) {
+          setGpsStatus('PERMISSION_DENIED');
+          toast.error('GPS permission denied. Please allow location in browser settings.');
+        } else {
+          setGpsStatus('UNAVAILABLE');
+          toast.warn('GPS signal weak. Retrying location search…');
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
+  // 1. Connect Real Hardware GPS watchPosition stream on mount
   useEffect(() => {
+    requestDeviceGps();
     realGpsTracker.startTracking(true);
     const unsubscribeGps = realGpsTracker.subscribe((loc, status) => {
       setGpsStatus(status);
@@ -123,6 +167,10 @@ export default function DriverRoute() {
         setDriverPos([loc.latitude, loc.longitude]);
         setDriverSpeed(loc.speed ?? 0);
         setDriverHeading(loc.heading ?? 0);
+        if (!hasRealGpsFix) {
+          setHasRealGpsFix(true);
+          setAssignedStops(generateAdaptiveStops(loc.latitude, loc.longitude));
+        }
       }
     });
 
@@ -175,7 +223,7 @@ export default function DriverRoute() {
         vehicleNumber: 'GJ-18-GB-4012',
         model: 'Tata Ace Gold 2T',
         wardCode: 'W-06',
-        wardName: 'Sector 6 Municipal Ward',
+        wardName: 'Assigned Municipal Beat',
         phone: user?.phone || '9825144321',
         currentLat: driverPos[0],
         currentLng: driverPos[1],
@@ -184,10 +232,10 @@ export default function DriverRoute() {
         fuelPct: 78,
         status: (driverSpeed > 2 ? 'en_route' : 'idle') as 'en_route' | 'idle',
         destination: {
-          name: nextStop?.name || 'Depot',
-          address: nextStop?.address || 'Municipal Ward Office',
-          lat: nextStop?.latitude || 23.2156,
-          lng: nextStop?.longitude || 72.6369,
+          name: nextStop?.name || 'Collection Point',
+          address: nextStop?.address || 'Municipal Ward Area',
+          lat: nextStop?.latitude || driverPos[0] + 0.003,
+          lng: nextStop?.longitude || driverPos[1] + 0.003,
           urgency: (nextStop?.urgency === 'EMERGENCY' ? 'EMERGENCY' : 'NORMAL') as 'EMERGENCY' | 'NORMAL',
           category: nextStop?.category || 'Garbage Pile',
         },
@@ -208,29 +256,34 @@ export default function DriverRoute() {
   const remainingCount = tour?.remainingStopsCount ?? 0;
 
   return (
-    <div className="space-y-4">
-      {/* Top Banner / Session Header (FIX 1: Profile Dropdown Removed Completely) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-3">
+    <div className="space-y-4 max-w-full overflow-x-hidden">
+      {/* Top Banner / Session Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-line pb-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 font-bold">
+            <span className="grid h-8 w-8 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 font-bold shrink-0">
               <Navigation className="h-4 w-4" />
             </span>
-            <h1 className="text-fluid-lg font-extrabold text-ink tracking-tight">
+            <h1 className="text-fluid-base sm:text-fluid-lg font-extrabold text-ink tracking-tight">
               Live Navigation & TSP Route
             </h1>
           </div>
-          <p className="text-fluid-xs text-muted">
+          <p className="text-fluid-xs text-muted mt-0.5">
             2-Opt TSP minimal-distance sequence · Road-snapped live turn guidance
           </p>
         </div>
 
         {/* Authenticated Driver Profile Badge & GPS Status */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Real Hardware GPS Stream Indicator */}
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border border-emerald-500/30 bg-emerald-50/10 text-emerald-600 shadow-xs">
+          {/* Real Hardware GPS Stream Indicator + Click to Lock GPS */}
+          <button
+            type="button"
+            onClick={requestDeviceGps}
+            title="Click to sync your exact physical device GPS"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[11px] font-bold border border-emerald-500/30 bg-emerald-50/15 hover:bg-emerald-50/30 text-emerald-600 shadow-xs cursor-pointer transition shrink-0"
+          >
             <span
-              className={`h-2 w-2 rounded-full ${
+              className={`h-2 w-2 rounded-full shrink-0 ${
                 gpsStatus === 'LIVE_GPS' ? 'bg-emerald-500 animate-ping' : 'bg-emerald-600'
               }`}
             />
@@ -238,21 +291,21 @@ export default function DriverRoute() {
               {gpsStatus === 'LIVE_GPS'
                 ? `GPS Live (±${gpsFix?.accuracy || 4}m)`
                 : gpsStatus === 'STATIONARY'
-                ? 'GPS: Stationary (0 km/h)'
+                ? 'GPS: Stationary'
                 : gpsStatus === 'PERMISSION_DENIED'
-                ? 'GPS: Permission Denied'
-                : 'GPS: Connecting…'}
+                ? '📍 Tap to Enable GPS'
+                : 'GPS: Syncing…'}
             </span>
-          </div>
+          </button>
 
-          {/* Authenticated Driver Tag (No dropdown, strictly from session) */}
-          <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-surface border border-line text-ink font-semibold text-xs shadow-xs">
-            <span className="grid h-6 w-6 place-items-center rounded-lg bg-emerald-600 text-white text-[10px] font-bold">
+          {/* Authenticated Driver Tag */}
+          <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-xl bg-surface border border-line text-ink font-semibold text-xs shadow-xs shrink-0">
+            <span className="grid h-6 w-6 place-items-center rounded-lg bg-emerald-600 text-white text-[10px] font-bold shrink-0">
               {(user?.name || 'Parth Patel').charAt(0)}
             </span>
             <div className="leading-tight">
-              <span className="font-bold block text-fluid-xs">{user?.name || 'Parth Patel'}</span>
-              <span className="text-[10px] text-muted font-mono">GJ-18-GB-4012 (Ward W-06)</span>
+              <span className="font-bold block text-[11.5px] truncate max-w-[130px]">{user?.name || 'Parth Patel'}</span>
+              <span className="text-[10px] text-muted font-mono block">GJ-18-GB-4012</span>
             </div>
           </div>
         </div>

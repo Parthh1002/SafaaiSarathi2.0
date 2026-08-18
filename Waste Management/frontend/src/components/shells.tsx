@@ -44,23 +44,23 @@ export function MobileShell({
   return (
     <div className="min-h-dvh bg-surface pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-10">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-line bg-surface/95 pt-[env(safe-area-inset-top)] shadow-xs backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2.5">
+      <header className="sticky top-0 z-40 border-b border-line bg-surface/95 pt-[env(safe-area-inset-top)] shadow-xs backdrop-blur-md overflow-x-hidden">
+        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-1.5 sm:gap-3 px-2.5 sm:px-6 lg:px-8 py-2 sm:py-2.5">
           {/* Logo & Portal Title */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
             <Link
               to={user?.role === 'DRIVER' ? '/driver' : '/app'}
-              className="flex items-center gap-2.5 sm:gap-3 group transition shrink-0"
+              className="flex items-center gap-2 sm:gap-3 group transition shrink-0"
             >
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand/10 p-1.5 transition group-hover:scale-105 shadow-xs">
+              <div className="grid h-8 w-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-xl bg-brand/10 p-1 sm:p-1.5 transition group-hover:scale-105 shadow-xs">
                 <img src="/icon.svg" alt="Safaai Sarathi" className="h-full w-full object-contain" />
               </div>
               <div className="flex flex-col text-left shrink-0">
-                <span className="text-[14.5px] sm:text-[15px] font-black tracking-tight text-ink leading-tight whitespace-nowrap">
+                <span className="text-[13.5px] sm:text-[15px] font-black tracking-tight text-ink leading-tight whitespace-nowrap">
                   Safaai Sarathi
                 </span>
                 <span
-                  className={`text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider whitespace-nowrap mt-0.5 ${
+                  className={`text-[9px] sm:text-[10px] font-black uppercase tracking-wider whitespace-nowrap mt-0.5 ${
                     accent === 'orange' ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'
                   }`}
                 >
@@ -76,18 +76,18 @@ export function MobileShell({
           </div>
 
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {headerRight}
             <LanguageSwitcher compact />
             <ThemeToggle />
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
-              className="flex items-center gap-2 rounded-xl border border-line bg-elevated p-1.5 pr-2.5 sm:pr-3 transition hover:bg-sunken shadow-xs cursor-pointer shrink-0"
+              className="flex items-center gap-1 sm:gap-1.5 rounded-xl border border-line bg-elevated p-1 sm:p-1.5 sm:pr-2.5 transition hover:bg-sunken shadow-xs cursor-pointer shrink-0"
               aria-label="Account menu"
             >
               <span
-                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-fluid-xs font-bold text-white shadow-xs"
+                className="grid h-6 w-6 sm:h-7 sm:w-7 shrink-0 place-items-center rounded-lg text-[11px] sm:text-fluid-xs font-bold text-white shadow-xs"
                 style={{ background: user?.avatarColor || (accent === 'orange' ? '#ea580c' : '#15803d') }}
               >
                 {initials(user?.name)}
