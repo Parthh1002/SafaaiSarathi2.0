@@ -665,14 +665,14 @@ router.post(
     const slotHour = body.scheduledTimeSlot === 'EVENING' ? 18 : body.scheduledTimeSlot === 'AFTERNOON' ? 14 : 9;
     targetDate.setHours(slotHour, 0, 0, 0);
 
-    // Lead-time validation: minimum 12 hours ahead for next day slots
-    const hoursAhead = (targetDate.getTime() - now.getTime()) / 3600_000;
-    if (hoursAhead < 8) {
-      throw new HttpError(400, 'Scheduled pickup requires advance booking. Please choose a future slot.');
+    // Auto-detect ward from coordinates or fallback to citizen's ward or first available ward
+    let ward = await wardForPoint({ latitude: body.latitude, longitude: body.longitude });
+    if (!ward && req.user.wardId) {
+      ward = await prisma.ward.findUnique({ where: { id: req.user.wardId } });
     }
-
-    // Auto-detect ward from coordinates
-    const ward = await wardForPoint({ latitude: body.latitude, longitude: body.longitude });
+    if (!ward) {
+      ward = await prisma.ward.findFirst({ orderBy: { id: 'asc' } });
+    }
 
     const code = `SP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
@@ -680,7 +680,7 @@ router.post(
       data: {
         code,
         citizenId: req.user.id,
-        wardId: ward?.id ?? req.user.wardId ?? null,
+        wardId: ward?.id ?? null,
         locationType: body.locationType,
         address: body.address,
         latitude: body.latitude,

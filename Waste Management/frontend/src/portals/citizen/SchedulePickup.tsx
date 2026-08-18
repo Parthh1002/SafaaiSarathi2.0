@@ -12,19 +12,16 @@ import {
   Building2,
   Home,
   Layers,
-  FileText,
   Loader2,
   Trash2,
   Boxes,
   Construction,
   Biohazard,
   Cpu,
-  AlertTriangle,
-  Crosshair,
   Navigation,
 } from 'lucide-react';
 import { api, errorMessage } from '../../lib/api';
-import { Badge, Card, toast } from '../../components/ui';
+import { Card, toast } from '../../components/ui';
 import { BaseMap, LocationPicker } from '../../components/map/Map';
 import { useT } from '../../lib/i18n';
 
@@ -37,7 +34,7 @@ async function reverseGeocodeLocation(lat: number, lng: number): Promise<string>
     return geocodeCache.get(cacheKey)!;
   }
 
-  // 1. Try OpenStreetMap Nominatim (High detail: building, street, society, sector)
+  // 1. Try OpenStreetMap Nominatim
   try {
     const osmRes = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
@@ -147,7 +144,7 @@ export default function SchedulePickup() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(['Organic', 'Plastic/Recyclable']);
   const [expectedQuantity, setExpectedQuantity] = useState<'SMALL' | 'MEDIUM' | 'LARGE'>('MEDIUM');
 
-  // Tomorrow as min date
+  // Tomorrow as default min date
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const maxDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -193,7 +190,6 @@ export default function SchedulePickup() {
   }
 
   useEffect(() => {
-    // Auto-fill GPS
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -223,7 +219,7 @@ export default function SchedulePickup() {
     }
     setSubmitting(true);
     try {
-      const { data } = await api('citizen').post('/citizen/scheduled-pickup', {
+      await api('citizen').post('/citizen/scheduled-pickup', {
         locationType,
         address,
         latitude: position.lat,
@@ -236,7 +232,7 @@ export default function SchedulePickup() {
         additionalNotes: additionalNotes || null,
       });
 
-      toast.success('Scheduled pickup request created successfully!');
+      toast.success(t('citizen.schedule.success') || 'Scheduled pickup request created successfully!');
       queryClient.invalidateQueries({ queryKey: ['citizen'] });
       navigate('/app/scheduled-requests', { replace: true });
     } catch (err) {
@@ -265,20 +261,23 @@ export default function SchedulePickup() {
                 <ChevronLeft className="h-4 w-4" /> Back
               </button>
             )}
-            <h1 className="text-fluid-xl font-bold tracking-tight text-ink">Schedule Event Waste Pickup</h1>
+            <h1 className="text-fluid-xl font-bold tracking-tight text-ink">
+              {t('citizen.schedule.title') || 'Schedule Event Waste Pickup'}
+            </h1>
           </div>
           <p className="text-fluid-xs text-muted">
-            Book a dedicated municipal waste pickup for marriages, society cleanups, or renovation debris.
+            {t('citizen.schedule.subtitle') ||
+              'Book a dedicated municipal waste pickup for marriages, society cleanups, or renovation debris.'}
           </p>
         </div>
 
         {/* Step Indicator */}
         <div className="flex items-center gap-2 bg-elevated/70 p-1.5 rounded-2xl border border-line shadow-xs">
           {[
-            { id: 'where', label: '1. Location' },
-            { id: 'what', label: '2. Waste' },
-            { id: 'when', label: '3. Schedule' },
-            { id: 'review', label: '4. Review' },
+            { id: 'where', label: `1. ${t('citizen.schedule.step1') || 'Location'}` },
+            { id: 'what', label: `2. ${t('citizen.schedule.step2') || 'Waste'}` },
+            { id: 'when', label: `3. ${t('citizen.schedule.step3') || 'Schedule'}` },
+            { id: 'review', label: `4. ${t('citizen.schedule.step4') || 'Review'}` },
           ].map((s, i) => {
             const current = step === s.id;
             const stepOrder = ['where', 'what', 'when', 'review'];
@@ -312,10 +311,12 @@ export default function SchedulePickup() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h3 className="text-fluid-sm font-bold text-ink flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-brand" /> Interactive Pickup Map
+                    <MapPin className="h-4 w-4 text-brand" />{' '}
+                    {t('citizen.schedule.mapTitle') || 'Interactive Pickup Map'}
                   </h3>
                   <p className="text-[11px] text-muted">
-                    Tap anywhere on the map or drag pin to lock the spot.
+                    {t('citizen.schedule.mapDesc') ||
+                      'Tap anywhere on the map or drag pin to lock the spot.'}
                   </p>
                 </div>
 
@@ -324,7 +325,7 @@ export default function SchedulePickup() {
                   onClick={handleLocateMe}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-brand/40 bg-brand/10 hover:bg-brand/20 px-3 py-1.5 text-[11px] font-bold text-brand shadow-xs transition cursor-pointer shrink-0"
                 >
-                  <Navigation className="h-3.5 w-3.5" /> Use Current GPS
+                  <Navigation className="h-3.5 w-3.5" /> {t('citizen.schedule.useGps') || 'Use Current GPS'}
                 </button>
               </div>
 
@@ -343,7 +344,7 @@ export default function SchedulePickup() {
               <div className="flex items-center justify-between rounded-xl bg-sunken/80 border border-line p-2.5 text-[11px]">
                 <span className="font-semibold text-ink flex items-center gap-1.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Locked GPS Coordinates
+                  {t('citizen.schedule.lockedCoords') || 'Locked GPS Coordinates'}
                 </span>
                 <span className="font-mono text-muted">
                   {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
@@ -357,9 +358,12 @@ export default function SchedulePickup() {
             <Card className="p-5 sm:p-6 border border-line shadow-xs space-y-5 bg-surface flex-1 flex flex-col justify-between">
               <div className="space-y-5">
                 <div>
-                  <h2 className="text-fluid-base font-bold text-ink mb-1">Select Pickup Location</h2>
+                  <h2 className="text-fluid-base font-bold text-ink mb-1">
+                    {t('citizen.schedule.selectLoc') || 'Select Pickup Location'}
+                  </h2>
                   <p className="text-fluid-xs text-muted">
-                    Choose location type and verify specific address for municipal pickup truck.
+                    {t('citizen.schedule.selectLocDesc') ||
+                      'Choose location type and verify specific address for municipal pickup truck.'}
                   </p>
                 </div>
 
@@ -374,14 +378,18 @@ export default function SchedulePickup() {
                         : 'border-line bg-surface hover:bg-sunken'
                     }`}
                   >
-                    <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
-                      locationType === 'MY_HOME' ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'
-                    }`}>
+                    <div
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
+                        locationType === 'MY_HOME' ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'
+                      }`}
+                    >
                       <Home className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="font-bold text-fluid-sm text-ink">My Home</p>
-                      <p className="text-[11px] text-muted">Residential household</p>
+                      <p className="font-bold text-fluid-sm text-ink">{t('citizen.schedule.myHome') || 'My Home'}</p>
+                      <p className="text-[11px] text-muted">
+                        {t('citizen.schedule.myHomeSub') || 'Residential household'}
+                      </p>
                     </div>
                   </button>
 
@@ -394,14 +402,20 @@ export default function SchedulePickup() {
                         : 'border-line bg-surface hover:bg-sunken'
                     }`}
                   >
-                    <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
-                      locationType === 'COMMON_PLOT_SOCIETY' ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'
-                    }`}>
+                    <div
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
+                        locationType === 'COMMON_PLOT_SOCIETY' ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'
+                      }`}
+                    >
                       <Building2 className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="font-bold text-fluid-sm text-ink">Common Plot</p>
-                      <p className="text-[11px] text-muted">Society / Club gate</p>
+                      <p className="font-bold text-fluid-sm text-ink">
+                        {t('citizen.schedule.commonPlot') || 'Common Plot'}
+                      </p>
+                      <p className="text-[11px] text-muted">
+                        {t('citizen.schedule.commonPlotSub') || 'Society / Club gate'}
+                      </p>
                     </div>
                   </button>
                 </div>
@@ -410,7 +424,8 @@ export default function SchedulePickup() {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label className="block text-fluid-xs font-bold text-ink">
-                      Specific Address / Landmark <span className="text-danger">*</span>
+                      {t('citizen.schedule.specificAddress') || 'Specific Address / Landmark'}{' '}
+                      <span className="text-danger">*</span>
                     </label>
                     {geocoding ? (
                       <span className="text-[11px] font-medium text-brand flex items-center gap-1">
@@ -433,10 +448,12 @@ export default function SchedulePickup() {
                 {/* Visual Tip */}
                 <div className="rounded-xl border border-line/70 bg-sunken/40 p-3 text-fluid-xs text-muted space-y-1">
                   <p className="font-semibold text-ink flex items-center gap-1.5">
-                    <Check className="h-3.5 w-3.5 text-brand" /> Smart Collection Route Dispatch
+                    <Check className="h-3.5 w-3.5 text-brand" />{' '}
+                    {t('citizen.schedule.smartRouting') || 'Smart Collection Route Dispatch'}
                   </p>
                   <p className="text-[11px]">
-                    Our route optimization engine assigns the nearest municipal truck based on these exact coordinates.
+                    {t('citizen.schedule.smartRoutingDesc') ||
+                      'Our route optimization engine assigns the nearest municipal truck based on these exact coordinates.'}
                   </p>
                 </div>
               </div>
@@ -448,7 +465,7 @@ export default function SchedulePickup() {
                 onClick={() => setStep('what')}
                 className="btn-primary w-full py-3.5 font-bold shadow-md shadow-brand/20 flex items-center justify-center gap-2 cursor-pointer transition mt-4"
               >
-                <span>Next: What Waste to Collect</span>
+                <span>{t('citizen.schedule.nextWhat') || 'Next: What Waste to Collect'}</span>
                 <ArrowRight className="h-4 w-4" />
               </button>
             </Card>
@@ -460,19 +477,24 @@ export default function SchedulePickup() {
       {step === 'what' && (
         <Card className="p-6 border border-line shadow-xs space-y-6">
           <div>
-            <h2 className="text-fluid-base font-bold text-ink mb-1">Occasion & Expected Waste</h2>
-            <p className="text-fluid-xs text-muted">Describe the event reason and multi-select expected waste streams.</p>
+            <h2 className="text-fluid-base font-bold text-ink mb-1">
+              {t('citizen.schedule.occasionTitle') || 'Occasion & Expected Waste'}
+            </h2>
+            <p className="text-fluid-xs text-muted">
+              {t('citizen.schedule.occasionDesc') ||
+                'Describe the event reason and multi-select expected waste streams.'}
+            </p>
           </div>
 
           {/* Event Reason */}
           <div className="space-y-1.5">
             <label className="block text-fluid-xs font-bold text-ink">
-              Event / Occasion Name <span className="text-danger">*</span>
+              {t('citizen.schedule.eventName') || 'Event / Occasion Name'} <span className="text-danger">*</span>
             </label>
             <input
               type="text"
               className="field w-full"
-              placeholder="e.g. Wedding Reception, Diwali Society Deep-Clean, Kitchen Renovation"
+              placeholder="e.g. Wedding Reception, Society Cleanliness Drive, Home Renovation"
               value={eventReason}
               onChange={(e) => setEventReason(e.target.value)}
             />
@@ -481,7 +503,7 @@ export default function SchedulePickup() {
           {/* Expected Categories Multi-select */}
           <div className="space-y-2">
             <label className="block text-fluid-xs font-bold text-ink">
-              Expected Waste Categories (Select All That Apply)
+              {t('citizen.schedule.categories') || 'Expected Waste Categories (Select All That Apply)'}
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {WASTE_CATEGORIES_OPTIONS.map((cat) => {
@@ -498,9 +520,11 @@ export default function SchedulePickup() {
                         : 'border-line bg-surface hover:bg-sunken text-ink'
                     }`}
                   >
-                    <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${
-                      selected ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'
-                    }`}>
+                    <div
+                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${
+                        selected ? 'bg-brand text-brand-ink' : 'bg-sunken text-muted'
+                      }`}
+                    >
                       <Icon className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -517,7 +541,7 @@ export default function SchedulePickup() {
           {/* Estimated Quantity */}
           <div className="space-y-2">
             <label className="block text-fluid-xs font-bold text-ink">
-              Estimated Waste Volume
+              {t('citizen.schedule.volume') || 'Estimated Waste Volume'}
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {QUANTITY_OPTIONS.map((q) => {
@@ -547,7 +571,7 @@ export default function SchedulePickup() {
             onClick={() => setStep('when')}
             className="btn-primary w-full py-3 font-bold shadow-md shadow-brand/20 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>Next: Target Date & Time Slot</span>
+            <span>{t('citizen.schedule.nextWhen') || 'Next: Target Date & Time Slot'}</span>
             <ArrowRight className="h-4 w-4" />
           </button>
         </Card>
@@ -557,16 +581,20 @@ export default function SchedulePickup() {
       {step === 'when' && (
         <Card className="p-6 border border-line shadow-xs space-y-6">
           <div>
-            <h2 className="text-fluid-base font-bold text-ink mb-1">Target Date & Preferred Time Slot</h2>
+            <h2 className="text-fluid-base font-bold text-ink mb-1">
+              {t('citizen.schedule.targetDateTitle') || 'Target Date & Preferred Time Slot'}
+            </h2>
             <p className="text-fluid-xs text-muted">
-              Book at least 24 hours in advance so the ward officer can schedule a dedicated compactor.
+              {t('citizen.schedule.targetDateDesc') ||
+                'Book at least 24 hours in advance so the ward officer can schedule a dedicated compactor.'}
             </p>
           </div>
 
           {/* Date Picker */}
           <div className="space-y-1.5">
             <label className="block text-fluid-xs font-bold text-ink">
-              Scheduled Pickup Date (Min 24h Ahead) <span className="text-danger">*</span>
+              {t('citizen.schedule.targetDate') || 'Scheduled Pickup Date (Min 24h Ahead)'}{' '}
+              <span className="text-danger">*</span>
             </label>
             <input
               type="date"
@@ -581,7 +609,7 @@ export default function SchedulePickup() {
           {/* Time Slot Selection */}
           <div className="space-y-2">
             <label className="block text-fluid-xs font-bold text-ink">
-              Preferred Collection Window
+              {t('citizen.schedule.timeWindow') || 'Preferred Collection Window'}
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {TIME_SLOT_OPTIONS.map((slot) => {
@@ -612,7 +640,7 @@ export default function SchedulePickup() {
           {/* Additional Notes */}
           <div className="space-y-1.5">
             <label className="block text-fluid-xs font-bold text-ink">
-              Special Gate Instructions / Landmarks (Optional)
+              {t('citizen.schedule.specialNotes') || 'Special Gate Instructions / Landmarks (Optional)'}
             </label>
             <textarea
               rows={2}
@@ -629,7 +657,7 @@ export default function SchedulePickup() {
             onClick={() => setStep('review')}
             className="btn-primary w-full py-3 font-bold shadow-md shadow-brand/20 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>Next: Review & Submit</span>
+            <span>{t('citizen.schedule.nextReview') || 'Next: Review & Submit'}</span>
             <ArrowRight className="h-4 w-4" />
           </button>
         </Card>
@@ -639,8 +667,12 @@ export default function SchedulePickup() {
       {step === 'review' && (
         <Card className="p-6 border border-line shadow-xs space-y-6">
           <div className="border-b border-line pb-3">
-            <h2 className="text-fluid-base font-bold text-ink mb-1">Confirm Scheduled Pickup Request</h2>
-            <p className="text-fluid-xs text-muted">Review details before sending to the ward officer console.</p>
+            <h2 className="text-fluid-base font-bold text-ink mb-1">
+              {t('citizen.schedule.confirmTitle') || 'Confirm Scheduled Pickup Request'}
+            </h2>
+            <p className="text-fluid-xs text-muted">
+              {t('citizen.schedule.confirmDesc') || 'Review details before sending to the ward officer console.'}
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-fluid-xs">
@@ -648,29 +680,54 @@ export default function SchedulePickup() {
               <p className="font-bold text-ink flex items-center gap-1.5">
                 <MapPin className="h-4 w-4 text-brand" /> Location & Occasion
               </p>
-              <p><span className="text-muted">Type:</span> {locationType === 'MY_HOME' ? 'My Home' : 'Common Plot'}</p>
-              <p><span className="text-muted">Address:</span> {address}</p>
-              <p><span className="text-muted">Reason:</span> <strong>{eventReason}</strong></p>
+              <p>
+                <span className="text-muted">Type:</span>{' '}
+                {locationType === 'MY_HOME' ? 'My Home' : 'Common Plot'}
+              </p>
+              <p>
+                <span className="text-muted">Address:</span> {address}
+              </p>
+              <p>
+                <span className="text-muted">Reason:</span> <strong>{eventReason}</strong>
+              </p>
             </div>
 
             <div className="p-4 rounded-2xl border border-line bg-sunken space-y-2">
               <p className="font-bold text-ink flex items-center gap-1.5">
                 <Calendar className="h-4 w-4 text-brand" /> Date, Slot & Quantity
               </p>
-              <p><span className="text-muted">Target Date:</span> <strong>{new Date(scheduledDate).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</strong></p>
-              <p><span className="text-muted">Time Slot:</span> {TIME_SLOT_OPTIONS.find((s) => s.id === scheduledTimeSlot)?.time}</p>
-              <p><span className="text-muted">Estimated Load:</span> {expectedQuantity}</p>
-              <p><span className="text-muted">Categories:</span> {selectedCategories.join(', ')}</p>
+              <p>
+                <span className="text-muted">Target Date:</span>{' '}
+                <strong>
+                  {new Date(scheduledDate).toLocaleDateString('en-IN', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </strong>
+              </p>
+              <p>
+                <span className="text-muted">Time Slot:</span>{' '}
+                {TIME_SLOT_OPTIONS.find((s) => s.id === scheduledTimeSlot)?.time}
+              </p>
+              <p>
+                <span className="text-muted">Estimated Load:</span> {expectedQuantity}
+              </p>
+              <p>
+                <span className="text-muted">Categories:</span> {selectedCategories.join(', ')}
+              </p>
             </div>
           </div>
 
           {/* Green Credit Perk */}
           <div className="rounded-2xl border border-brand/20 bg-brand/5 p-4 text-fluid-xs text-brand space-y-1">
             <p className="font-bold flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4" /> Earn +25 Green Credits
+              <Sparkles className="h-4 w-4" /> {t('citizen.schedule.earnCredits') || 'Earn +25 Green Credits'}
             </p>
             <p className="text-[11px] text-muted">
-              Pre-scheduling waste prevents illegal roadside dumping and earns you +25 Green Credits once collected by our driver.
+              {t('citizen.schedule.earnCreditsDesc') ||
+                'Pre-scheduling waste prevents illegal roadside dumping and earns you +25 Green Credits once collected by our driver.'}
             </p>
           </div>
 
@@ -683,12 +740,12 @@ export default function SchedulePickup() {
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Submitting Advance Request…</span>
+                <span>{t('citizen.schedule.submitting') || 'Submitting Advance Request…'}</span>
               </>
             ) : (
               <>
                 <Check className="h-4 w-4" />
-                <span>Submit Advance Pickup Request</span>
+                <span>{t('citizen.schedule.submit') || 'Submit Advance Pickup Request'}</span>
               </>
             )}
           </button>
