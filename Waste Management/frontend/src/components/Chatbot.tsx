@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bot,
-  MessageSquare,
   X,
   Send,
   Sparkles,
@@ -19,8 +18,12 @@ import {
   MapPin,
   Gift,
   ArrowRight,
+  RotateCcw,
+  Languages,
+  Minus,
+  MessageSquare,
 } from 'lucide-react';
-import { useI18n } from '../lib/i18n';
+import { useI18n, type Locale } from '../lib/i18n';
 import { api, tokenStore } from '../lib/api';
 
 interface ActionButton {
@@ -41,36 +44,45 @@ interface Message {
 
 const KNOWLEDGE_BASE = {
   en: {
+    title: 'AI Safaai Sahayak',
+    subtitle: 'Municipal 24/7 Sanitation Agent',
     welcome:
       'Namaste! I am your AI Safaai Sahayak powered by Groq Llama 3.3. How can I help you today? You can ask me to file a waste complaint, pre-schedule bulk event pickup, track collection trucks, or check your Green Credits!',
+    placeholder: 'Ask anything or type your complaint…',
     quickPrompts: [
-      'Register complaint at my location',
-      'Schedule event pickup for wedding',
-      'Wet vs Dry waste segregation',
-      'How do Green Credits work?',
-      'Emergency helpline numbers',
+      '📸 File a complaint at my spot',
+      '🗓️ Pre-schedule event waste pickup',
+      '🌿 Wet vs Dry waste segregation',
+      '🎁 How do Green Credits work?',
+      '🚨 Emergency helpline numbers',
     ],
   },
   hi: {
+    title: 'AI सफाई सहायक',
+    subtitle: '24/7 नगर निगम स्वच्छता सलाहकार',
     welcome:
       'नमस्ते! मैं आपका AI सफाई सहायक हूँ (Groq Llama 3.3 द्वारा संचालित)। मैं कचरा रिपोर्ट करने, शादी/इवेंट के लिए पिकअप शेड्यूल करने, वैन ट्रैक करने या ग्रीन रिवॉर्ड पॉइंट्स में आपकी मदद कर सकता हूँ!',
+    placeholder: 'कोई सवाल पूछें या शिकायत लिखें…',
     quickPrompts: [
-      'मेरी लोकेशन पर कचरे की शिकायत दर्ज करें',
-      'इवेंट कचरा पिकअप शेड्यूल करें',
-      'गीला और सूखा कचरा नियम',
-      'ग्रीन क्रेडिट्स कैसे मिलते हैं?',
-      'आपातकालीन हेल्पलाइन नंबर',
+      '📸 यहाँ कचरे की शिकायत दर्ज करें',
+      '🗓️ शादी/इवेंट के लिए पिकअप शेड्यूल करें',
+      '🌿 गीला और सूखा कचरा नियम',
+      '🎁 ग्रीन क्रेडिट्स कैसे कमाएं?',
+      '🚨 आपातकालीन हेल्पलाइन नंबर',
     ],
   },
   gu: {
+    title: 'AI સફાઈ સહાયક',
+    subtitle: '24/7 મ્યુનિસિપલ સ્વચ્છતા સહાયક',
     welcome:
       'નમસ્તે! હું તમારો AI સફાઈ સહાયક છું (Groq Llama 3.3 દ્વારા સંચાલિત). હું કચરાની ફરિયાદ નોંધવા, લગ્ન/ઇવેન્ટ માટે પિકઅપ શિડ્યુલ કરવા કે ગ્રીન ક્રેડિટ્સ જાણવામાં તમારી મદદ કરી શકું છું!',
+    placeholder: 'કંઈપણ પૂછો અથવા ફરિયાદ લખો…',
     quickPrompts: [
-      'મારા લોકેશન પર કચરાની ફરિયાદ કરો',
-      'ઇવેન્ટ પિકઅપ બુકિંગ કરો',
-      'ભીનો અને સૂકો કચરો અલગ કરવાના નિયમો',
-      'ગ્રીન ક્રેડિટ્સ કેવી રીતે મળે?',
-      'ઇમરજન્સી હેલ્પલાઇન નંબર',
+      '📸 મારા લોકેશન પર ફરિયાદ નોંધાવો',
+      '🗓️ ઇવેન્ટ માટે પિકઅપ બુક કરો',
+      '🌿 ભીનો અને સૂકો કચરો અલગ કરવાના નિયમો',
+      '🎁 ગ્રીન ક્રેડિટ્સ કેવી રીતે મળે?',
+      '🚨 ઇમરજન્સી હેલ્પલાઇન નંબર',
     ],
   },
 };
@@ -173,11 +185,16 @@ function detectActions(text: string): ActionButton[] {
 
 export function Chatbot() {
   const navigate = useNavigate();
-  const { locale } = useI18n();
-  const currentLang = locale === 'gu' || locale === 'hi' ? locale : 'en';
+  const { locale, setLocale } = useI18n();
+  const currentLang = (locale === 'gu' || locale === 'hi' ? locale : 'en') as 'en' | 'hi' | 'gu';
   const localized = KNOWLEDGE_BASE[currentLang];
 
   const [isOpen, setIsOpen] = useState(false);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -191,21 +208,58 @@ export function Chatbot() {
       ],
     },
   ]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Update welcome message when user switches language
+  useEffect(() => {
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === 'welcome') {
+        return [
+          {
+            id: 'welcome',
+            sender: 'bot',
+            text: localized.welcome,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            aiPowered: true,
+            actions: [
+              { label: '📸 Snap Photo & Report Waste', url: '/app/report', icon: 'camera', variant: 'primary' },
+              { label: '🗓️ Pre-Schedule Event Pickup', url: '/app/schedule-pickup', icon: 'calendar', variant: 'warning' },
+            ],
+          },
+        ];
+      }
+      return prev;
+    });
+  }, [currentLang]);
 
   useEffect(() => {
     if (isOpen) {
-      scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => {
+        scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+        inputRef.current?.focus();
+      }, 100);
     }
   }, [messages, isOpen, isTyping]);
+
+  function handleResetChat() {
+    setMessages([
+      {
+        id: 'welcome-' + Date.now(),
+        sender: 'bot',
+        text: localized.welcome,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        aiPowered: true,
+        actions: [
+          { label: '📸 Snap Photo & Report Waste', url: '/app/report', icon: 'camera', variant: 'primary' },
+          { label: '🗓️ Pre-Schedule Event Pickup', url: '/app/schedule-pickup', icon: 'calendar', variant: 'warning' },
+        ],
+      },
+    ]);
+  }
 
   function handleActionClick(action: ActionButton) {
     setIsOpen(false);
     const token = tokenStore.get('citizen');
     if (!token) {
-      // Direct unauthenticated users to login or citizen app
       navigate(`/login?portal=citizen&redirect=${encodeURIComponent(action.url)}`);
     } else {
       navigate(action.url);
@@ -228,7 +282,6 @@ export function Chatbot() {
     setIsTyping(true);
 
     try {
-      // Use public chatbot endpoint to support both landing page & authenticated citizens
       const res = await api('citizen').post('/public/chatbot', { message: text, lang: currentLang });
       const botReply = res.data?.reply || 'I am your Safaai Sahayak. Please tap the Report tab to file a waste complaint.';
       const detected = detectActions(text + ' ' + botReply);
@@ -272,79 +325,159 @@ export function Chatbot() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        aria-label="AI Safaai Sahayak"
-        className={`fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-brand-ink shadow-2xl shadow-brand/40 transition hover:scale-105 active:scale-95 md:bottom-6 md:right-6 cursor-pointer ${
+        aria-label="Open AI Safaai Sahayak Chatbot"
+        className={`fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-brand-ink shadow-2xl shadow-brand/40 transition-all duration-300 hover:scale-110 active:scale-95 md:bottom-6 md:right-6 cursor-pointer group ${
           isOpen ? 'hidden' : 'flex'
         }`}
       >
-        <Sparkles className="h-6 w-6" />
-        <span className="absolute -top-1 -right-1 flex h-4 w-4">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ok opacity-75"></span>
-          <span className="relative inline-flex h-4 w-4 rounded-full bg-ok"></span>
+        <span className="relative">
+          <Sparkles className="h-6 w-6 transition-transform duration-300 group-hover:rotate-12" />
+          <span className="absolute -top-2 -right-2 flex h-4 w-4">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex h-4 w-4 rounded-full bg-emerald-500 border-2 border-white"></span>
+          </span>
         </span>
       </button>
 
-      {/* Floating Chat Window Modal */}
+      {/* Backdrop for Mobile / Tablet Focus */}
       {isOpen && (
-        <div className="fixed bottom-20 right-4 z-50 flex h-[540px] max-h-[85vh] w-[94vw] max-w-[400px] flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-2xl md:bottom-6 md:right-6 animate-in fade-in slide-in-from-bottom-5 duration-200">
-          {/* Chat Header */}
-          <div className="flex items-center justify-between border-b border-line bg-brand px-4 py-3 text-brand-ink">
-            <div className="flex items-center gap-2.5">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/20 shadow-xs">
-                <Bot className="h-5 w-5" />
-              </span>
-              <div>
+        <div
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs transition-opacity duration-300 sm:bg-transparent sm:backdrop-blur-none sm:pointer-events-none"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Floating Chat Window Modal (Bottom sheet on mobile, anchored card on desktop) */}
+      {isOpen && (
+        <div
+          className="fixed inset-x-0 bottom-0 z-50 flex h-[90vh] max-h-[850px] w-full flex-col overflow-hidden rounded-t-[2rem] border border-line bg-surface shadow-2xl sm:inset-x-auto sm:bottom-6 sm:right-6 sm:h-[600px] sm:w-[420px] sm:rounded-3xl animate-in slide-in-from-bottom-8 zoom-in-95 duration-300"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
+          {/* Mobile Sheet Drag Pill Handle */}
+          <div className="flex justify-center pt-2.5 pb-1 sm:hidden">
+            <div className="h-1.5 w-12 rounded-full bg-line/80" />
+          </div>
+
+          {/* Premium Chat Header */}
+          <div className="flex items-center justify-between border-b border-line bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-700 px-4 py-3 text-white shadow-md">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-white/15 backdrop-blur-md shadow-inner">
+                <Bot className="h-6 w-6 text-emerald-100" />
+                <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-800" />
+              </div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <h3 className="text-fluid-sm font-bold leading-tight">AI Safaai Sahayak</h3>
-                  <span className="inline-flex items-center gap-0.5 rounded-md bg-white/20 px-1.5 py-0.2 text-[9px] font-extrabold uppercase tracking-wider">
-                    <Zap className="h-2.5 w-2.5 text-yellow-300 fill-yellow-300" /> Groq AI
+                  <h3 className="text-fluid-sm font-extrabold tracking-tight truncate">{localized.title}</h3>
+                  <span className="inline-flex items-center gap-0.5 rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-300 shrink-0 shadow-xs">
+                    <Zap className="h-2.5 w-2.5 fill-amber-300" /> Groq AI
                   </span>
                 </div>
-                <p className="text-[11px] opacity-85">Municipal 24/7 Action & Sanitation Agent</p>
+                <p className="text-[11px] text-emerald-100/90 truncate">{localized.subtitle}</p>
               </div>
             </div>
+
+            {/* Header Right Actions */}
+            <div className="flex items-center gap-1 shrink-0">
+              {/* Inline Language Switcher Pills */}
+              <div className="flex items-center bg-black/20 rounded-xl p-0.5 text-[10px] font-bold">
+                {(['en', 'hi', 'gu'] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setLocale(lang)}
+                    className={`px-1.5 py-0.5 rounded-lg transition cursor-pointer uppercase ${
+                      currentLang === lang ? 'bg-white text-emerald-800 shadow-xs' : 'text-white/75 hover:text-white'
+                    }`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleResetChat}
+                title="Restart Chat"
+                className="rounded-xl p-1.5 text-white/80 transition hover:bg-white/20 hover:text-white cursor-pointer"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                aria-label="Close Chat"
+                className="rounded-xl p-1.5 text-white/80 transition hover:bg-white/20 hover:text-white cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Action Navigation Bar */}
+          <div className="flex items-center gap-1.5 overflow-x-auto border-b border-line bg-sunken/50 px-3 py-2 no-scrollbar">
             <button
               type="button"
-              onClick={() => setIsOpen(false)}
-              className="rounded-xl p-1.5 text-brand-ink/80 transition hover:bg-white/20 hover:text-brand-ink cursor-pointer"
+              onClick={() => handleActionClick({ label: 'Report', url: '/app/report', icon: 'camera', variant: 'primary' })}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-line bg-elevated px-2.5 py-1 text-[11px] font-bold text-ink shadow-2xs transition hover:border-brand hover:text-brand cursor-pointer"
             >
-              <X className="h-5 w-5" />
+              <Camera className="h-3 w-3 text-brand" /> Report Waste
+            </button>
+            <button
+              type="button"
+              onClick={() => handleActionClick({ label: 'Schedule', url: '/app/schedule-pickup', icon: 'calendar', variant: 'warning' })}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-line bg-elevated px-2.5 py-1 text-[11px] font-bold text-ink shadow-2xs transition hover:border-brand hover:text-brand cursor-pointer"
+            >
+              <Calendar className="h-3 w-3 text-amber-600" /> Event Pickup
+            </button>
+            <button
+              type="button"
+              onClick={() => handleActionClick({ label: 'Emergency', url: '/app/emergency', icon: 'emergency', variant: 'danger' })}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-line bg-elevated px-2.5 py-1 text-[11px] font-bold text-danger shadow-2xs transition hover:border-danger hover:bg-danger/10 cursor-pointer"
+            >
+              <AlertTriangle className="h-3 w-3 text-danger" /> 30-Min Alert
+            </button>
+            <button
+              type="button"
+              onClick={() => handleActionClick({ label: 'Rewards', url: '/app/rewards', icon: 'reward', variant: 'info' })}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-line bg-elevated px-2.5 py-1 text-[11px] font-bold text-ink shadow-2xs transition hover:border-brand hover:text-brand cursor-pointer"
+            >
+              <Gift className="h-3 w-3 text-emerald-600" /> Green Credits
             </button>
           </div>
 
-          {/* Chat Body */}
-          <div className="flex-1 space-y-3 overflow-y-auto p-4 text-fluid-xs">
+          {/* Chat Body Scroll Area */}
+          <div className="flex-1 space-y-3.5 overflow-y-auto p-4 text-fluid-xs bg-surface/60">
             {messages.map((m) => (
               <div
                 key={m.id}
-                className={`flex gap-2 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex gap-2.5 ${m.sender === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-200`}
               >
                 {m.sender === 'bot' && (
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand mt-0.5">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-2xl bg-brand/10 text-brand mt-0.5 border border-brand/20 shadow-xs">
                     <Bot className="h-4 w-4" />
                   </span>
                 )}
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 leading-relaxed shadow-xs whitespace-pre-line ${
+                  className={`max-w-[86%] sm:max-w-[82%] rounded-2xl px-4 py-3 leading-relaxed shadow-xs whitespace-pre-line text-[13px] ${
                     m.sender === 'user'
-                      ? 'bg-brand text-brand-ink rounded-tr-none'
-                      : 'bg-elevated border border-line text-ink rounded-tl-none'
+                      ? 'bg-brand text-brand-ink font-medium rounded-tr-none shadow-sm'
+                      : 'bg-elevated border border-line text-ink rounded-tl-none shadow-xs'
                   }`}
                 >
-                  <p className="break-words font-normal">{m.text}</p>
+                  <p className="break-words">{m.text}</p>
 
                   {/* Interactive Action Buttons Triggered by AI Agent */}
                   {m.actions && m.actions.length > 0 && (
-                    <div className="mt-2.5 space-y-1.5 pt-2 border-t border-line/60">
-                      <p className="text-[10px] font-semibold text-muted uppercase tracking-wider">
-                        ⚡ Recommended Action
+                    <div className="mt-3 space-y-1.5 pt-2.5 border-t border-line/70">
+                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-muted flex items-center gap-1">
+                        <Sparkles className="h-3 w-3 text-brand" /> Quick Action
                       </p>
                       {m.actions.map((act, i) => (
                         <button
                           key={i}
                           type="button"
                           onClick={() => handleActionClick(act)}
-                          className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-[12px] font-bold transition shadow-xs cursor-pointer text-left ${
+                          className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-bold transition shadow-xs cursor-pointer text-left ${
                             act.variant === 'danger'
                               ? 'bg-danger text-white hover:brightness-110'
                               : act.variant === 'warning'
@@ -359,15 +492,15 @@ export function Chatbot() {
                     </div>
                   )}
 
-                  <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <div className="mt-2 flex items-center justify-between gap-2 pt-1 border-t border-black/5 dark:border-white/5">
                     {m.sender === 'bot' && m.aiPowered && (
-                      <span className="text-[9px] font-semibold text-brand flex items-center gap-0.5 opacity-80">
-                        <Zap className="h-2.5 w-2.5" /> Llama 3.3
+                      <span className="text-[9px] font-bold text-brand flex items-center gap-0.5">
+                        <Zap className="h-2.5 w-2.5 text-amber-500 fill-amber-500" /> Groq Llama 3.3
                       </span>
                     )}
                     <span
-                      className={`text-[10px] ml-auto ${
-                        m.sender === 'user' ? 'text-brand-ink/70 text-right' : 'text-faint'
+                      className={`text-[10px] ml-auto font-mono ${
+                        m.sender === 'user' ? 'text-brand-ink/75' : 'text-muted'
                       }`}
                     >
                       {m.timestamp}
@@ -378,29 +511,29 @@ export function Chatbot() {
             ))}
 
             {isTyping && (
-              <div className="flex items-center gap-2 text-faint">
-                <span className="grid h-7 w-7 place-items-center rounded-xl bg-brand/10 text-brand">
+              <div className="flex items-center gap-2 text-muted animate-pulse">
+                <span className="grid h-8 w-8 place-items-center rounded-2xl bg-brand/10 text-brand border border-brand/20 shadow-xs">
                   <Bot className="h-4 w-4" />
                 </span>
-                <span className="rounded-2xl border border-line bg-elevated px-3.5 py-2 text-[11px] flex items-center gap-1.5 text-muted shadow-xs">
+                <span className="rounded-2xl border border-line bg-elevated px-4 py-2.5 text-[12px] flex items-center gap-2 text-ink shadow-xs">
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />
-                  <span>Sahayak is thinking with Groq AI…</span>
+                  <span className="font-medium">Sahayak is thinking with Groq AI…</span>
                 </span>
               </div>
             )}
             <div ref={scrollRef} />
           </div>
 
-          {/* Quick Prompts */}
-          <div className="border-t border-line/60 bg-sunken/40 px-3 py-2">
-            <p className="mb-1.5 text-[10px] font-semibold text-muted uppercase tracking-wider">Quick Suggestions</p>
+          {/* Quick Suggestions Chips */}
+          <div className="border-t border-line/70 bg-sunken/60 px-3 py-2">
+            <p className="mb-1.5 text-[10px] font-bold text-muted uppercase tracking-wider">Suggested Questions</p>
             <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
               {localized.quickPrompts.map((prompt) => (
                 <button
                   key={prompt}
                   type="button"
                   onClick={() => handleSend(prompt)}
-                  className="shrink-0 rounded-xl border border-line bg-elevated px-2.5 py-1 text-[11px] font-medium text-ink transition hover:border-brand hover:text-brand cursor-pointer shadow-2xs"
+                  className="shrink-0 rounded-xl border border-line bg-elevated px-3 py-1.5 text-[11.5px] font-medium text-ink transition hover:border-brand hover:text-brand hover:bg-brand/5 cursor-pointer shadow-2xs"
                 >
                   {prompt}
                 </button>
@@ -408,25 +541,26 @@ export function Chatbot() {
             </div>
           </div>
 
-          {/* Chat Input */}
+          {/* Chat Input Bar */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSend();
             }}
-            className="flex items-center gap-2 border-t border-line bg-surface p-2.5"
+            className="flex items-center gap-2 border-t border-line bg-surface p-3"
           >
             <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type complaint, schedule, or query…"
-              className="flex-1 rounded-xl border border-line bg-elevated px-3 py-2 text-fluid-xs text-ink placeholder:text-faint focus:border-brand focus:outline-none"
+              placeholder={localized.placeholder}
+              className="field flex-1 rounded-2xl text-[13px] px-3.5 py-2.5"
             />
             <button
               type="submit"
               disabled={!input.trim() || isTyping}
-              className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-brand-ink transition disabled:opacity-50 cursor-pointer shadow-xs"
+              className="btn-primary rounded-2xl h-10 w-10 p-0 flex items-center justify-center disabled:opacity-40 shadow-sm cursor-pointer shrink-0"
             >
               {isTyping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </button>
