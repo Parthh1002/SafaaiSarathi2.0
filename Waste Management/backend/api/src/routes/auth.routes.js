@@ -193,10 +193,11 @@ router.get(
     const profile = await exchangeCode(String(code));
     const session = await upsertGoogleUser(profile, res, req);
 
-    // Hand the access token to the SPA; the refresh token is already an
+    // Hand the access token and user role to the SPA; the refresh token is already an
     // httpOnly cookie, so it never touches the URL.
     const target = new URL('/auth/google/return', env.clientOrigins[0]);
     target.searchParams.set('token', session.accessToken);
+    target.searchParams.set('role', session.user?.role || 'CITIZEN');
     res.redirect(target.toString());
   })
 );
@@ -247,7 +248,8 @@ async function upsertGoogleUser(profile, res, req) {
     });
   }
 
-  return auth.completeLogin(user, { res, req, expectedRole: ROLES.CITIZEN });
+  // Allow all valid user roles to log in through Google OAuth without restriction
+  return auth.completeLogin(user, { res, req, expectedRole: null });
 }
 
 // ---- Session lifecycle ----------------------------------------------------

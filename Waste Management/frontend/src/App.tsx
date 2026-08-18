@@ -59,19 +59,32 @@ function PortalLoader() {
   );
 }
 
-/** Google redirects back here with the access token in the query string. */
+/** Google redirects back here with the access token and user role in the query string. */
 function GoogleReturn() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = params.get('token');
+    const role = (params.get('role') || 'CITIZEN').toUpperCase();
     if (!token) {
       navigate('/login', { replace: true });
       return;
     }
-    tokenStore.set('citizen', token);
-    navigate('/app', { replace: true });
+
+    if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
+      tokenStore.set('admin', token);
+      navigate('/admin', { replace: true });
+    } else if (role === 'OFFICER') {
+      tokenStore.set('officer', token);
+      navigate('/officer', { replace: true });
+    } else if (role === 'DRIVER') {
+      tokenStore.set('driver', token);
+      navigate('/driver', { replace: true });
+    } else {
+      tokenStore.set('citizen', token);
+      navigate('/app', { replace: true });
+    }
   }, [params, navigate]);
 
   return <PortalLoader />;
