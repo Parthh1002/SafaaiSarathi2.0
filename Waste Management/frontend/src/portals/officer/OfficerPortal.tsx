@@ -27,7 +27,7 @@ export default function OfficerPortal() {
   const nav: NavItem[] = [
     { to: '/officer', label: t('officer.nav.dashboard'), icon: LayoutDashboard, end: true },
     { to: '/officer/queue', label: t('officer.nav.queue'), icon: ListFilter, badge: data?.kpis?.reviewNeeded },
-    { to: '/officer/scheduled-requests', label: 'Scheduled Requests', icon: Calendar },
+    { to: '/officer/scheduled-requests', label: t('officer.nav.scheduled'), icon: Calendar },
     { to: '/officer/emergencies', label: t('officer.nav.emergencies'), icon: Siren, badge: data?.kpis?.emergenciesOpen },
     { to: '/officer/hotspots', label: t('officer.nav.hotspots'), icon: TrendingUp },
     { to: '/officer/fleet', label: t('officer.nav.fleet'), icon: Truck },

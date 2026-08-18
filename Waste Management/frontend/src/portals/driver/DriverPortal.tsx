@@ -79,7 +79,7 @@ export default function DriverPortal() {
   const nav: NavItem[] = [
     { to: '/driver', label: t('driver.nav.route'), icon: Map, end: true },
     { to: '/driver/stops', label: t('driver.nav.stops'), icon: ListChecks },
-    { to: '/driver/fuel', label: 'Fuel Log', icon: Fuel },
+    { to: '/driver/fuel', label: t('driver.nav.fuel'), icon: Fuel },
     { to: '/driver/summary', label: t('driver.nav.shift'), icon: BarChart3 },
     { to: '/driver/sos', label: t('driver.nav.sos'), icon: Siren },
   ];

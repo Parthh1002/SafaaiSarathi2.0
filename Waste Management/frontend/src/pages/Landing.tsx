@@ -157,7 +157,7 @@ export default function Landing() {
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand/10 text-brand text-xs">
                     <HelpCircle className="h-3 w-3" />
                   </span>
-                  <span>FAQ</span>
+                  <span>{t('landing.nav.faq')}</span>
                 </a>
                 <span className="h-3.5 w-px bg-line/60" />
                 <a
@@ -240,7 +240,7 @@ export default function Landing() {
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand/10 text-brand text-xs">
                     <HelpCircle className="h-3 w-3" />
                   </span>
-                  <span>FAQ</span>
+                  <span>{t('landing.nav.faq')}</span>
                 </a>
                 <span className="h-3.5 w-px bg-line/60" />
                 <a

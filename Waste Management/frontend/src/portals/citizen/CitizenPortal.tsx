@@ -19,7 +19,7 @@ export default function CitizenPortal() {
   const nav: NavItem[] = [
     { to: '/app', label: t('citizen.nav.home'), icon: Home, end: true },
     { to: '/app/report', label: t('citizen.nav.report'), icon: PlusCircle },
-    { to: '/app/schedule-pickup', label: 'Schedule Event', icon: Calendar },
+    { to: '/app/schedule-pickup', label: t('citizen.nav.schedule'), icon: Calendar },
     { to: '/app/complaints', label: t('citizen.nav.complaints'), icon: ListChecks },
     { to: '/app/rewards', label: t('citizen.nav.rewards'), icon: Trophy },
   ];

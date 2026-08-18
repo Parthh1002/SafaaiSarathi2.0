@@ -88,6 +88,7 @@ export const en: Record<string, string> = {
   // ---- landing ----
   'landing.nav.how': 'How it works',
   'landing.nav.why': "Why it's different",
+  'landing.nav.faq': 'FAQ',
   'landing.nav.staff': 'For municipal staff',
   'landing.hero.badge': 'Built for Gujarat ULBs',
   'landing.hero.title1': 'Civic complaints that',
@@ -235,7 +236,7 @@ export const en: Record<string, string> = {
   // ---- citizen ----
   'citizen.nav.home': 'Home',
   'citizen.nav.report': 'Report',
-  'citizen.analyzing_photo': 'Analysing photo with AI...',
+  'citizen.nav.schedule': 'Schedule Event',
   'citizen.nav.complaints': 'My reports',
   'citizen.nav.rewards': 'Rewards',
   'citizen.nav.directory': 'Helpline',
@@ -388,6 +389,7 @@ export const en: Record<string, string> = {
   // ---- driver ----
   'driver.nav.route': 'Route',
   'driver.nav.stops': 'Stops',
+  'driver.nav.fuel': 'Fuel Log',
   'driver.nav.shift': 'Shift',
   'driver.nav.sos': 'SOS',
   'driver.title': 'Driver',
@@ -463,6 +465,7 @@ export const en: Record<string, string> = {
   'officer.subtitle': 'Assigned wards',
   'officer.nav.dashboard': 'Ward dashboard',
   'officer.nav.queue': 'Complaint queue',
+  'officer.nav.scheduled': 'Scheduled Requests',
   'officer.nav.emergencies': 'Emergencies',
   'officer.nav.hotspots': 'Hotspot forecast',
   'officer.nav.fleet': 'Fleet & drivers',
